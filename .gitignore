@@ -7,3 +7,4 @@
 *.pdf
 
 camy_render/src/shaders/
+dump/
