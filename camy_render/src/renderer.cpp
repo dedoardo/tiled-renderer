@@ -144,6 +144,16 @@ namespace camy
 		hidden::gpu.safe_dispose(m_offscreen_target);
 	}
 
+	void Renderer::render(Scene& scene, Camera& camera)
+	{
+		Viewport vp;
+		vp.left = vp.top = 0.f;
+		vp.right = m_window_surface->description.width;
+		vp.bottom = m_window_surface->description.height;
+		
+		render(scene, camera, vp);
+	}
+
 	void Renderer::render(Scene& scene, Camera& camera, const Viewport& viewport)
 	{
 		using namespace DirectX;

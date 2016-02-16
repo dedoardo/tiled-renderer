@@ -2,3 +2,8 @@
 *.user
 *.userosscache
 *.sdf
+*.idb
+*.log
+*.pdf
+
+camy_render/src/shaders/

@@ -40,6 +40,7 @@ namespace camy
 		void unload();
 
 		// Todo: provide default viewport value
+		void render(Scene& scene, Camera& camera); // Default viewport that corresponds to the window_surface specified in load();
 		void render(Scene& scene, Camera& camera, const Viewport& viewport);
 
 		void sync();

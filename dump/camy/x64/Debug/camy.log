@@ -1,1 +1,14 @@
-﻿  camy.vcxproj -> C:\Users\spark\camy\vs_solution\lib\x64\Debug\camy.lib
+﻿  compilation header save succeeded; see C:\Users\spark\camy\camy\src\shaders\pp_vs.hpp
+  compilation object save succeeded; see C:\Users\spark\camy\vs_solution\lib\x64\Debug\pp_vs.cso
+  shader.cpp
+  resources.cpp
+  layers.cpp
+  gpu_backend.cpp
+c:\users\spark\camy\camy\src\gpu_backend.cpp(468): warning C4244: '=': conversion from 'camy::u32' to 'FLOAT', possible loss of data
+c:\users\spark\camy\camy\src\gpu_backend.cpp(469): warning C4244: '=': conversion from 'camy::u32' to 'FLOAT', possible loss of data
+  camy_error.cpp
+  layer_dispatcher.cpp
+  camy_init.cpp
+  cbuffer_system.cpp
+  Generating Code...
+  camy.vcxproj -> C:\Users\spark\camy\vs_solution\lib\x64\Debug\camy.lib

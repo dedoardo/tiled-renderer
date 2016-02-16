@@ -43,6 +43,7 @@ Features:
  ☐ PipelineParameter::data should be an enum just to simplify naming, and in passes.hpp give indices to the different m_parameters[XXX]
  ☐ Enable resource validation, save for each shader how many parameters need to be set, and check if all of them are actually being set 
  ☐ Find a way to buffer camy_messages, not to clutter the output, maybe using some kind of hashing 
+ ☐ Fix how shaders are called as shader variables
 Bugs:
 
 Fixes:
