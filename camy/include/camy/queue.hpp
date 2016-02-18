@@ -50,7 +50,7 @@ namespace camy
 			Function: get_shared_parameters
 				Returns the shared parameters by all the items in the Queue
 		*/
-		const ParameterGroup* get_shared_parameters()const { return m_shared_parameters; }
+		const ParameterGroup& get_shared_parameters()const { static const ParameterGroup default_shared_parameters; return m_shared_parameters == nullptr ? default_shared_parameters : *m_shared_parameters; }
 
 		/*
 			Function: get_dependencies
@@ -98,7 +98,7 @@ namespace camy
 		// Not even remotely handling the > 2^32 items queued
 		std::vector<u32> m_sorted_indices;
 
-		ParameterGroup const* m_shared_parameters;
+		ParameterGroup const*   m_shared_parameters;
 		Dependency*		m_dependencies;
 		u32				m_num_dependencies;
 

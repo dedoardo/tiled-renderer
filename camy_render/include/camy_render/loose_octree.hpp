@@ -18,19 +18,34 @@ namespace camy
 	class LooseOctree;
 
 	/*
-		This structure is read-only,
-		Todo: might think about making everythink private and friend class LooseNode
+		
 	*/
 	struct LooseNodeObject
 	{
+		LooseNodeObject(const Sphere& bounding_sphere, void* user_data = nullptr) :
+			user_data{ user_data },
+			bounding_sphere(bounding_sphere) { } 
+
 		// Pointer to something the user can associate with this node
+		// It can be changed without any concern
 		void*		user_data; 
 
+		void relocate(const Sphere& bounding_sphere);
+
+		const Sphere& get_bounding_sphere()const { return bounding_sphere; }
+
+	protected:
+		friend class LooseOctree;
+
+		// Sphere associated with the object
+		// Currently in order to change the boundingsphere a remove() + add() has to be done
 		Sphere		bounding_sphere;
 
-		// Only to be touched from the LooseOctree
-		LooseNode*		parent;
+		// Node the object is part of, cannot be changed manually a reparent() is necessary
+		// call reparent() in order to modify it
+		LooseNode*  parent{ nullptr };
 	};
+
 
 	/*
 		Preallocating all the nodes is not feasible 5 levels imply 32768 nodes 
@@ -40,17 +55,30 @@ namespace camy
 	{
 		using Allocator = allocators::PagedPoolAllocator<LooseNode, 8 * 8 * 8>;
 
+		/*
+			Retrieves all the user_data contained in the LooseObjects inside the frustum_planes.
+			Assuming the frustum planes are 6
+		*/
 		void retrieve_visible(std::vector<void*>& visible_allocator, const Plane* frustum_planes);
+
+		/*
+			To be called whenever a LooseNodeObject is repositioned. If it doesn't fit in
+			 this very LooseNode it is relocated adding him from the top. We could reinsert
+			 moving from node to node, but inserting a node is simpler and probably more efficient ( in a worst case scenario )
+		*/
 		void relocate(LooseNodeObject* object);
 
-		LooseOctree*	tree; // Needed for reinstertion
+		/*
+			Reference to the creating tree, it is needed for relocation / insertion
+		*/
+		LooseOctree*	tree;
+
 		DirectX::XMFLOAT3 center{ 0.f, 0.f, 0.f };
 		
 		float half_width{ 0.f };
 
 		LooseNode* parent{ nullptr };
 
-		// Todo: can be substituted with custom solution 
 		std::vector<LooseNodeObject*> objects;
 		LooseNode* children[8];
 	};

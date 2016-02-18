@@ -132,9 +132,10 @@ namespace camy
 							LightSceneNode
 	============================================================
 	*/
-	LightSceneNode::LightSceneNode() :
+	LightSceneNode::LightSceneNode(const Sphere& bounding_sphere) :
 		SceneNode::SceneNode(SceneNode::Type::Light),
-		light{ float3_default, 1.f, { 0.f, 1.f, 0.f}, 1.f }
+		light{ float3_default, 1.f, { 0.f, 1.f, 0.f}, 1.f },
+		spatial_object(bounding_sphere, this)
 	{
 	
 	}
@@ -161,8 +162,9 @@ namespace camy
 		if (enable_ambient_occlusion) material->render_feature_set |= shaders::RenderFeatureSet_AmbientOcclusion;
 	}
 
-	RenderSceneNode::RenderSceneNode() :
-		SceneNode::SceneNode(Type::Render)  // Rest is default initialized
+	RenderSceneNode::RenderSceneNode(const Sphere& bounding_sphere) :
+		SceneNode::SceneNode(Type::Render),
+		spatial_object(bounding_sphere, this) // Rest is default initialized
 	{
 		
 	}

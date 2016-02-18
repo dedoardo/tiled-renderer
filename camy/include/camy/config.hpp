@@ -15,3 +15,6 @@
 	Validation of pipeline states / resources ( Kinda general atm. include various things ) 
 */
 #define camy_validate_states
+
+
+#define camy_enable_string_identification

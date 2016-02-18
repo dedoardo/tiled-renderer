@@ -114,7 +114,6 @@ namespace camy
 		auto material_param_count{ 0u };
 		const auto& renderable{ render_node->renderables[renderable_index] };
 		
-		
 		if (renderable.material == nullptr)
 		{
 			camy_warning("Found renderable without material when rendering forward pass");

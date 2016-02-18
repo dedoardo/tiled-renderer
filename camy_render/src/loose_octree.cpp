@@ -6,6 +6,19 @@
 
 namespace camy
 {
+	void LooseNodeObject::relocate(const Sphere& bounding_sphere)
+	{
+		this->bounding_sphere = bounding_sphere;
+	
+		if (parent == nullptr)
+		{
+			camy_warning("Trying to relocate a node not properly initialized");
+			return;
+		}
+
+		parent->relocate(this);
+	}
+
 	void LooseNode::relocate(LooseNodeObject* object)
 	{
 		camy_assert(std::find(objects.begin(), objects.end(), object) != objects.end(),
@@ -14,7 +27,7 @@ namespace camy
 		// Currently we don't support resizing bounding volume, thus we are not going deeper than the current 
 		// node when relocating.
 		float3 delta;
-		math::store(delta, math::sub(math::load(object->bounding_sphere.center), math::load(center)));
+		math::store(delta, math::sub(math::load(object->get_bounding_sphere().center), math::load(center)));
 		
 		// Checking if any of the delta is > half_width, we do this without branching,
 		// by removing the decimal value

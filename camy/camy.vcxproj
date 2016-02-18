@@ -224,6 +224,9 @@
     <None Include="include\camy_core\shader.inl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\pp_common.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="shaders\pp_vs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>

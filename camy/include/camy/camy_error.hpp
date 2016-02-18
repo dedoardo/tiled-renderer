@@ -41,8 +41,6 @@ namespace camy
 #define camy_assert(x, cmdlist, __VA_ARGS__) { if (!(x)) { cmdlist; camy_error(__VA_ARGS__)); } }
 #endif
 
-
-// Log functions are exposed via macros so that is it easy to turn them off / on based on kind of build
 #if defined(camy_mode_final)
 #define camy_info(...)
 #define camy_warning(...)

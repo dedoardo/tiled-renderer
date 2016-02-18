@@ -319,9 +319,8 @@ namespace camy
 				// by the user
 				if (i == 0)
 				{
-					const ParameterGroup* shared_parameters{ render_queue.get_shared_parameters() };
-					if (shared_parameters != nullptr)
-						set_parameters(*shared_parameters, pc);
+					auto shared_parameters{ render_queue.get_shared_parameters() };
+					set_parameters(shared_parameters, pc);
 				}
 
 				// Time to set parameters

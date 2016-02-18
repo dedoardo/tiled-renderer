@@ -136,15 +136,17 @@ namespace camy
 		Modifying a light's radius require a reevaluation in the spatial partitioning structure
 		this is something that will be done but has not been implemented yet ( Todo ) 
 	*/
-	struct LightSceneNode final : SceneNode
+	struct LightSceneNode final : public SceneNode
 	{
-		LightSceneNode();
+		LightSceneNode(const Sphere& bounding_sphere);
 		~LightSceneNode() = default;
 
 		void set_color(const float3& color);
 		const shaders::Light& get_light()const { return light; }
 
 		camy_inline void relocate();
+
+		const LooseNodeObject& get_spatial_object()const { return spatial_object; }
 
 	private:
 		friend class Scene;
@@ -173,7 +175,7 @@ namespace camy
 
 	struct RenderSceneNode final : public SceneNode
 	{
-		RenderSceneNode();
+		RenderSceneNode(const Sphere& bounding_sphere);
 		~RenderSceneNode() = default;
 		
 		/*
@@ -200,6 +202,9 @@ namespace camy
 		camy_inline void relocate();
 
 		camy_inline const float4x4* get_global_transform()const;
+
+		const LooseNodeObject& get_spatial_object()const { return spatial_object; }
+
 
 	private:
 		friend class Scene;

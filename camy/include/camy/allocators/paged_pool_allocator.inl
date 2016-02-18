@@ -20,7 +20,7 @@ namespace camy
 			m_next_free = camy_to_type_ref(StoredType, &buffer[sizeof(StoredType) * m_next_free]).next_free;
 			--m_free_count;
 
-			return new (reinterpret_cast<Type*>(&buffer[sizeof(StoredType) * next_free])) Type(std::forward(ctor_args)...);
+			return new (reinterpret_cast<Type*>(&buffer[sizeof(StoredType) * next_free])) Type(std::forward<CtorArgs>(ctor_args)...);
 		}
 
 		template <typename Type, u32 count>
@@ -83,7 +83,7 @@ namespace camy
 			do
 			{
 				// We try to allocate from the current page ( does not necessarily have to be the last one )
-				result = m_current_page->allocate(std::forward(ctor_args)...);
+				result = m_current_page->allocate(std::forward<CtorArgs>(ctor_args)...);
 				if (result != nullptr)
 					return result;
 

@@ -2,12 +2,11 @@ namespace camy
 {
 	camy_inline void LightSceneNode::relocate()
 	{
-		spatial_object.parent->relocate(&spatial_object);
+		// TODO: Properly fix relocation
 	}
 
 	camy_inline void RenderSceneNode::relocate()
 	{
-		spatial_object.parent->relocate(&spatial_object);
 	}
 
 	camy_inline const float4x4* RenderSceneNode::get_global_transform()const

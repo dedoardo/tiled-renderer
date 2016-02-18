@@ -211,6 +211,7 @@
     <None Include="include\camy\queue.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="shaders\pp_common.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\pp_vs.hlsl" />

@@ -69,9 +69,13 @@ namespace camy
 		if (parent == nullptr)
 			parent = m_root;
 
+		Sphere bounding_sphere;
+		bounding_sphere.center = parent->position;
+		bounding_sphere.radius = radius;
+
 		// if ret is nullptr the allocator will generate the warning and nullptr will be
 		// returned, thus we don't need to do any check.
-		auto ret{ m_light_node_allocator.allocate() };
+		auto ret{ m_light_node_allocator.allocate(bounding_sphere) };
 		ret->parent = parent;
 		ret->parent->children.push_back(ret);
 		ret->scene = this;
@@ -81,18 +85,13 @@ namespace camy
 		ret->light.radius = radius;
 		ret->light.intensity = intensity;
 
-		// We calculate its position based on the upper transform node
-		ret->spatial_object.bounding_sphere.center = parent->position;
-		ret->spatial_object.bounding_sphere.radius = radius; // shaders::calculate_affect_radius(radius, ret->light.intensity);
-		ret->spatial_object.user_data = ret;
-
 		// Now it's time to insert the light in the loose octree
 		m_octree.add_object(&ret->spatial_object);
 
 		camy_info("Creating light node at: (",
-			ret->spatial_object.bounding_sphere.center.x, ":",
-			ret->spatial_object.bounding_sphere.center.y, ":",
-			ret->spatial_object.bounding_sphere.center.z, ") radius: ",
+			ret->get_spatial_object().get_bounding_sphere().center.x, ":",
+			ret->get_spatial_object().get_bounding_sphere().center.y, ":",
+			ret->get_spatial_object().get_bounding_sphere().center.z, ") radius: ",
 			radius);
 
 		if (name != nullptr)
@@ -106,24 +105,24 @@ namespace camy
 		if (parent == nullptr)
 			parent = m_root;
 
-		auto ret{ m_render_node_allocator.allocate() };
+		Sphere bounding_sphere;
+		bounding_sphere.center = parent->position;
+		bounding_sphere.radius = radius;
+
+		auto ret{ m_render_node_allocator.allocate(bounding_sphere) };
 		
 		ret->parent = parent;
 		ret->parent->children.push_back(ret);
 		ret->scene = this;
 
-		// We calculate its position based on the upper transform node
-		ret->spatial_object.bounding_sphere.center = parent->position;
-		ret->spatial_object.bounding_sphere.radius = radius;
-		ret->spatial_object.user_data = ret;
 
 		// Finally adding it
 		m_octree.add_object(&ret->spatial_object);
 
 		camy_info("Creating render node at: (",
-			ret->spatial_object.bounding_sphere.center.x, ":",
-			ret->spatial_object.bounding_sphere.center.y, ":",
-			ret->spatial_object.bounding_sphere.center.z, ") radius: ",
+			ret->get_spatial_object().get_bounding_sphere().center.x, ":",
+			ret->get_spatial_object().get_bounding_sphere().center.y, ":",
+			ret->get_spatial_object().get_bounding_sphere().center.z, ") radius: ",
 			radius);
 
 		if (name != nullptr)
