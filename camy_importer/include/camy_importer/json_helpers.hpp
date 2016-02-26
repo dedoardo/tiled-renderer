@@ -1,8 +1,8 @@
 #pragma once
 
 // camy
-#include <camy/camy_base.hpp>
-#include <camy/camy_math.hpp>
+#include <camy/base.hpp>
+#include <camy/math.hpp>
 
 // importer
 #include "tags.hpp"

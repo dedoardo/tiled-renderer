@@ -6,20 +6,20 @@ namespace camy
 		PagedLinearAllocator<page_size>::PagedLinearAllocator(u32 alignment) : 
 			m_alignment{ alignment }
 		{
-			camy_test_if((m_alignment & 0x1), 
+			if ((m_alignment & 0x1))
 			{
 				camy_warning("Alignment: ", m_alignment, "is not valid, has to be a power of two, defaulting to 2");
 				m_alignment = 2;
-			});
+			}
 
 			m_current_page = new (_aligned_malloc(sizeof(Page<page_size>), m_alignment)) Page<page_size>;
 
 			// Offset at compile time can indeed be done, but requires some little yet ugly hacks, if aligned is not 
 			// respected it currently isnt a problem, just warning the use
-			camy_test_if(((void*)m_current_page != (void*)&(m_current_page->buffer)),
+			if (((void*)m_current_page != (void*)&(m_current_page->buffer)))
 			{
 				camy_warning("Page buffer is not at offset 0 this will result in unaligned allocation");
-			});
+			}
 		}
 
 		template <Size page_size>

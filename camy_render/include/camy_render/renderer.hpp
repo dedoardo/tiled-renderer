@@ -35,8 +35,12 @@ namespace camy
 		Renderer(Renderer&& other) = delete;
 		Renderer& operator=(Renderer&& other) = delete;
 
-		// Taking pointer as parameter to make it clear it that the resource cannot be disposed
-		bool load(Surface* window_surface, const float4x4& projection, u32 max_lights = 10, u32 shadow_map_size = 4096);
+		/*
+			Function: load
+				Creates all the required resources needed for rendering based on the
+				effects that are being enabled. 
+		*/
+		bool load(Surface* window_surface, const float4x4& projection, u32 effects, u32 max_lights = 10, u32 shadow_map_size = 4096);
 		void unload();
 
 		// Todo: provide default viewport value
@@ -49,7 +53,7 @@ namespace camy
 		void _queue_sky(Scene& scene, Camera& camera, const Viewport& viewport);
 		void _queue_light_culling(Scene& scene, Camera& camera, const Viewport& viewport);
 
-		// Current target being used
+		u32		 m_effects;
 		Surface* m_window_surface;
 		Surface* m_offscreen_target;
 		PostProcessPipeline m_post_process_pipeline;

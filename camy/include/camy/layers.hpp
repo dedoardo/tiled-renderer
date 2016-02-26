@@ -1,7 +1,7 @@
 #pragma once
 
 // camy
-#include "camy_base.hpp"
+#include "base.hpp"
 #include "common_structs.hpp"
 #include "queue.hpp"
 
@@ -25,10 +25,21 @@ namespace camy
 			Note:
 			Remember that gaps cannot exist :)
 		*/
-		enum class Order : u8
+		enum class Order
 		{
 			Ordered,	// Has a specific pass N and is executed before the pass N+1 and after the pass N-1
 			Unordered,	// Doesn't matter, can be executed whenever needed
+		};
+
+		/*
+			Shall i use the same Queue::State ? 
+		*/
+		enum class State
+		{
+			Executed,
+			Queueing,
+			Ready,
+			Permanent // Exception for PostProcessLayer
 		};
 
 	public:
@@ -39,20 +50,23 @@ namespace camy
 			PostProcess
 		};
 
-		Layer(Type type, Order order, u32 pass) : m_type{ type }, m_order{ order }, m_pass{ pass } { }
+		Layer(Type type, Order order, u32 pass) : m_type{ type }, m_order{ order }, m_pass{ pass }, m_state{ State::Executed } { }
 		virtual ~Layer() = default;
 		
 		Type get_type()const { return m_type; }
 		Order get_order()const { return m_order; }
 		u32 get_pass()const { return m_pass; }
-
-		virtual bool is_ready()const = 0;
+		State get_state()const { return m_state; }
+		virtual void tag_executed() = 0;
 
 	// Should not absolutely changed after creation, no point in making it protected
 	private:
 		Type m_type;
 		Order m_order;
 		u32   m_pass;
+
+	protected:
+		State m_state;
 	};
 
 	/*
@@ -92,7 +106,7 @@ namespace camy
 		RenderLayer(RenderLayer&& other) = default;
 		RenderLayer& operator=(RenderLayer&& other) = default;
 
-		void begin(u32 render_queue);
+		void begin();
 
 		RenderItem* create_render_item(u32 render_queue);
 
@@ -101,16 +115,9 @@ namespace camy
 		const Queue<RenderItem>* get_render_queues()const { return m_render_queues; }
 		u32 get_num_render_queues()const { return m_num_render_queues; }
 
-		/*
-			Function: is_ready
-				Returns true if the layer is ready to be executed and the queueing phase/ sorting is done ,
-				this is called by the LayerDispatcher to check on the states
-		*/
-		bool  is_ready()const override { return m_ready_count == m_num_render_queues; }
+		void tag_executed()override;
 
 	private:
-		u32	  m_ready_count;
-
 		Queue<RenderItem>* m_render_queues;
 		u32			 m_num_render_queues;
 	};
@@ -128,12 +135,11 @@ namespace camy
 
 		void end();
 
-		bool is_ready()const override { return m_is_ready; }
 		
 		const Queue<ComputeItem>* get_queue()const;
+		void tag_executed()override;
 
 	private:
-		bool m_is_ready;
 		Queue<ComputeItem> m_queue;
 	};
 
@@ -153,14 +159,11 @@ namespace camy
 		void create(const PostProcessItem* items, u32 num_items);
 		void set_shared_parameters(const ParameterGroup& parameters);
 
-		// If there are no items inserted  it's OK, but a warning will be issued because this
-		// is probably not intended behavior
-		bool is_ready()const override;
-
 		const ParameterGroup* get_shared_parameters()const { return &m_shared_parameters; }
 
 		const PostProcessItem* get_items()const { return m_items; }
 		u32 get_num_items()const { return m_num_items; }
+		void tag_executed()override;
 
 	private:
 		PostProcessItem* m_items;

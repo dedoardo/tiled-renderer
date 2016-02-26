@@ -1,7 +1,7 @@
 #pragma once
 
 // camy
-#include "camy_base.hpp"
+#include "base.hpp"
 #include "allocators/paged_pool_allocator.hpp"
 #include "resources.hpp"
 

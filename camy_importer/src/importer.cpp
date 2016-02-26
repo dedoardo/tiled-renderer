@@ -3,7 +3,7 @@
 
 // camy
 #include <camy/gpu_backend.hpp>
-#include <camy/camy_init.hpp>
+#include <camy/init.hpp>
 #include <camy/resources.hpp>
 
 // render

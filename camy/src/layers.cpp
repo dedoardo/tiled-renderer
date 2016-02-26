@@ -9,8 +9,6 @@ namespace camy
 	RenderLayer::RenderLayer(Order order, u32 pass, u32 num_render_queues, u32 queue_size_estimate) :
 		Layer::Layer(Type::Render, order, pass),
 
-		m_ready_count{ 0u },
-
 		m_render_queues{ nullptr },
 		m_num_render_queues{ num_render_queues }
 	{
@@ -19,19 +17,27 @@ namespace camy
 
 	RenderLayer::~RenderLayer()
 	{
-		delete[] m_render_queues;
+		safe_release_array(m_render_queues);
 	}
 
-	void RenderLayer::begin(u32 render_queue)
+	void RenderLayer::begin()
 	{
-		// Todo: implement assert with debug message ( kinda like a debug if we were talking about)s
-		camy_assert(render_queue < m_num_render_queues, { return; }, "Render queue does not identify a valid render queue in the current pass | ", render_queue);
+		if (m_state == State::Queueing)
+		{
+			camy_warning("Can't called begin multiple times");
+			return;
+		}
 
-		m_ready_count = 0;
+		if (m_state == State::Ready)
+		{
+			camy_warning("Can't call begin while the items have yet to be executed");
+			return;
+		}
 
-		// Calling two times begin on the same renderqueue will issue warnings are reclear the buffers ( no major errors ),
-		// however we don't care, renderqueues handle that themselves
-		m_render_queues[render_queue].begin();
+		for (auto i{ 0u }; i < m_num_render_queues; ++i)
+			m_render_queues[i].begin();
+
+		m_state = State::Queueing;
 	}
 
 	RenderItem* RenderLayer::create_render_item(u32 render_queue)
@@ -43,46 +49,97 @@ namespace camy
 
 	void RenderLayer::end(u32 render_queue, const ParameterGroup* shared_parameters, Dependency* dependencies, const u32 num_dependencies)
 	{
+		if (m_state == State::Executed)
+		{
+			camy_warning("Can't call end() before begin() has been called") ;
+			return;
+		}
+
+		if (m_state == State::Ready)
+		{
+			camy_warning("End on all the render queues hasnt been called");
+			return;
+		}
+
 		camy_assert(render_queue < m_num_render_queues, { return; }, "Render queue does not identify a valid render queue in the current pass | ", render_queue);
 
 		m_render_queues[render_queue].end(shared_parameters, dependencies, num_dependencies);
-		++m_ready_count;
+
+		bool all_ready{ true };
+		for (auto i{ 0u }; i < m_num_render_queues; ++i)
+		{
+			if (m_render_queues[i].get_state() != Queue<RenderItem>::State::Ready)
+			{
+				all_ready = false;
+				break;
+			}
+		}
+
+		if (all_ready)
+			m_state = State::Ready;
+	}
+
+	void RenderLayer::tag_executed()
+	{
+		for (auto i{ 0u }; i < m_num_render_queues; ++i)
+		{
+			m_render_queues[i].tag_executed();
+			if (m_render_queues[i].get_state() != Queue<RenderItem>::State::Executed)
+			{
+				camy_warning("Failed to tag queue as executed");
+				return;
+			}
+		}
+
+		m_state = State::Executed;
 	}
 
 	ComputeLayer::ComputeLayer(Order order, u32 pass) :
-		Layer::Layer(Type::Compute, order, pass),
-		m_is_ready{ true }
+		Layer::Layer(Type::Compute, order, pass)
 	{
 
 	}
 
 	void ComputeLayer::begin()
 	{
-		if (m_is_ready == false)
+		if (m_state == State::Queueing)
 		{
-			camy_warning("Begin has already been called on a computelayer");
+			camy_warning("Can't called begin multiple times");
 			return;
 		}
 
-		m_is_ready = false;
+		if (m_state == State::Ready)
+		{
+			camy_warning("Can't call begin while the items have yet to be executed");
+			return;
+		}
+
 		m_queue.begin();
+	
+		m_state = State::Queueing;
 	}
 
 	ComputeItem* ComputeLayer::create_compute_item()
-	{
-		if (m_is_ready)
-		{
-			camy_warning("Tried to queue a compute item, but begin hasnt been called");
-			return nullptr;
-		}
-	
+	{	
 		return m_queue.create_item();
 	}
 
 	void ComputeLayer::end()
 	{
-		m_is_ready = true;
+		if (m_state == State::Executed)
+		{
+			camy_warning("Can't call end() before begin() has been called");
+			return;
+		}
+
+		if (m_state == State::Ready)
+		{
+			camy_warning("End on all the computes queues hasnt been called");
+			return;
+		}
+
 		m_queue.end();
+		m_state = State::Ready;
 	}
 
 	const Queue<ComputeItem>* ComputeLayer::get_queue()const
@@ -90,12 +147,22 @@ namespace camy
 		return &m_queue;
 	}
 
+	void ComputeLayer::tag_executed()
+	{
+		m_queue.tag_executed();
+		if (m_queue.get_state() != Queue<ComputeItem>::State::Executed)
+			camy_warning("Failed to tag the compute queue as executed");
+		else
+			m_state = State::Executed;
+	}
+
 	PostProcessLayer::PostProcessLayer(Order order, u32 pass) :
 		Layer::Layer(Type::PostProcess, order, pass),
 		m_items{ nullptr },
 		m_num_items{ 0u }
 	{
-
+		// Postprocess is always ready
+		m_state = State::Permanent;
 	}
 
 	PostProcessLayer::~PostProcessLayer()
@@ -123,10 +190,7 @@ namespace camy
 		m_shared_parameters = parameters;
 	}
 
-	bool PostProcessLayer::is_ready()const
+	void PostProcessLayer::tag_executed()
 	{
-		if (m_num_items == 0)
-			camy_warning("Calling is_ready on an empty postprocesslayer this might be not intended behavior");
-		return true;
 	}
 }

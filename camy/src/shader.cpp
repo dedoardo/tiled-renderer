@@ -2,7 +2,7 @@
 #include <camy/shader.hpp>
 
 // camy
-#include <camy/camy_init.hpp>
+#include <camy/init.hpp>
 #include <camy/gpu_backend.hpp>
 
 // C++ STL

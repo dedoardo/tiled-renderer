@@ -154,7 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\game.cpp" />
+    <ClCompile Include="src\source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\misc.hpp" />

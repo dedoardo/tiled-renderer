@@ -4,8 +4,8 @@
 #include <Windows.h>
 #undef NOMINMAX
 
-const unsigned int g_width{ 1280 };
-const unsigned int g_height{ 720 };
+const unsigned int g_width{ 1920 };
+const unsigned int g_height{ 1080 };
 
 inline LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {

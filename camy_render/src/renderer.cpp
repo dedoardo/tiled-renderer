@@ -8,6 +8,7 @@
 
 // C++ STL
 #include <algorithm>
+#include <bitset>
 
 // Shaders
 #define BYTE camy::Byte
@@ -51,84 +52,125 @@ namespace camy
 		unload();
 	}
 
-	bool Renderer::load(Surface* window_surface, const float4x4& projection, u32 max_lights, u32 shadow_map_size)
+	bool Renderer::load(Surface* window_surface, const float4x4& projection, u32 effects, u32 max_lights, u32 shadow_map_size)
 	{
 		unload();
 
 		if (window_surface == nullptr)
 		{
-			camy_error("Tried to load renderer with null window_surface");
+			camy_error("Invalid argument: window_surface != nullptr");
 			return false;
 		}
 
+		if (shadow_map_size == 0 || max_lights == 0)
+		{
+			camy_error("Invalid argument: max_lights > 0 && shadow_map_size > 0");
+			return false;
+		}
+
+		camy_info("Loading renderer: ");
+		camy_info("> Effects enabled: ", std::bitset<6>(effects));
+		camy_info("> Max lights: ", max_lights);
+		camy_info("> Shadow map size: ", shadow_map_size);
+		
+		/*
+			First off we need to create the offscreen render target where the scene will be rendered ready for
+			postprocessing. If HDR is enabled we are going to use a 16bit per channel format. Currently there is
+			no way to control the HDR format, an option will be eventually added
+		*/
 		m_window_surface = window_surface;
 		m_max_lights = max_lights;
+		m_effects = effects;
 
-		m_offscreen_target = hidden::gpu.create_render_target(Surface::Format::RGBA16Float, window_surface->description.width, window_surface->description.height);
+		Surface::Format offscreen_format{ Surface::Format::RGBA8Unorm };
+		if (effects == PostProcessPipeline::Effects_HDR)
+		{
+			offscreen_format = PostProcessPipeline::hdr_format;
+			camy_info("HDR enabled, offscreen format RGBA16Float");
+		}
+
+		m_offscreen_target = hidden::gpu.create_render_target(offscreen_format, window_surface->description.width, window_surface->description.height);
 		if (m_offscreen_target == nullptr)
 		{
+			camy_warning("Error: Failed to create offscreen render target");
 			unload();
 			return false;
 		}
 
-		if (!m_sky_pass.load(m_offscreen_target))
-		{
-			camy_error("Failed to create sky pass");
-			unload();
-			return false;
-		}
-
-		// Depth for the scene is the same resolution as backbuffer's one
+		/*
+			Scene depth is used for light culling, a view space depth from the camera perspective will be output
+		*/
 		if (!m_scene_depth_pass.load(window_surface->description.width, window_surface->description.height, true))
 		{
-			camy_error("Failed to create scene depth pass");
+			camy_error("Error: failed to load scene depth pass");
 			unload();
 			return false;
 		}
 
+		/*
+			Compute shader culling pass that uses info from the previous pass
+		*/
 		if (!m_light_culling_pass.load(window_surface->description.width, window_surface->description.height))
 		{
-			camy_error("Failed to load light culling pass");
+			camy_error("Error: Failed to load light culling pass");
 			unload();
 			return false;
 		}
 
-		// Resolution for depth is different tho
+		/*
+			Light depth generates the shadow map, currently it is a very trivial implementation
+		*/
 		if (!m_light_depth_pass.load(shadow_map_size, shadow_map_size, true))
 		{
-			camy_error("Failed to create light depth pass");
+			camy_error("Error: Failed to load light depth pass");
 			unload();
 			return false;
 		}
 
-		if (!m_forward_pass.load(m_offscreen_target, max_lights))
+		Surface* output_surface{ m_offscreen_target };
+		if (effects == PostProcessPipeline::Effects_None)
+			output_surface = m_window_surface;
+
+		/*
+			Currently sky is on by default, when tonemapping and environment parameters will be introduced it will be fixed
+		*/
+		if (!m_sky_pass.load(output_surface))
+		{
+			camy_error("Error: Failed to load sky pass");
+			unload();
+			return false;
+		}
+
+		/*
+			Forward pass is the actual rendering pass where geometry + material + lighting is rendered alltogether
+		*/
+		if (!m_forward_pass.load(output_surface, max_lights))
 		{
 			camy_error("Failed to create forward pass");
 			unload();
 			return false;
 		}
 
-		// Setting dependencies
-		//m_light_depth_out.type = Dependency::Type::DepthBuffer;
-		//m_light_depth_out.resource = 0; // Not even used, there is only one depth buffer
-
+		/*
+			Specified resources that need to be unbound before moving onto the next, in order to avoid hazards
+		*/
 		m_forward_deps[0] = m_forward_pass.get_shadow_map_var();
-
 		m_forward_deps[1] = m_forward_pass.get_light_indices_var();
-
 		m_forward_deps[2] = m_forward_pass.get_light_grid_var();
-
 		m_forward_deps[3] = m_forward_pass.get_shadow_map_view_var();
 
-		// Todo: Set scnee depth pass dependency
-
-		if (!m_post_process_pipeline.load(m_offscreen_target, m_window_surface))
+		if (!m_post_process_pipeline.load(m_offscreen_target, m_window_surface, effects))
 		{
+			camy_error("Error: Failed to load post processing pipeline");
 			unload();
 			return false;
 		}
+		
+		// Creating layer from it only if there are some items
+		if (effects != PostProcessPipeline::Effects_None)
+			m_pp_layer.create(&m_post_process_pipeline.pp_items[0], static_cast<u32>(m_post_process_pipeline.pp_items.size()));
 
-		m_pp_layer.create(&m_post_process_pipeline.pp_items[0], m_post_process_pipeline.pp_items.size());
+		camy_info("Succesfully loaded Renderer and post-processing pipeline");
 
 		return true;
 	}
@@ -148,8 +190,8 @@ namespace camy
 	{
 		Viewport vp;
 		vp.left = vp.top = 0.f;
-		vp.right = m_window_surface->description.width;
-		vp.bottom = m_window_surface->description.height;
+		vp.right = static_cast<float>(m_window_surface->description.width);
+		vp.bottom = static_cast<float>(m_window_surface->description.height);
 		
 		render(scene, camera, vp);
 	}
@@ -183,10 +225,9 @@ namespace camy
 			m_light_culling_pass.get_light_indices(), m_light_culling_pass.get_light_grid());
 
 		// Begin queueing
-		m_scene_depth_layer.begin(0);
-		m_light_depth_layer.begin(0);
-		m_forward_layer.begin(0);
-		m_forward_layer.begin(1);
+		m_scene_depth_layer.begin();
+		m_light_depth_layer.begin();
+		m_forward_layer.begin();
 
 		// Here more sophisticated culling could be introduced
 		for (auto i{ 0u }; i < node_count; ++i)
@@ -220,7 +261,7 @@ namespace camy
 		}
 	
 		// Updating resources
-		m_forward_pass.post(m_light_culling_pass.get_light_indices(), m_light_culling_pass.get_light_grid());
+ 		m_forward_pass.post(m_light_culling_pass.get_light_indices(), m_light_culling_pass.get_light_grid());
 
 		// We can't light cull before the needed resources have been updated correctly
 		_queue_light_culling(scene, camera, viewport);
@@ -242,7 +283,7 @@ namespace camy
 
 	void Renderer::_queue_sky(Scene& scene, Camera& camera, const Viewport& viewport)
 	{
-		m_sky_layer.begin(0);
+		m_sky_layer.begin();
 		m_sky_pass.prepare_single(camera, *m_sky_layer.create_render_item(0));
 		m_sky_layer.end(0, m_sky_pass.get_shared_parameter_group());
 	}

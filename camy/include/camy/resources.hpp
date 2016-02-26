@@ -1,7 +1,7 @@
 #pragma once
 
 // camy
-#include "camy_base.hpp"
+#include "base.hpp"
 #include "com_utils.hpp"
 
 namespace camy
@@ -161,6 +161,7 @@ namespace camy
 
 			// Uncompressed formats
 			RGBA8Unorm,
+			RGB16Float,
 			RGBA16Float,
 			RGBA32Float,
 			R16Float,

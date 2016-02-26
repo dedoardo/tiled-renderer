@@ -2,7 +2,7 @@
 #include <camy/cbuffer_system.hpp>
 
 // camy
-#include <camy/camy_init.hpp>
+#include <camy/init.hpp>
 
 namespace camy
 {
@@ -76,11 +76,11 @@ namespace camy
 		// We start from 16, with size = 16  10000 => upper_pow2 returns 5 that for us is 0
 		u32 index = math::upper_pow2(size) - 4;
 
-		camy_test_if(index >= m_hierarchy_depth,
+		if (index >= m_hierarchy_depth)
 		{
 			camy_warning("Requested cbuffer resulted in invalid index computation: ", slot, " | ", size);
 			return nullptr;
-		});
+		}
 
 		return &m_cbuffers[slot][index];
 	}

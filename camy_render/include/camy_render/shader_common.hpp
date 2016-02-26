@@ -1,12 +1,11 @@
 #if defined(camy_compile_cpp)
 #pragma once
 
-#include <camy/camy_base.hpp>
-#include <camy/camy_math.hpp>
+#include <camy/base.hpp>
+#include <camy/math.hpp>
 
 #define cbuffer struct
 #define uint	u32
-#define float2 camy::float2
 
 #pragma pack(push, 1)
 
@@ -15,22 +14,27 @@ namespace camy
 	namespace shaders
 	{
 #if defined(camy_compile_cpp)
-		// Todo: need to rework the in/out naming when interfaceing with C++
-		static const char next_light_index_name[]{ "next_light_index" };
-		static const char light_indices_name[]{ "light_indices" };
-		static const char light_grid_name[]{ "light_grid" };
-		static const char lights_name[]{ "lights" };
-		static const char depth_map_name[]{ "depth_map" };
+		/*
+			Names for all the possible resources to be bound to the shaders
+		*/
+		namespace names
+		{
+			static const char next_light_index[]{ "next_light_index" };
+			static const char light_indices[]{ "light_indices" };
+			static const char light_grid[]{ "light_grid" };
+			static const char lights[]{ "lights" };
+			static const char depth_map[]{ "depth_map" };
 
-		static const char shadow_map_name[]{ "shadow_map" };
-		static const char shadow_map_view_name[]{ "shadow_map_view" };
+			static const char shadow_map[]{ "shadow_map" };
+			static const char shadow_map_view[]{ "shadow_map_view" };
 
-		static const char default_sampler_name[]{ "default_sampler" };
-		static const char comparison_sampler_name[]{ "comparison_sampler" };
+			static const char default_sampler[]{ "default_sampler" };
+			static const char comparison_sampler[]{ "comparison_sampler" };
 
-		static const char color_map_name[]{ "color_map" };
-		static const char smoothness_map_name[]{ "smoothness_map" };
-		static const char metalness_map_name[]{ "metalness_map" };
+			static const char color_map[]{ "color_map" };
+			static const char smoothness_map[]{ "smoothness_map" };
+			static const char metalness_map[]{ "metalness_map" };
+		}
 #endif
 
 #endif
@@ -160,17 +164,16 @@ namespace camy
 		};
 #endif
 
-#if defined(camy_shaders_enable_image_info) || defined(camy_compile_cpp)
-		cbuffer ImageInfo
+#if defined(camy_shaders_enable_kawase_blur_args) || defined(camy_compile_cpp)
+		cbuffer KawaseBlurArgs
 		{
 
 #if defined(camy_compile_cpp)
 			static const char* name;
 #endif
-			uint width;
-			uint height;
-			uint2 _ImageInfoPadding1;
-			float2 offsets[4];
+			float2 texel_size;
+			float2 _ImageInfoPadding1;
+			uint  iteration;
 		};
 #endif
 
@@ -192,7 +195,6 @@ namespace camy
 
 #undef cbuffer
 #undef uint
-#undef float2
 	}
 }
 

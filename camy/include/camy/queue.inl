@@ -5,7 +5,7 @@ namespace camy
 		m_shared_parameters{ nullptr },
 		m_dependencies{ nullptr },
 		m_num_dependencies{ 0 },
-		m_is_ready{ false }
+		m_state{ State::Executed }
 	{
 
 	}
@@ -13,18 +13,38 @@ namespace camy
 	template <typename ItemType>
 	void Queue<ItemType>::begin()
 	{
+		if (m_state == State::Ready)
+		{
+			camy_warning("Can't call begin() before tag_executed has been called");
+			return;
+		}
+
+		if (m_state == State::Queueing)
+		{
+			camy_warning("Can't call begin multiple times");
+			return;
+		}
+
 		// Clearing the queue
 		m_render_items.clear();
-		m_is_ready = false;
 
 		m_shared_parameters = nullptr;
 		m_dependencies = nullptr;
 		m_num_dependencies = 0;
+	
+		// Ready for queueing
+		m_state = State::Queueing;
 	}
 
 	template <typename ItemType>
 	ItemType* Queue<ItemType>::create_item()
 	{
+		if (m_state != State::Queueing)
+		{
+			camy_warning("Can't create item before begin has been called");
+			return nullptr;
+		}
+
 		m_render_items.emplace_back();
 		return &m_render_items.back();
 	}
@@ -32,15 +52,27 @@ namespace camy
 	template <typename ItemType>
 	void Queue<ItemType>::end(const ParameterGroup* shared_parameters, Dependency* dependencies, const u32 num_dependencies)
 	{
+		if (m_state == State::Executed)
+		{
+			camy_warning("Can't call end() before a begin has been called");
+			return;
+		}
+
+		if (m_state == State::Ready)
+		{
+			camy_warning("Can't call end() multiple times");
+			return;
+		}
+
 		m_shared_parameters = shared_parameters;
 
 		m_dependencies = dependencies;
 		m_num_dependencies = num_dependencies;
 
 		/*
-		Temporal coherence :
-		http://www.gamedev.net/topic/661114-temporal-coherence-and-render-queue-sorting/
-		thanks L. Spiro
+			Temporal coherence :
+			http://www.gamedev.net/topic/661114-temporal-coherence-and-render-queue-sorting/
+			thanks L. Spiro
 		*/
 		auto current_size{ m_sorted_indices.size() };
 		auto next_size{ m_render_items.size() };
@@ -84,13 +116,13 @@ namespace camy
 		}
 
 		// Ready to be executed!
-		m_is_ready = true;
+		m_state = State::Ready;
 	}
 
 	template <typename ItemType>
 	const ItemType* Queue<ItemType>::get_items()const
 	{
-		if (!m_is_ready)
+		if (m_state != State::Ready)
 		{
 			camy_error("Tried to retrieve render items before end() has been called, returning null");
 			return nullptr;
@@ -105,7 +137,7 @@ namespace camy
 	template <typename ItemType>
 	u32 Queue<ItemType>::get_num_items()const
 	{
-		if (!m_is_ready)
+		if (m_state != State::Ready)
 		{
 			camy_error("Tried to retrieve number of render items before end() has been called, returning null");
 			return 0;
@@ -117,7 +149,7 @@ namespace camy
 	template <typename ItemType>
 	const u32* Queue<ItemType>::get_sorted_indices()const
 	{
-		if (!m_is_ready)
+		if (m_state != State::Ready)
 		{
 			camy_error("Tried to retrieve sorted indices before end() has been called, returning null");
 			return nullptr;
@@ -132,12 +164,23 @@ namespace camy
 	template <typename ItemType>
 	u32 Queue<ItemType>::get_num_sorted_indices()const
 	{
-		if (!m_is_ready)
+		if (m_state != State::Ready)
 		{
 			camy_error("Tried to retrieve number of sorted indices before end() has been called, returning null");
 			return 0;
 		}
 
 		return static_cast<u32>(m_sorted_indices.size());
+	}
+
+	template <typename ItemType>
+	void Queue<ItemType>::tag_executed()
+	{
+		if (m_state == State::Executed)
+			camy_warning("Queue has been already tagged as executed executed!");
+		else if (m_state == State::Queueing)
+			camy_warning("Can't tag the queue as executed while queueing is till going on");
+		else // m_state == State::Ready
+			m_state = State::Executed;
 	}
 }

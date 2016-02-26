@@ -1,7 +1,7 @@
 #pragma once
 
-#include "camy/camy_base.hpp"
-#include "camy/camy_init.hpp"
+#include "camy/base.hpp"
+#include "camy/init.hpp"
 #include "camy/features.hpp"
 
 #include "camy/gpu_backend.hpp"

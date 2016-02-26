@@ -16,45 +16,91 @@ namespace camy
 	*/
 	struct PostProcessPipeline
 	{
+		/*
+			Temporarily hardcoded
+		*/
+		static const Surface::Format hdr_format{ Surface::Format::RGBA16Float };
+		static const u32 kawase_blur_iterations{ 5 };
+		static const u32 kawase_blur_kernels[];
+
+		/*
+			Enum: Effects
+				Effects currently supported by the pipeline
+		*/
+		enum Effects : u32
+		{
+			Effects_None  = 0,
+			Effects_HDR   = 1 << 0,   // + Tonemapping
+			Effects_Bloom = 1 << 1, //
+			
+			// Yet to implement, here for reference
+			Effects_Vignette		= 1 << 2,
+			Effects_MotionBlur		= 1 << 3,
+			Effects_LensFlare		= 1 << 4,
+			Effects_LightScattering = 1 << 5
+		};
+
 		PostProcessPipeline() = default;
 		~PostProcessPipeline();
 
+		/*
+			Function: load
+				Creates all the required resources needed for rendering based off the
+				number of effects.
+		*/
+		bool load(Surface* input_image, Surface* output_image, u32 effects);
 		
-		// Loads all the required resources and fills in pp_items
-		bool load(Surface* hdr_scene, Surface* output_rt);
-		
-		// Manually disposes everything
+		/*
+			Function: dispose
+				Manually releases all the resources, automatically called upon destruction
+		*/
 		void dispose();
 
-		// Postprocessing items
+
+		u32 effects{ Effects_None };
+
+		/*
+			Postprocessing items
+		*/
 		std::vector<PostProcessItem> pp_items;
 
-		// Luminance mipmaps and map
+		/*
+			Shared
+		*/
+		Sampler* bilinear_sampler{ nullptr };
+		BlendState* additive_blend_state{ nullptr };
+
+		/*
+			Effects_HDR
+		*/
+
+		Surface* offscreen_target{ nullptr };
+
+		Surface* luminance_map{ nullptr };
 		std::vector<Surface*> luminance_mipmaps;
-		Surface* downsampled_bright_scene;
 
-		Surface* luminance_map;
-
-		Sampler* default_sampler;
+		Shader luminance_downsample_ps;
 		PipelineParameter downsample_luminance_sampler_parameter;
+
+		Shader to_luminance_ps;
 		PipelineParameter to_luminance_sampler_parameter;
 
-		// From HDR rendered scene to luminance map, same resolution
-		Shader to_luminance_ps;
-
-		// Downsamples luminance values using some operator
-		Shader luminance_downsample_ps;
-
-		// Downsamples the color taking into account brightness and threshold for the bloom filter
-		Shader bright_downsample_ps;
-
-		// Blurring shaders, currently fixed kernel
-		Shader blur_vertical_ps;
-		Shader blur_horizontal_ps;
-
-		// Combines the output of the bloom pass ( that is the color ) that will then 
-		// be tone-mapped accordingly to the world luminance computed and stored in the
-		// 1x1 texture
 		Shader tone_map_ps;
+		PipelineParameter tone_map_params[2]; // Average luminance + sampler
+
+		/*
+			Effects_Bloom
+		*/
+		Surface* downsampled_bright_scene{ nullptr };
+		Shader bright_downsample_ps;
+		PipelineParameter bright_downsample_params;
+
+		Surface* kawase_blur_extra_rts[2]{ nullptr, nullptr };
+		Shader kawase_blur_ps;
+		PipelineParameter kawase_blur_params[2 * kawase_blur_iterations];						  // Sampler + CBuffer(texel_size, iter)
+		shaders::KawaseBlurArgs kawase_blur_args[kawase_blur_iterations]; // One arg per iteration
+
+		Shader bloom_ps;
+		PipelineParameter bloom_params[2]; // Input Surface + sampler
 	};
 }

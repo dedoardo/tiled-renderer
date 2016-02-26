@@ -1,7 +1,7 @@
 #pragma once
 
 // camy
-#include "camy_base.hpp"
+#include "base.hpp"
 
 namespace camy
 {

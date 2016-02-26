@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\shaders\forward_vs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -138,5 +135,8 @@
     <FxCompile Include="shaders\to_luminance_ps.hlsl" />
     <FxCompile Include="shaders\downsample_luminance_ps.hlsl" />
     <FxCompile Include="shaders\downsample_bright_ps.hlsl" />
+    <FxCompile Include="shaders\kawase_blur_ps.hlsl" />
+    <FxCompile Include="shaders\bloom_ps.hlsl" />
+    <FxCompile Include="shaders\tone_map_ps.hlsl" />
   </ItemGroup>
 </Project>

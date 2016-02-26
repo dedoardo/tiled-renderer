@@ -1,11 +1,11 @@
 #pragma once
 
 // camy
-#include "camy_base.hpp"
+#include "base.hpp"
 #include "resources.hpp"
 #include "features.hpp"
 #include "shader.hpp"
-#include "camy_math.hpp"
+#include "math.hpp"
 
 namespace camy
 {
@@ -138,5 +138,7 @@ namespace camy
 		ParameterGroup	parameters;					// Parameters for this specific pass, they are not probably needed, if they are shared with other passes, use the default ones, they are not cached
 		Shader*			pixel_shader{ nullptr };	// Pixel shader that will be run on every texel of the output surface
 		Surface*		output_surface{ nullptr };  // Output surface :) 
+	
+		BlendState*		blend_state{ nullptr };
 	};
 } 

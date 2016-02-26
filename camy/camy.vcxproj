@@ -158,11 +158,11 @@
     <ClInclude Include="include\camy\allocators\page.hpp" />
     <ClInclude Include="include\camy\allocators\paged_linear_allocator.hpp" />
     <ClInclude Include="include\camy\allocators\paged_pool_allocator.hpp" />
-    <ClInclude Include="include\camy\camy_base.hpp" />
-    <ClInclude Include="include\camy\camy_decls.hpp" />
-    <ClInclude Include="include\camy\camy_error.hpp" />
-    <ClInclude Include="include\camy\camy_init.hpp" />
-    <ClInclude Include="include\camy\camy_math.hpp" />
+    <ClInclude Include="include\camy\base.hpp" />
+    <ClInclude Include="include\camy\decls.hpp" />
+    <ClInclude Include="include\camy\error.hpp" />
+    <ClInclude Include="include\camy\init.hpp" />
+    <ClInclude Include="include\camy\math.hpp" />
     <ClInclude Include="include\camy\cbuffer_system.hpp" />
     <ClInclude Include="include\camy\com_utils.hpp" />
     <ClInclude Include="include\camy\config.hpp" />
@@ -199,9 +199,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\cbuffer_system.cpp" />
-    <ClCompile Include="src\camy_init.cpp" />
+    <ClCompile Include="src\init.cpp" />
     <ClCompile Include="src\layer_dispatcher.cpp" />
-    <ClCompile Include="src\camy_error.cpp" />
+    <ClCompile Include="src\error.cpp" />
     <ClCompile Include="src\gpu_backend.cpp" />
     <ClCompile Include="src\layers.cpp" />
     <ClCompile Include="src\resources.cpp" />
@@ -210,8 +210,8 @@
   <ItemGroup>
     <None Include="include\camy\allocators\paged_linear_allocator.inl" />
     <None Include="include\camy\allocators\paged_pool_allocator.inl" />
-    <None Include="include\camy\camy_error.inl" />
-    <None Include="include\camy\camy_math.inl" />
+    <None Include="include\camy\error.inl" />
+    <None Include="include\camy\math.inl" />
     <None Include="include\camy\gpu_backend.inl" />
     <None Include="include\camy\queue.inl" />
     <None Include="include\camy\resource_storer.inl" />

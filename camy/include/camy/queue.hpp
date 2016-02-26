@@ -1,7 +1,7 @@
 #pragma once
 
 // camy
-#include <camy/camy_base.hpp>
+#include <camy/base.hpp>
 #include <camy/common_structs.hpp>
 
 // C++ STL
@@ -22,6 +22,14 @@ namespace camy
 	template <typename ItemType>
 	class Queue final
 	{
+	public:
+		enum class State
+		{
+			Executed,
+			Queueing,
+			Ready
+		};
+
 	public:
 		Queue();
 		~Queue() = default;
@@ -91,6 +99,19 @@ namespace camy
 		*/
 		u32 get_num_sorted_indices()const;
 
+		/*
+			Function: get_state
+				Returns the current state of the queue
+		*/
+		State get_state()const { return m_state; }
+
+		/*
+			Function: tag_executed
+				Once the items in the queue have been processed tag_executed will
+				reset the internal state and allow a begin()
+		*/
+		void tag_executed();
+
 	private:
 		// Currently 
 		std::vector<ItemType> m_render_items;
@@ -102,7 +123,7 @@ namespace camy
 		Dependency*		m_dependencies;
 		u32				m_num_dependencies;
 
-		bool			m_is_ready;
+		State m_state;
 	};
 }
 

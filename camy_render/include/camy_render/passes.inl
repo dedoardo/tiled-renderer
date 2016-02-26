@@ -1,6 +1,6 @@
 // camy
-#include <camy/camy_init.hpp>
-#include <camy/camy_math.hpp>
+#include <camy/init.hpp>
+#include <camy/math.hpp>
 #include <camy/gpu_backend.hpp>
 
 // render
@@ -137,10 +137,12 @@ namespace camy
 
 			if (renderable.material->render_feature_set & shaders::RenderFeatureSet_ColorMap)
 			{
-				material_params[next_free].shader_variable = m_pixel_shader.get(shaders::color_map_name);
+				material_params[next_free].shader_variable = m_pixel_shader.get(shaders::names::color_map);
 				material_params[next_free].data = renderable.color_map;
 			
-				camy_test_if(material_params[next_free].data == nullptr, camy_warning("RenderFeatureSet_ColorMap is enabled, but the specified color map is null"));
+
+				if (material_params[next_free].data == nullptr)
+					camy_warning("RenderFeatureSet_ColorMap is enabled, but the specified color map is null");
 
 				if (material_params[next_free].data != nullptr)
 					++next_free;
@@ -148,10 +150,11 @@ namespace camy
 		
 			if (renderable.material->render_feature_set & shaders::RenderFeatureSet_MetalnessMap)
 			{
-				material_params[next_free].shader_variable = m_pixel_shader.get(shaders::metalness_map_name);
+				material_params[next_free].shader_variable = m_pixel_shader.get(shaders::names::metalness_map);
 				material_params[next_free].data = renderable.metalness_map;
 
-				camy_test_if(material_params[next_free].data == nullptr, camy_warning("RenderFeatureSet_MetalnessMap is enabled, but the specified metalness map is null"));
+				if (material_params[next_free].data == nullptr)
+					camy_warning("RenderFeatureSet_MetalnessMap is enabled, but the specified metalness map is null");
 
 				if (material_params[next_free].data != nullptr)
 					++next_free;
@@ -159,10 +162,11 @@ namespace camy
 
 			if (renderable.material->render_feature_set & shaders::RenderFeatureSet_SmoothnessMap)
 			{
-				material_params[next_free].shader_variable = m_pixel_shader.get(shaders::smoothness_map_name);
+				material_params[next_free].shader_variable = m_pixel_shader.get(shaders::names::smoothness_map);
 				material_params[next_free].data = renderable.smoothness_map;
 
-				camy_test_if(material_params[next_free].data == nullptr, camy_warning("RenderFeatureSet_SmoothnessMap is enabled, but the specified smoothness map is null"));
+				if (material_params[next_free].data == nullptr)
+					camy_warning("RenderFeatureSet_SmoothnessMap is enabled, but the specified smoothness map is null");
 
 				if (material_params[next_free].data != nullptr)
 					++next_free;

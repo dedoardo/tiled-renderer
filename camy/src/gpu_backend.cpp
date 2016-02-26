@@ -2,7 +2,7 @@
 #include <camy/gpu_backend.hpp>
 
 // camy
-#include <camy/camy_error.hpp>
+#include <camy/error.hpp>
 #include <camy/resources.hpp>
 #include <camy/features.hpp>
 #include <camy/layers.hpp>
@@ -113,7 +113,7 @@ namespace camy
 	bool GPUBackend::create_builtin_resources()
 	{
 		m_postprocess_vs = create_shader(Shader::Type::Vertex, pp_vs, sizeof(pp_vs));
-		if (m_postprocess_vs != nullptr)
+		if (m_postprocess_vs == nullptr)
 			return false;
 
 		return true;
@@ -203,8 +203,7 @@ namespace camy
 						vb = render_item.vertex_buffer1->hidden.buffer;
 						stride = render_item.vertex_buffer1->element_size;
 
-						camy_test_if(vb == nullptr,
-							camy_warning("Binding null vertex buffer at slot 0"););
+						camy_validate_state(vb, "Binding null vertex buffer at slot 0");
 					}
 
 					m_context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
@@ -227,8 +226,7 @@ namespace camy
 						vb = render_item.vertex_buffer2->hidden.buffer;
 						stride = render_item.vertex_buffer2->element_size;
 
-						camy_test_if(vb == nullptr,
-							camy_warning("Binding null vertex buffer at slot 1"););
+						camy_validate_state(vb, "Binding null vertex buffer at slot 1");
 					}
 
 					m_context->IASetVertexBuffers(1, 1, &vb, &stride, &offset);
@@ -252,8 +250,7 @@ namespace camy
 						if (render_item.index_buffer->index_type == IndexBuffer::Type::U32)
 							format = DXGI_FORMAT_R32_UINT;
 	
-						camy_test_if(ib == nullptr,
-							camy_warning("Binding null index buffer"););
+						camy_validate_state(ib, "Binding null index buffer");
 					}
 
 					m_context->IASetIndexBuffer(ib, format, 0);
@@ -464,12 +461,18 @@ namespace camy
 			D3D11_VIEWPORT viewport;
 			viewport.TopLeftX =
 				viewport.TopLeftY = 0.f;
-			viewport.Width = pp_item.output_surface->description.width;
-			viewport.Height = pp_item.output_surface->description.height;
+			viewport.Width = static_cast<float>(pp_item.output_surface->description.width);
+			viewport.Height = static_cast<float>(pp_item.output_surface->description.height);
 			viewport.MinDepth = 0.f;
 			viewport.MaxDepth = 1.f;
 
 			m_context->RSSetViewports(1, &viewport);
+
+			// Blend state, no caching atm nor nullptr check ( Todo ) 
+			if (pp_item.blend_state != nullptr)
+				m_context->OMSetBlendState(pp_item.blend_state->hidden.state, nullptr, 0xFFFFFFFF);
+			else
+				m_context->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
 			// Issuing draw call
 			m_context->Draw(3, 0);
@@ -478,11 +481,16 @@ namespace camy
 			ID3D11ShaderResourceView* null_srv{ nullptr };
 			m_context->PSSetShaderResources(0, 1, &null_srv);
 			previous_srv = pp_item.output_surface->hidden.srv;
-		}
 
-		// Unbinding last render target
-		ID3D11RenderTargetView* null_rtv{ nullptr };
-		m_context->OMSetRenderTargets(1, &null_rtv, nullptr);
+			// Unbinding last render target
+			ID3D11RenderTargetView* null_rtv{ nullptr };
+			m_context->OMSetRenderTargets(1, &null_rtv, nullptr);
+
+			// Todo: implement dependencies on postprocess items aswell, currently unbinding, 
+			// this is bad but first want to make sure the rest is working
+			for (auto p{ 0u }; p < pp_item.parameters.num_parameters; ++p)
+				unbind_dependency(pp_item.parameters.parameters[p].shader_variable);
+		}
 	}
 
 	void GPUBackend::update(const Buffer* buffer, const void* data)

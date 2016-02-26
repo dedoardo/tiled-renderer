@@ -1,7 +1,7 @@
 #pragma once
 
 // camy
-#include "camy_base.hpp"
+#include "base.hpp"
 #include "resource_storer.hpp"
 #include "shader.hpp"
 #include "common_structs.hpp"

@@ -2,7 +2,7 @@
 #include <camy/layer_dispatcher.hpp>
 
 // camy
-#include <camy/camy_init.hpp>
+#include <camy/init.hpp>
 
 // C++ STL
 #undef max
@@ -62,7 +62,8 @@ namespace camy
 				m_layers[i]->get_pass() == current_pass && 
 				m_bitmask[i] == false)
 			{
-				if (m_layers[i]->is_ready())
+				if (m_layers[i]->get_state() == Layer::State::Ready || 
+					m_layers[i]->get_state() == Layer::State::Permanent)
 				{
 					if (m_layers[i]->get_type() == Layer::Type::Render)
 						hidden::gpu.execute(static_cast<const RenderLayer*>(m_layers[i]));
@@ -90,6 +91,9 @@ namespace camy
 			if (all_dispatched)
 				current_index = i;
 		}
+
+		for (const auto& layer : m_layers)
+			layer->tag_executed();
 	}
 
 	void LayerDispatcher::_validate_layers()

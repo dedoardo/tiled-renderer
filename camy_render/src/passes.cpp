@@ -2,7 +2,7 @@
 #include <camy_render/passes.hpp>
 
 // camy
-#include <camy/camy_init.hpp>
+#include <camy/init.hpp>
 #include <camy/gpu_backend.hpp>
 
 // Shaders
@@ -113,8 +113,8 @@ namespace camy
 		}
 
 		// Warning should be issued by Shader::get, but that's pretty generic, giving more info here
-		camy_test_if(m_data_parameter.shader_variable.valid == 0,
-			camy_warning("Failed to retrieve PerFrame/View cbuffer for depth pass"));
+		if(m_data_parameter.shader_variable.valid == 0)
+			camy_warning("Failed to retrieve PerFrame/View cbuffer for depth pass");
 
 		m_parameter_group.num_parameters = 1;
 		m_parameter_group.parameters = &m_data_parameter;
@@ -240,15 +240,15 @@ namespace camy
 		m_parameters[0].shader_variable = m_compute_shader.get(shaders::CullingDispatchArgs::name);
 		m_parameters[0].data = &m_culling_dispatch_args;
 
-		m_parameters[1].shader_variable = m_compute_shader.get(shaders::next_light_index_name);
+		m_parameters[1].shader_variable = m_compute_shader.get(shaders::names::next_light_index);
 		m_parameters[1].data = m_next_light_index;
-		m_parameters[2].shader_variable = m_compute_shader.get(shaders::light_indices_name);
+		m_parameters[2].shader_variable = m_compute_shader.get(shaders::names::light_indices);
 		m_parameters[2].data = m_light_indices;
-		m_parameters[3].shader_variable = m_compute_shader.get(shaders::light_grid_name);
+		m_parameters[3].shader_variable = m_compute_shader.get(shaders::names::light_grid);
 		m_parameters[3].data = m_light_grid;
-		m_parameters[4].shader_variable = m_compute_shader.get(shaders::lights_name);
+		m_parameters[4].shader_variable = m_compute_shader.get(shaders::names::lights);
 
-		m_parameters[5].shader_variable = m_compute_shader.get(shaders::depth_map_name);
+		m_parameters[5].shader_variable = m_compute_shader.get(shaders::names::depth_map);
 
 		m_parameter_group.num_parameters = 6;
 		m_parameter_group.parameters = m_parameters;
@@ -276,7 +276,7 @@ namespace camy
 
 	ShaderVariable LightCullingPass::get_light_indices_var()const
 	{
-		auto ret { m_compute_shader.get(shaders::light_indices_name) };
+		auto ret { m_compute_shader.get(shaders::names::light_indices) };
 
 		if (ret.valid == 0)
 			camy_warning("Trying to retrieve light indices var from non-correctly initialized light culling pass");
@@ -293,7 +293,7 @@ namespace camy
 
 	ShaderVariable LightCullingPass::get_light_grid_var()const
 	{
-		auto ret{ m_compute_shader.get(shaders::light_grid_name) };
+		auto ret{ m_compute_shader.get(shaders::names::light_grid) };
 
 		if (ret.valid == 0)
 			camy_warning("Trying to retrieve light grid var from non-correctly initialized light culling pass");
@@ -474,8 +474,8 @@ namespace camy
 
 		m_common_states.rasterizer_state = hidden::gpu.create_rasterizer_state(RasterizerState::Cull::Back, RasterizerState::Fill::Solid);
 
-		m_parameters[0].shader_variable = m_pixel_shader.get(shaders::comparison_sampler_name);
-		m_parameters[1].shader_variable = m_pixel_shader.get(shaders::default_sampler_name);
+		m_parameters[0].shader_variable = m_pixel_shader.get(shaders::names::comparison_sampler);
+		m_parameters[1].shader_variable = m_pixel_shader.get(shaders::names::default_sampler);
 
 		m_parameters[0].data = hidden::gpu.create_sampler(Sampler::Filter::Linear, Sampler::Address::Mirror, Sampler::Comparison::Less);
 		if (m_parameters[0].data == nullptr)
@@ -512,14 +512,14 @@ namespace camy
 		m_environment.height = static_cast<float>(target_surface->description.height);
 		m_environment.eye_position = float3_default;
 
-		m_parameters[4].shader_variable = m_pixel_shader.get(shaders::shadow_map_name);
+		m_parameters[4].shader_variable = m_pixel_shader.get(shaders::names::shadow_map);
 		m_parameters[4].data = nullptr;
 
-		m_parameters[5].shader_variable = m_pixel_shader.get(shaders::lights_name);
+		m_parameters[5].shader_variable = m_pixel_shader.get(shaders::names::lights);
 		m_parameters[5].data = m_light_buffer;
 
-		m_parameters[6].shader_variable = m_pixel_shader.get(shaders::light_indices_name);
-		m_parameters[7].shader_variable = m_pixel_shader.get(shaders::light_grid_name);
+		m_parameters[6].shader_variable = m_pixel_shader.get(shaders::names::light_indices);
+		m_parameters[7].shader_variable = m_pixel_shader.get(shaders::names::light_grid);
 
 		m_parameter_group.num_parameters = 2 + 2 + 1 + 3;
 		m_parameter_group.parameters = m_parameters;
@@ -580,7 +580,7 @@ namespace camy
 
 	ShaderVariable ForwardPass::get_shadow_map_var()const
 	{
-		auto ret{ m_pixel_shader.get(shaders::shadow_map_name) };
+		auto ret{ m_pixel_shader.get(shaders::names::shadow_map) };
 		if (ret.valid == 0)
 			camy_warning("Trying to retrieve shadow map before the forward pass has been properly initialized");
 		return ret;
@@ -588,7 +588,7 @@ namespace camy
 
 	ShaderVariable ForwardPass::get_shadow_map_view_var()const
 	{
-		auto ret{ m_pixel_shader.get(shaders::shadow_map_view_name) };
+		auto ret{ m_pixel_shader.get(shaders::names::shadow_map_view) };
 		if (ret.valid == 0)
 			camy_warning("Trying to retrieve shadow map view before the forward pass has been properly initialized");
 		return ret;
@@ -596,7 +596,7 @@ namespace camy
 
 	ShaderVariable ForwardPass::get_light_indices_var()const
 	{
-		auto ret{ m_pixel_shader.get(shaders::light_indices_name) };
+		auto ret{ m_pixel_shader.get(shaders::names::light_indices) };
 		if (ret.valid == 0)
 			camy_warning("Trying to retrieve light indices before the forward pass has been properly initialized");
 		return ret;
@@ -604,7 +604,7 @@ namespace camy
 
 	ShaderVariable ForwardPass::get_light_grid_var()const
 	{
-		auto ret{ m_pixel_shader.get(shaders::light_grid_name) };
+		auto ret{ m_pixel_shader.get(shaders::names::light_grid) };
 		if (ret.valid == 0)
 			camy_warning("Trying to retrieve light grid before the forward pass has been properly initialized");
 		return ret;

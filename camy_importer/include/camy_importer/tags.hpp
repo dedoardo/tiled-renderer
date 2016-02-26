@@ -1,7 +1,7 @@
 #pragma once
 
 // camy
-#include <camy/camy_math.hpp>
+#include <camy/math.hpp>
 
 // rapidjson
 #include <rapidjson/document.h>

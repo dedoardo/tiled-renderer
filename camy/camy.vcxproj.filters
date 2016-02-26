@@ -81,18 +81,6 @@
     <ClInclude Include="include\camy\allocators\paged_pool_allocator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\camy\camy_base.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\camy\camy_decls.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\camy\camy_error.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\camy\camy_math.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\camy\com_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -123,9 +111,6 @@
     <ClInclude Include="include\camy\cbuffer_system.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\camy\camy_init.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\camy\layers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -141,6 +126,21 @@
     <ClInclude Include="include\camy\config.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\camy\base.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\camy\decls.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\camy\error.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\camy\init.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\camy\math.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\gpu_backend.cpp">
@@ -152,19 +152,19 @@
     <ClCompile Include="src\layer_dispatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\camy_error.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\resources.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\camy_init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\cbuffer_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\layers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\init.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\error.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -202,16 +202,16 @@
     <None Include="include\camy\shader.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="include\camy\camy_math.inl">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="include\camy\camy_error.inl">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="include\camy\queue.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="shaders\pp_common.hlsl" />
+    <None Include="include\camy\error.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="include\camy\math.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\pp_vs.hlsl" />
