@@ -1,3 +1,6 @@
+#define camy_shaders_enable_luminance_downsample_args
+#include "../include/camy_render/shader_common.hpp"
+
 struct PSInput
 {
 	float4 position : SV_POSITION;
@@ -5,18 +8,18 @@ struct PSInput
 };
 
 Texture2D	 input_surface;
-SamplerState luminance_sampler;
+SamplerState point_sampler;
 
 float4 main(PSInput input) : SV_TARGET
 {
-	// We are letting bilinear filtering take care of downsampling.
-	// Some resources:
-	// http://www.gamedev.net/topic/651867-question-about-tone-mapping-hdr/#entry5121231
-	// http://www.gamedev.net/topic/345577-d3d9-high-dynamic-range-rendering-example/
-	// In the demo he samples multiple times to avoid a later on loss of precision ? 
-	// I didnt go the Load() approach because it becomes way too complex when dealing with odd / small numbers
-	// where if you wrongly sample something you are going to end up with completely wrong results
-	float l = input_surface.Sample(luminance_sampler, input.texcoord);
+	input.texcoord -= (texel_size / 2);
 
-	return float4(l, l, l, 1.f);
+	float average_luminance = 0.f;
+	average_luminance += input_surface.Sample(point_sampler, input.texcoord);
+	average_luminance += input_surface.Sample(point_sampler, input.texcoord + float2(texel_size.x, 0.f));
+	average_luminance += input_surface.Sample(point_sampler, input.texcoord + texel_size);
+	average_luminance += input_surface.Sample(point_sampler, input.texcoord + float2(0.f, texel_size.y));
+	average_luminance *= 0.25f;
+
+	return float4(average_luminance.xxx, 1.f);
 }

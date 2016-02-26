@@ -68,6 +68,7 @@ namespace camy
 			Shared
 		*/
 		Sampler* bilinear_sampler{ nullptr };
+		Sampler* point_sampler{ nullptr };
 		BlendState* additive_blend_state{ nullptr };
 
 		/*
@@ -80,7 +81,8 @@ namespace camy
 		std::vector<Surface*> luminance_mipmaps;
 
 		Shader luminance_downsample_ps;
-		PipelineParameter downsample_luminance_sampler_parameter;
+		PipelineParameter* luminance_downsample_params{ nullptr }; // Args + Sampler
+		shaders::LuminanceDownsampleArgs* luminance_downsample_args{ nullptr };
 
 		Shader to_luminance_ps;
 		PipelineParameter to_luminance_sampler_parameter;

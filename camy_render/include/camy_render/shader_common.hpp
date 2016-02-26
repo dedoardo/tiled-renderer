@@ -164,6 +164,17 @@ namespace camy
 		};
 #endif
 
+#if defined(camy_shaders_enable_luminance_downsample_args) || defined(camy_compile_cpp)
+		cbuffer LuminanceDownsampleArgs
+		{
+#if defined(camy_compile_cpp)
+			static const char* name;
+#endif
+			float2 texel_size;
+		};
+#endif
+
+
 #if defined(camy_shaders_enable_kawase_blur_args) || defined(camy_compile_cpp)
 		cbuffer KawaseBlurArgs
 		{

@@ -71,9 +71,19 @@ namespace camy
 		bilinear_sampler = hidden::gpu.create_sampler(Sampler::Filter::Point, Sampler::Address::Clamp);
 		if (bilinear_sampler == nullptr)
 		{
+			camy_error("Error: Failed to create bilinear sampler");
 			dispose();
 			return false;
 		}
+
+		point_sampler = hidden::gpu.create_sampler(Sampler::Filter::Point, Sampler::Address::Clamp);
+		if (point_sampler == nullptr)
+		{
+			camy_error("Error: Failed to create bilinear sampler");
+			dispose();
+			return false;
+		}
+
 		additive_blend_state = hidden::gpu.create_blend_state(BlendState::Mode::Additive);
 		if (additive_blend_state == nullptr)
 		{
@@ -112,9 +122,6 @@ namespace camy
 			}
 
 			// Also preparing parameters
-			downsample_luminance_sampler_parameter.shader_variable = luminance_downsample_ps.get("luminance_sampler");
-			downsample_luminance_sampler_parameter.data = bilinear_sampler;
-
 			to_luminance_sampler_parameter.shader_variable = to_luminance_ps.get("surface_sampler");
 			to_luminance_sampler_parameter.data = bilinear_sampler;
 
@@ -144,10 +151,15 @@ namespace camy
 			to_luminance_pp.parameters.parameters = &to_luminance_sampler_parameter;
 			pp_items.push_back(to_luminance_pp);
 
+			auto iterations{ std::log2(std::max(downsampled_width, downsampled_height)) };
+			luminance_downsample_args = new shaders::LuminanceDownsampleArgs[iterations];
+			luminance_downsample_params = new PipelineParameter[iterations * 2];
+
 			// Now we subsequently downsample the luminance map down to 1x1 RT
 			auto next_width{ downsampled_width };
 			auto next_height{ downsampled_height };
 			Surface* next_input_rt{ luminance_map };
+			auto iter{ 0u };
 			while (next_width != 1 || next_height != 1)
 			{
 				auto down_width{ std::max(1u, next_width / 2) };
@@ -168,14 +180,28 @@ namespace camy
 				pp_item.input_surface = next_input_rt;
 				pp_item.output_surface = mipmap;
 				pp_item.pixel_shader = &luminance_downsample_ps;
-				pp_items.push_back(pp_item);
 
-				pp_item.parameters.num_parameters = 1;
-				pp_item.parameters.parameters = &downsample_luminance_sampler_parameter;
+				/*
+					Setting parameters:
+						- Point sampler
+						- texel size of the source image ( not destination ) thanks : http://www.gamedev.net/topic/654165-average-luminance-2x-downsample-filter-kernel/
+				*/
+				luminance_downsample_params[iter * 2 + 0].shader_variable = luminance_downsample_ps.get("point_sampler");
+				luminance_downsample_params[iter * 2 + 0].data = point_sampler;
+
+				luminance_downsample_args[iter].texel_size = float2(1.f / next_width, 1.f / next_height);
+				luminance_downsample_params[iter * 2 + 1].shader_variable = luminance_downsample_ps.get(shaders::LuminanceDownsampleArgs::name);
+				luminance_downsample_params[iter * 2 + 1].data = &luminance_downsample_args[iter];
+
+				pp_item.parameters.num_parameters = 2;
+				pp_item.parameters.parameters = &luminance_downsample_params[iter * 2];
+
+				pp_items.push_back(pp_item);
 
 				next_width = down_width;
 				next_height = down_height;
 				next_input_rt = mipmap;
+				++iter;
 			}
 
 			/*
@@ -369,6 +395,7 @@ namespace camy
 			Shared
 		*/
 		hidden::gpu.safe_dispose(bilinear_sampler);
+		hidden::gpu.safe_dispose(point_sampler);
 		hidden::gpu.safe_dispose(additive_blend_state);
 
 		/*
@@ -383,6 +410,9 @@ namespace camy
 		luminance_downsample_ps.unload();
 		to_luminance_ps.unload();
 		tone_map_ps.unload();
+
+		safe_release(luminance_downsample_args);
+		safe_release(luminance_downsample_params);
 
 		/*
 			Effects_Bloom

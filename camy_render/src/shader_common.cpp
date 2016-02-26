@@ -13,6 +13,7 @@ namespace camy
 		const char* Material::name{ "Material" };
 		const char* Environment::name{ "Environment" };
 		const char* CullingDispatchArgs::name{ "CullingDispatchArgs" };
+		const char* LuminanceDownsampleArgs::name{ "LuminanceDownsampleArgs" };
 		const char* KawaseBlurArgs::name{ "KawaseBlurArgs" };
 	}
 }

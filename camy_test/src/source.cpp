@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 
 	// Loading rendered
 	Renderer renderer;
-	if (!renderer.load(g_window_surface, camera.get_projection(), PostProcessPipeline::Effects_Bloom))
+	if (!renderer.load(g_window_surface, camera.get_projection(), PostProcessPipeline::Effects_HDR | PostProcessPipeline::Effects_Bloom))
 		return at_exit(EXIT_FAILURE);
 
 	// Setting sunlight
