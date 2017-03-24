@@ -1,0 +1,19 @@
+/* camy_graphics
+*
+* Copyright (C) 2017 Edoardo Dominici
+*
+* This software may be modified and distributed under the terms
+* of the MIT license.  See the LICENSE file for details.
+*/
+#pragma once
+
+#include <camy/graphics/base.hpp>
+#include <camy/graphics/command_list.hpp>
+#include <camy/graphics/compute_bucket.hpp>
+#include <camy/graphics/frame.hpp>
+#include <camy/graphics/ibucket.hpp>
+#include <camy/graphics/platform.hpp>
+#include <camy/graphics/render_bucket.hpp>
+#include <camy/graphics/render_context.hpp>
+#include <camy/graphics/resource_manager.hpp>
+#include <camy/graphics/shader_stage.hpp>
