@@ -6,5 +6,6 @@
 *.log
 *.pdf
 
-camy_render/src/shaders/
-dump/
+vs/.out/
+vs/.vs/
+vs/Debug
