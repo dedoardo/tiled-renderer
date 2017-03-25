@@ -6,6 +6,9 @@
 *.log
 *.pdf
 
-vs/.out/
-vs/.vs/
-vs/Debug
+/vs/.out/
+/vs/.vs/
+/vs/Debug
+.*/
+.*
+!/.gitignore
