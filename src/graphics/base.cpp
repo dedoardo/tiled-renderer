@@ -10,7 +10,7 @@
 
 namespace camy
 {
-    bool Blob::contains_data()
+    bool Blob::contains_data() const
     {
         return byte_size > 0 && data != nullptr;
     }

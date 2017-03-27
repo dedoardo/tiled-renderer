@@ -150,7 +150,7 @@ namespace camy
         rsize new_capacity = old_capacity * 2;
         m_base = (ElementType*)::camy::allocate(camy_loc, kElementSize * new_capacity, kAlignment);
         m_top = m_base + new_capacity;
-        for (rsize i = 0; i < new_capacity; ++i)
+        for (rsize i = 0; i < old_capacity; ++i)
         {
             new (m_base + i) ElementType(std::move(old_buffer[i]));
             m_freelist.push(new_capacity -i - 1);

@@ -54,6 +54,7 @@ namespace camy
         
         // Query
         rsize count()const;
+		rsize capacity()const;
         bool  empty()const;
 	private:
 		void _realloc();
@@ -274,6 +275,12 @@ namespace camy
     {
         return m_size;
     }
+
+	template<typename ElementType, uint16 kAlignment>
+	inline rsize Vector<ElementType, kAlignment>::capacity() const
+	{
+		return m_capacity;
+	}
 
     template<typename ElementType, uint16 kAlignment>
     inline bool Vector<ElementType, kAlignment>::empty() const

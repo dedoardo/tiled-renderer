@@ -1,4 +1,4 @@
-/* shader_stage.cpp
+/* program.cpp
 *
 * Copyright (C) 2017 Edoardo Dominici
 *
@@ -6,7 +6,7 @@
 * of the MIT license.  See the LICENSE file for details.
 */
 // Header
-#include <camy/graphics/shader_stage.hpp>
+#include <camy/graphics/program.hpp>
 
 #if defined(camy_os_windows) && defined(camy_backend_opengl4)
 

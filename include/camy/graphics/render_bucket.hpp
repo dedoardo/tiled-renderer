@@ -195,6 +195,6 @@ namespace camy
             rsize     cur = 0;
         };
         Vector<ConstantBufferUpload> m_uploads;
-        rsize                        m_current_upload;
+        int                        m_current_upload;
     };
 }

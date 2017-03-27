@@ -16,4 +16,4 @@
 #include <camy/graphics/render_bucket.hpp>
 #include <camy/graphics/render_context.hpp>
 #include <camy/graphics/resource_manager.hpp>
-#include <camy/graphics/shader_stage.hpp>
+#include <camy/graphics/program.hpp>

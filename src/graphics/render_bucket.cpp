@@ -240,7 +240,7 @@ namespace camy
         // Resetting incremental allocators
         for (rsize i = 0; i < m_uploads.count(); ++i)
             m_uploads[i].cur = 0;
-        m_current_upload = 0;
+		m_current_upload = -1;
 
         m_command_list.begin();
 
@@ -316,7 +316,7 @@ namespace camy
             _draw_ftable[(rsize)item.draw_call.type](m_command_list, item.draw_call);
         }
 
-        for (rsize i = 0; i <= m_current_upload; ++i)
+        for (int i = 0; i <= m_current_upload; ++i)
         {
             ConstantBufferUpload& upload = m_uploads[i];
             m_command_list.queue_constant_buffer_update(upload.handle, upload.data, upload.cur * API::query(API::Query::ConstantByteSize));
@@ -331,26 +331,40 @@ namespace camy
         camy_assert(required % API::query(API::Query::ConstantByteSize) == 0);
         required /= API::query(API::Query::ConstantByteSize);
 
-        if (!m_uploads.empty() && required > (m_uploads.last().count - m_uploads.last().cur))
-            ++m_current_upload;
+		// Honestly, this is merely playing w/ indices 
+		// This way we signal that atleast one cbuffer update should be queued
+		if (m_current_upload == -1)
+			m_current_upload = 0;
 
-        if (m_current_upload >= m_uploads.count())
-        {
-            m_uploads.emplace();
-            ConstantBufferUpload& upload = m_uploads.last();
+		// Are we out of space in the cbuffer currently being used and can we reuse a previous cbuffer
+		if (m_current_upload < ((int)m_uploads.count() - 1) && required > (m_uploads[m_current_upload].count - m_uploads[m_current_upload].cur))
+			++m_current_upload;
+		
+		// We are already at the last cbuffer and there is no space
+		else if (m_current_upload >= ((int)m_uploads.count() - 1))
+		{
+			// do we have space ?
+			if (m_uploads.empty() ||
+				required > (m_uploads[m_current_upload].count - m_uploads[m_current_upload].cur))
+			{
+				m_uploads.emplace();
+				ConstantBufferUpload& upload = m_uploads.last();
 
-            ConstantBufferDesc cbd;
-            cbd.size = 256 * API::query(API::Query::ConstantByteSize);
-            upload.handle = API::rc().create_constant_buffer(cbd, "$_camy_incr_cbuffer_$");
-            upload.data = (byte*)allocate(camy_loc, cbd.size);
-            upload.count = 256;
-            upload.cur = 0;
-        }
+				ConstantBufferDesc cbd;
+				cbd.size = 1024 * API::query(API::Query::ConstantByteSize);
+				upload.handle = API::rc().create_constant_buffer(cbd, "__camy_incr_cbuffer_d3d11__");
+				upload.data = (byte*)allocate(camy_loc, cbd.size);
+				upload.count = 1024;
+				upload.cur = 0;
+				m_current_upload = m_uploads.count() - 1;
+			}
+		}
+		// Else there is space in the current cbuffer
 
-        ConstantBufferUpload& upload = m_uploads.last();
-        std::memcpy(upload.data + upload.cur * API::query(API::Query::ConstantByteSize), parameter.data, required * API::query(API::Query::ConstantByteSize));
-        handle_out = upload.handle;
-        offset_out = upload.cur;
-        upload.cur += required;
+		ConstantBufferUpload& upload = m_uploads[m_current_upload];
+		std::memcpy(upload.data + upload.cur * API::query(API::Query::ConstantByteSize), parameter.data, required * API::query(API::Query::ConstantByteSize));
+		handle_out = upload.handle;
+		offset_out = upload.cur;
+		upload.cur += required;
     }
 }

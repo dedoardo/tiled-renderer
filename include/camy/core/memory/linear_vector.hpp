@@ -143,8 +143,10 @@ namespace camy
 			ElementType* old_buffer = m_buffer;
 			rsize new_capacity = m_capacity * 2;
             m_buffer = (ElementType*)allocate(camy_loc, kElementSize * new_capacity);
-            for (rsize i = 0; i < m_capacity; ++i)
-                new (&m_buffer[i]) ElementType(std::move(old_buffer[i]));
+
+			m_cur = m_buffer;
+			for (rsize i = 0; i < m_capacity; ++i)
+                new (m_cur++) ElementType(std::move(old_buffer[i]));
 
             deallocate(old_buffer);
 			m_capacity = new_capacity;

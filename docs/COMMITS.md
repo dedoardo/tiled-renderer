@@ -1,0 +1,2 @@
+- Fixed bug in LinearVector reallocation
+- Fixed bug in Pool reallocation

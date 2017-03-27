@@ -52,3 +52,5 @@ Modern OpenGL
 Direct State Access API
 vertex_attrib_binding
 Query API
+
+The same you do 

@@ -144,9 +144,9 @@ namespace camy
             hdr->prev->next = hdr->next;
 
         byte* udata = (byte*)hdr - hdr->padding;        
-        free(udata);
-
         memtrack::g_total_bytes -= hdr->bytes;
+		free(udata);
+
         camy_assert(memtrack::g_total_bytes >= 0);
 
         //-------------------------

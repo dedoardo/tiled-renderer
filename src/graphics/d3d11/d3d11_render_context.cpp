@@ -1084,6 +1084,8 @@ namespace camy
     {
         switch (type)
         {
+		case InputElement::Type::Float2:
+			return DXGI_FORMAT_R32G32_FLOAT;
         case InputElement::Type::Float3:
             return DXGI_FORMAT_R32G32B32_FLOAT;
         case InputElement::Type::Float4:

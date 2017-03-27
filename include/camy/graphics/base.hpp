@@ -137,7 +137,7 @@ namespace camy
         void* data = nullptr;
         rsize byte_size = 0;
 
-        bool contains_data();
+		bool contains_data()const;
         void allocate_data(const byte* in_data, rsize byte_size);
         void free_data();
     };
@@ -281,11 +281,11 @@ namespace camy
 			None
 		};
 
-		Fill fill;
-		Cull cull;
-		uint32 depth_bias;
-		float  depth_bias_clamp;
-		float  slope_scaled_depth_bias;
+		Fill fill = Fill::Solid;
+		Cull cull = Cull::Back;
+		uint32 depth_bias = 0;
+		float  depth_bias_clamp = 0.f;
+		float  slope_scaled_depth_bias = 0.f;
 	};
 
 	struct RasterizerState
@@ -363,6 +363,7 @@ namespace camy
 		uint32 uav()const { return (data&kUavMask) >> kUavOff; }
 		void uav(uint32 val) { data = (data & (~kUavMask) | (val << kUavOff)); }
 
+		bool is_valid()const {	return valid() == 0; }
 
 		static ShaderVariable invalid() { ShaderVariable sv; sv.valid(1); return sv; };
 	};
