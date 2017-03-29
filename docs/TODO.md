@@ -8,6 +8,8 @@ Fixes:
 - Consistent naming of internal resources ( __internal: ) ( __generated:  )
 - More testing under invalid conditions (find software that does that)
 - Technique mask builder
+- Check MaterialInfo assignment operator etc because of the data* member
+- Shared parameters in  renderbucket to avoid setting the same shit over and over again
 
 Cool stuff:
 - Some kind of global illumination, either voxels or probes (Multi-Scale global illumination in Quantum Break)

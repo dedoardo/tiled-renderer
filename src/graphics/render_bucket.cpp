@@ -186,6 +186,7 @@ namespace camy
         command_list.set_viewport(pipeline_state.viewport);
         command_list.set_rasterizer_state(pipeline_state.rasterizer_state);
         //command_list.set_blend_state(pipeline_state.blend_state);
+		command_list.set_depth_stencil_state(pipeline_state.depth_stencil_state);
     }
 
 #pragma pack(push, 1)

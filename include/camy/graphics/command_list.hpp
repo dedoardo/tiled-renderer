@@ -42,6 +42,7 @@ namespace camy
 
         void set_primitive_topology();
 		void set_rasterizer_state(HResource handle);
+		void set_depth_stencil_state(HResource handle);
 
         void set_input_signature(HResource handle);
         void set_viewport(const Viewport& viewport);

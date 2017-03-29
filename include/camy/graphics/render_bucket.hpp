@@ -86,6 +86,7 @@ namespace camy
         HResource depth_buffer = kInvalidHResource;
         HResource rasterizer_state = kInvalidHResource;
         HResource blend_state = kInvalidHResource;
+		HResource depth_stencil_state = kInvalidHResource;
         Viewport  viewport;
 
         static PipelineState default();

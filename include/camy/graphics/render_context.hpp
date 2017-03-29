@@ -70,7 +70,7 @@ namespace camy
 
         void        immediate_clear(); // Resets the state of the immediate context (D3D11)
 		void		clear_color(HResource target, const float4& color);  // helper (use commandlist)
-		void		clear_depth(HResource target);  // helper (use commadnlist)
+		void		clear_depth(HResource target, float depth, sint32 stencil = -1);  // helper (use commadnlist)
 		HResource   get_backbuffer_handle()const;
         Surface&    get_backbuffer();
         void        swap_buffers();

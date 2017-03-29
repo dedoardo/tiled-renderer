@@ -347,9 +347,18 @@ namespace camy
 		m_data.immediate_context->ClearRenderTargetView(surface.native.rtvs[0], (float*)&color);
 	}
 	
-	void RenderContext::clear_depth(HResource target)
+	void RenderContext::clear_depth(HResource target, float depth, sint32 stencil)
 	{
-		assert(false); // TODO
+		if (target == kInvalidHResource)
+		{
+			camy_warning("Tried to clear invalid resource");
+			return;
+		}
+
+		Surface& surface = get_surface(target);
+		UINT flags = D3D11_CLEAR_DEPTH;  
+		flags |= stencil == -1 ? 0 : D3D11_CLEAR_STENCIL;
+		m_data.immediate_context->ClearDepthStencilView(surface.native.dsvs[0], flags, depth, (UINT)stencil);
 	}
 
     HResource RenderContext::get_backbuffer_handle() const
@@ -561,6 +570,7 @@ namespace camy
             srvs = tallocate_array<ID3D11ShaderResourceView*>(camy_loc, num_views, 16, nullptr);
 
             D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+			ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
             srv_desc.Format = camy_to_dxgi(desc.pixel_format_srv);
 
             for (uint32 i = 0; i < num_views; ++i)
@@ -609,6 +619,7 @@ namespace camy
             rtvs = tallocate_array<ID3D11RenderTargetView*>(camy_loc, num_views, 16, nullptr);
 
             D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
+			ZeroMemory(&rtv_desc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
             rtv_desc.Format = camy_to_dxgi(desc.pixel_format_rtv);
 
             for (uint32 i = 0; i < num_views; ++i)
@@ -644,6 +655,7 @@ namespace camy
             uavs = tallocate_array<ID3D11UnorderedAccessView*>(camy_loc, num_views, 16, nullptr);
 
             D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+			ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
             uav_desc.Format = camy_to_dxgi(desc.pixel_format_uav);
             for (uint32 i = 0; i < num_views; ++i)
             {
@@ -674,7 +686,8 @@ namespace camy
         {
             dsvs = tallocate_array<ID3D11DepthStencilView*>(camy_loc, num_views, 16, nullptr);
 
-            D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
+			D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
+			ZeroMemory(&dsv_desc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
             dsv_desc.Format = camy_to_dxgi(desc.pixel_format_uav);
             for (uint32 i = 0; i < num_views; ++i)
             {
@@ -708,6 +721,7 @@ namespace camy
         Surface& res = m_resource_manager.get<Surface>(ret);
 
         res.desc = desc;
+		res.native.texture2d = texture;
         res.native.srvs = srvs;
         res.native.rtvs = rtvs;
         res.native.uavs = uavs;
@@ -932,7 +946,7 @@ namespace camy
         res.desc = desc;
         res.native.buffer = buffer;
 
-        camy_info("Successfully create ConstantBuffer: ", name, "[", desc.size, "]");
+        camy_info("Successfully created ConstantBuffer: ", name, "[", desc.size, "]");
         return ret;
     error:
         safe_release_com(buffer);
@@ -1107,6 +1121,7 @@ namespace camy
             next.SemanticIndex = desc.elements[i].semantic_idx;
             next.InputSlot = desc.elements[i].slot;
             next.Format = camy_to_d3d11(desc.elements[i].type);
+			next.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 
             if (desc.elements[i].is_instanced)
             {
@@ -1232,14 +1247,26 @@ namespace camy
         return kInvalidHResource;
     }
 
+	D3D11_COMPARISON_FUNC camy_to_d3d11(DepthStencilStateDesc::DepthFunc func)
+	{
+		switch (func)
+		{
+		case DepthStencilStateDesc::DepthFunc::LessEqual:
+			return D3D11_COMPARISON_LESS_EQUAL;
+		case DepthStencilStateDesc::DepthFunc::Less:
+		default:
+			return D3D11_COMPARISON_LESS;
+		}
+	}
+
     HResource RenderContext::create_depth_stencil_state(const DepthStencilStateDesc& desc, const char8* name)
     {
         camy_assert(m_data.device != nullptr);
 
         D3D11_DEPTH_STENCIL_DESC dss_desc;
         dss_desc.DepthEnable = true;
-        dss_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-        dss_desc.DepthFunc = D3D11_COMPARISON_LESS;
+        dss_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		dss_desc.DepthFunc = camy_to_d3d11(desc.depth_func);
         dss_desc.StencilEnable = false;
 
         ID3D11DepthStencilState* depth_stencil_state = nullptr;

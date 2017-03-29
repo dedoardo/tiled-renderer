@@ -1,2 +1,6 @@
+- Added program
 - Fixed bug in LinearVector reallocation
 - Fixed bug in Pool reallocation
+- Fixed bug in depth buffer creation
+- Introduced DepthStencilState (zprepass only for now)
+- Fixed bug in create_input_layout

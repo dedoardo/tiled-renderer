@@ -80,25 +80,21 @@ namespace camy
         camy_api void log(const char8* tag, const char8* function, const char8* line, const OutArgs& ...out_args)
 		{
 			if (g_output_stream == nullptr) return;
-
-            rsize tag_len = ::camy::strlen(tag);
-            rsize max_len = ::camy::strlen("Warning");
-			std::string empty(max_len - tag_len, ' ');
 	
 			if (g_output_stream == &std::cout)
 			{
 				if (::camy::strcmp(tag, "Info"))
 					set_info_color();
-				else if (::camy::strcmp(tag, "Warning"))
+				else if (::camy::strcmp(tag, "Warn"))
 					set_warning_color();
-				else if (::camy::strcmp(tag, "Error"))
+				else if (::camy::strcmp(tag, "Err "))
 					set_error_color();
 			}
 
 			auto now_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			*g_output_stream << "[" << std::put_time(std::localtime(&now_t), "%T") << "]";
 
-			*g_output_stream << "[" << tag << "] " << empty;
+			*g_output_stream << "[" << tag << "] ";
 
 			log_rec(out_args...);
 
@@ -117,9 +113,9 @@ namespace camy
             {
                 if (::camy::strcmp(tag, "Info"))
                     set_info_color();
-                else if (::camy::strcmp(tag, "Warning"))
+                else if (::camy::strcmp(tag, "Warn"))
                     set_warning_color();
-                else if (::camy::strcmp(tag, "Error"))
+                else if (::camy::strcmp(tag, "Err "))
                     set_error_color();
             }
 
@@ -150,14 +146,14 @@ namespace camy
 #endif
 
 #if camy_enable_logging >= 3
-#define camy_error(...) ::camy::hidden::log("Error", __FUNCTION__, std::to_string(__LINE__).c_str(),  __VA_ARGS__)
+#define camy_error(...) ::camy::hidden::log("Err ", __FUNCTION__, std::to_string(__LINE__).c_str(),  __VA_ARGS__)
 #define camy_error_stripped(...) ::camy::hidden::log_stripped("Error",  __VA_ARGS__)
 #else
 #define camy_error(...)
 #endif
 
 #if camy_enable_logging >= 2
-#define camy_warning(...) ::camy::hidden::log("Warning", __FUNCTION__, std::to_string(__LINE__).c_str(),  __VA_ARGS__)
+#define camy_warning(...) ::camy::hidden::log("Warn", __FUNCTION__, std::to_string(__LINE__).c_str(),  __VA_ARGS__)
 #else
 #define camy_warning(...)
 #endif

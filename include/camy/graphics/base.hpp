@@ -434,9 +434,9 @@ namespace camy
 			Never
 		};
 
-		Address address;
-		Filter filter;
-		Comparison comparison;
+		Address address = Address::Wrap;
+		Filter filter = Filter::Linear;
+		Comparison comparison = Comparison::Never;
 	};
 
 	struct Sampler
@@ -447,7 +447,13 @@ namespace camy
 
 	struct DepthStencilStateDesc
 	{
+		enum class DepthFunc
+		{
+			Less,
+			LessEqual
+		};
 
+		DepthFunc depth_func;
 	};
 
 	struct DepthStencilState

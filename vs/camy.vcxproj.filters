@@ -152,9 +152,6 @@
     <ClInclude Include="..\include\camy\graphics\resource_manager.hpp">
       <Filter>include\camy\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\camy\graphics\shader_stage.hpp">
-      <Filter>include\camy\graphics</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\camy\graphics\d3d11\d3d11_graphics_base.hpp">
       <Filter>include\camy\graphics\d3d11</Filter>
     </ClInclude>
@@ -211,9 +208,6 @@
     <ClCompile Include="..\src\graphics\d3d11\d3d11_render_context.cpp">
       <Filter>src\graphics\d3d11</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\graphics\d3d11\d3d11_shader_stage.cpp">
-      <Filter>src\graphics\d3d11</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\graphics\opengl4\opengl4_command_list.cpp">
       <Filter>src\graphics\opengl4</Filter>
     </ClCompile>
@@ -223,7 +217,13 @@
     <ClCompile Include="..\src\graphics\opengl4\opengl4_render_context.cpp">
       <Filter>src\graphics\opengl4</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\graphics\opengl4\opengl4_shader_stage.cpp">
+    <ClCompile Include="..\src\graphics\program.cpp">
+      <Filter>src\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\graphics\d3d11\d3d11_program.cpp">
+      <Filter>src\graphics\d3d11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\graphics\opengl4\opengl4_program.cpp">
       <Filter>src\graphics\opengl4</Filter>
     </ClCompile>
   </ItemGroup>

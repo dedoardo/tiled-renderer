@@ -15,6 +15,8 @@
 #include <camy/core/memory/static_string.hpp>
 #include <camy/graphics/resource_manager.hpp>
 
+#define camy_cbuffer(type) #type
+
 namespace camy
 {
 	struct CompileOpts
@@ -74,8 +76,6 @@ namespace camy
 		HResource ps();
 		ShaderVariable vertex_var(const char8* name);
 		ShaderVariable pixel_var(const char8* name);
-		template <typename NamedCBuffer> ShaderVariable vertex_var() { return vertex_var(NamedCBuffer::_cbuffer_name); }
-		template <typename NamedCBuffer> ShaderVariable pixel_var() { return pixel_var(NamedCBuffer::_cbuffer_name); }
 
 	private:
 		//! Platform dependent implementation

@@ -166,7 +166,6 @@
     <ClInclude Include="..\include\camy\graphics\render_bucket.hpp" />
     <ClInclude Include="..\include\camy\graphics\render_context.hpp" />
     <ClInclude Include="..\include\camy\graphics\resource_manager.hpp" />
-    <ClInclude Include="..\include\camy\graphics\shader_stage.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\core\error.cpp" />
@@ -181,12 +180,13 @@
     <ClCompile Include="..\src\graphics\d3d11\d3d11_command_list.cpp" />
     <ClCompile Include="..\src\graphics\d3d11\d3d11_platform.cpp" />
     <ClCompile Include="..\src\graphics\d3d11\d3d11_render_context.cpp" />
-    <ClCompile Include="..\src\graphics\d3d11\d3d11_shader_stage.cpp" />
+    <ClCompile Include="..\src\graphics\d3d11\d3d11_program.cpp" />
     <ClCompile Include="..\src\graphics\frame.cpp" />
     <ClCompile Include="..\src\graphics\opengl4\opengl4_command_list.cpp" />
     <ClCompile Include="..\src\graphics\opengl4\opengl4_platform.cpp" />
     <ClCompile Include="..\src\graphics\opengl4\opengl4_render_context.cpp" />
-    <ClCompile Include="..\src\graphics\opengl4\opengl4_shader_stage.cpp" />
+    <ClCompile Include="..\src\graphics\opengl4\opengl4_program.cpp" />
+    <ClCompile Include="..\src\graphics\program.cpp" />
     <ClCompile Include="..\src\graphics\render_bucket.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

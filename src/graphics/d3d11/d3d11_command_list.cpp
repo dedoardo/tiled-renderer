@@ -140,6 +140,18 @@ namespace camy
 		m_data.ctx->RSSetState(rss);
 	}
 
+	void CommandList::set_depth_stencil_state(HResource handle)
+	{
+		_camy_cl_assert;
+
+		ID3D11DepthStencilState* dss = nullptr;
+
+		if (handle != kInvalidHResource)
+			dss = API::rc().get_depth_stencil_state(handle).native.state;
+
+		m_data.ctx->OMSetDepthStencilState(dss, 1); // TODO: Add stencil
+	}
+
     void CommandList::set_input_signature(HResource handle)
     {
         _camy_cl_assert;
@@ -333,7 +345,7 @@ namespace camy
     {
         _camy_cl_assert;
 
-        rsize lookup_idx = (rsize)var.shader() * (rsize)ShaderDesc::Type::Count + var.type();
+        rsize lookup_idx = (rsize)var.shader() * 3 + var.type();
         _set_ftable[lookup_idx](m_data.ctx, var, handle);
     }
 
