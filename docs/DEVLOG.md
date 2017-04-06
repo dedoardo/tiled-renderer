@@ -47,10 +47,3 @@ ShaderStage
 graphics/base.hpp as for camy_core provides all the basic types upon which everything else builds. It follows a specific inclusion order:
 - First it includes graphics/<backend>/<backend>_graphics_base.hpp
 
-
-Modern OpenGL
-Direct State Access API
-vertex_attrib_binding
-Query API
-
-The same you do 

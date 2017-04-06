@@ -10,6 +10,9 @@
 // camy
 #include <camy/core/base.hpp>
 
+// math
+#include <camy/core/math/types.hpp>
+
 /*
 	Graphics Card: 
 	camy_gpu_dedicated	 - High performance dedicated card
@@ -17,18 +20,6 @@
 */
 #if !defined(camy_gpu_dedicated) || !defined(camy_gpu_integrated)
 #	define camy_gpu_dedicated
-#endif
-
-/*
-	OS:
-	camy_os_windows
-	camy_os_linux
-	camy_os_macosx
-*/
-#if defined(_WIN32)
-#	define camy_os_windows
-#else
-#error Your OS is not currently supported
 #endif
 
 /*
@@ -203,9 +194,18 @@ namespace camy
 		enum class Query
 		{
 			ConstantByteSize,
-			MinConstantsPerUpdate
+			MinConstantsPerUpdate,
+			ShaderMatrixOrder,
+		};
+
+		enum class ShaderMatrixOrder : rsize
+		{
+			RowMajor,
+			ColMajor
 		};
 
 		camy_api rsize query(Query query);
+
+		camy_api float4x4 to_shader_order(const float4x4& mat);
 	}
 }

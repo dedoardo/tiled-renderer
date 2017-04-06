@@ -14,14 +14,14 @@
 
 namespace camy
 {
-    void DrawCall::set_default(uint32 vertex_count, uint32 vertex_offset)
+    void DrawCall::make_default(uint32 vertex_count, uint32 vertex_offset)
     {
         type = DrawCall::Type::Default;
         info.default.vertex_count = vertex_count;
         info.default.vertex_offset = vertex_offset;
     }
 
-    void DrawCall::set_indexed(uint32 index_count, uint32 index_offset, uint32 vertex_offset)
+    void DrawCall::make_indexed(uint32 index_count, uint32 index_offset, uint32 vertex_offset)
     {
         type = DrawCall::Type::Indexed;
         info.indexed.index_count = index_count;
@@ -29,7 +29,7 @@ namespace camy
         info.indexed.vertex_offset = vertex_offset;
     }
 
-    void DrawCall::set_instanced(uint32 vertex_count, uint32 instance_count, uint32 vertex_offset, uint32 instance_offset)
+    void DrawCall::make_instanced(uint32 vertex_count, uint32 instance_count, uint32 vertex_offset, uint32 instance_offset)
     {
         type = DrawCall::Type::Instanced;
         info.instanced.vertex_count = vertex_count;
@@ -38,7 +38,7 @@ namespace camy
         info.instanced.instance_offset = instance_offset;
     }
 
-    void DrawCall::set_indexed_instanced(uint32 index_count, uint32 instance_count, uint32 index_offset, uint32 vertex_offset, uint32 instance_offset)
+    void DrawCall::make_indexed_instanced(uint32 index_count, uint32 instance_count, uint32 index_offset, uint32 vertex_offset, uint32 instance_offset)
     {
         type = DrawCall::Type::IndexedInstanced;
         info.indexed_instanced.index_count = index_count;
@@ -70,11 +70,12 @@ namespace camy
         parameters[slot].data = data;
     }
 
-    void ParameterBlock::set(rsize slot, ShaderVariable var, HResource handle)
+    void ParameterBlock::set(rsize slot, ShaderVariable var, HResource handle, uint16 view)
     {
         parameters[slot].var = var;
-        parameters[slot].handle = handle;
-    }
+        parameters[slot].res.handle = handle;
+		parameters[slot].res.view = view;
+	}
 
     RenderBucket::RenderBucket()
     {
@@ -192,11 +193,11 @@ namespace camy
 #pragma pack(push, 1)
     struct PipelineStateCache
     {
-        HResource vertex_shader = kInvalidHResource;
-        HResource geometry_shader = kInvalidHResource;
-        HResource pixel_shader = kInvalidHResource;
-        HResource vertex_buffers[kMaxBindableVertexBuffers]{ kInvalidHResource, kInvalidHResource };
-        HResource index_buffer = kInvalidHResource;
+        HResource vertex_shader;
+        HResource geometry_shader;
+        HResource pixel_shader;
+        HResource vertex_buffers[kMaxBindableVertexBuffers];
+        HResource index_buffer;
         ParameterBlock::CacheTag cache_tags[kMaxParameterBlocks]{ ParameterBlock::kInvalidCacheTag, ParameterBlock::kInvalidCacheTag , ParameterBlock::kInvalidCacheTag , ParameterBlock::kInvalidCacheTag , ParameterBlock::kInvalidCacheTag };
     };
 #pragma pack(pop)
@@ -288,7 +289,7 @@ namespace camy
 
             for (rsize b = 0; b < kMaxParameterBlocks; ++b)
             {
-                if (item.parameters[b] == kInvalidHParameterBlock)
+                if (item.parameters[b].is_valid() == false)
                     continue;
 
                 ParameterBlock& block = m_parameter_blocks[item.parameters[b]];
@@ -302,13 +303,13 @@ namespace camy
                             continue;
                         camy_assert((BindType)param.var.type() != BindType::Constant);
                         if ((BindType)param.var.type() != BindType::ConstantBuffer)
-                            m_command_list.set_parameter(param.var, param.handle);
+                            m_command_list.set_parameter(param.var, param.res.handle, (uint8)param.res.view);
                         else
                         {
                             HResource handle; 
                             rsize offset;
                             _incr_alloc(param, handle, offset);
-                            m_command_list.set_parameter(param.var, param.data, handle, offset);
+                            m_command_list.set_cbuffer_off(param.var, handle, offset);
                         }
                     }
                 }

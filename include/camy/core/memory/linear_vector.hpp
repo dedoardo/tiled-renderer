@@ -119,14 +119,14 @@ namespace camy
     template<typename ElementType, uint16 kAlignment>
     inline ElementType& LinearVector<ElementType, kAlignment>::operator[](rsize idx)
     {
-        assert(idx < count());
+        camy_assert(idx < count());
         return m_buffer[idx];
     }
 
     template<typename ElementType, uint16 kAlignment>
     inline const ElementType& LinearVector<ElementType, kAlignment>::operator[](rsize idx) const
     {
-        assert(idx < count());
+        camy_assert(idx < count());
         return m_buffer[idx];
     }
 

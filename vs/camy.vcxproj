@@ -91,7 +91,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\include;$(ProjectDir)\..\include\camy\core\math\3p_embedded\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <BuildLog>
       <Path />
@@ -117,7 +118,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\include;$(ProjectDir)\..\include\camy\core\math\3p_embedded\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -133,9 +135,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\camy\core\base.hpp" />
-    <ClInclude Include="..\include\camy\core\error.hpp" />
     <ClInclude Include="..\include\camy\core\math\colors.hpp" />
-    <ClInclude Include="..\include\camy\core\math\simd.hpp" />
+    <ClInclude Include="..\include\camy\core\math\ops.hpp" />
     <ClInclude Include="..\include\camy\core\math\types.hpp" />
     <ClInclude Include="..\include\camy\core\memory\alloc.hpp" />
     <ClInclude Include="..\include\camy\core\memory\auto_ptr.hpp" />
@@ -150,6 +151,8 @@
     <ClInclude Include="..\include\camy\core\memory\static_array.hpp" />
     <ClInclude Include="..\include\camy\core\memory\static_string.hpp" />
     <ClInclude Include="..\include\camy\core\memory\vector.hpp" />
+    <ClInclude Include="..\include\camy\core\os\file.hpp" />
+    <ClInclude Include="..\include\camy\core\os\log.hpp" />
     <ClInclude Include="..\include\camy\core\os\time.hpp" />
     <ClInclude Include="..\include\camy\core\utils.hpp" />
     <ClInclude Include="..\include\camy\graphics\base.hpp" />
@@ -168,13 +171,13 @@
     <ClInclude Include="..\include\camy\graphics\resource_manager.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\core\error.cpp" />
-    <ClCompile Include="..\src\core\math\simd.cpp" />
+    <ClCompile Include="..\src\core\math\ops.cpp" />
     <ClCompile Include="..\src\core\math\types.cpp" />
     <ClCompile Include="..\src\core\memory\alloc.cpp" />
     <ClCompile Include="..\src\core\memory\int2int_map.cpp" />
+    <ClCompile Include="..\src\core\os\file.cpp" />
+    <ClCompile Include="..\src\core\os\log.cpp" />
     <ClCompile Include="..\src\core\os\time.cpp" />
-    <ClCompile Include="..\src\core\utils.cpp" />
     <ClCompile Include="..\src\graphics\base.cpp" />
     <ClCompile Include="..\src\graphics\compute_bucket.cpp" />
     <ClCompile Include="..\src\graphics\d3d11\d3d11_command_list.cpp" />

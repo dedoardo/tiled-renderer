@@ -8,11 +8,10 @@
 // Header
 #include <camy/core/os/time.hpp>
 
+#if defined(camy_os_windows)
+#include <Windows.h>
 namespace camy
 {
-#if defined(_WIN32)
-#include <Windows.h>
-
 	TimeSlice timer_split()
 	{
 		LARGE_INTEGER ts;
@@ -27,5 +26,7 @@ namespace camy
 		QueryPerformanceFrequency(&fq);
 		return (float)slice / ((float)fq.QuadPart / 1000.f);
 	}
-#endif
 }
+#else
+#	error No implementation available for this platform
+#endif

@@ -9,52 +9,38 @@
 #include <camy/core/math/types.hpp>
 
 // camy
-#include <camy/core/math/simd.hpp>
+#include <camy/core/math/ops.hpp>
+
+// libc
+#include <math.h>
 
 namespace camy
 {
 	float2& float2::operator+=(const float2& right)
 	{
-		store(*this, add(load(*this), load(right)));
+		x += right.x;
+		y += right.y;
 		return *this;
 	}
 
 	float2& float2::operator-=(const float2& right)
 	{
-		store(*this, sub(load(*this), load(right)));
+		x -= right.x;
+		y -= right.y;
 		return *this;
 	}
 
 	float2 & float2::operator*=(const float factor)
 	{
-		store(*this, scale(load(*this), factor));
+		x *= factor;
+		y *= factor;
 		return *this;
 	}
 
 	float2 & float2::operator/=(const float factor)
 	{
-		store(*this, scale(load(*this), 1.f / factor));
-		return *this;
-	}
-
-	float float2::len() const
-	{
-		return len3(load(*this));
-	}
-
-	float float2::len_squared() const
-	{
-		return len_squared3(load(*this));
-	}
-
-	float float2::dot(float2 & right) const
-	{
-		return dot2(load(*this), load(right));
-	}
-
-	float2& float2::normalize()
-	{
-		store(*this, normalize2(load(*this)));
+		x /= factor;	
+		y /= factor;
 		return *this;
 	}
 
@@ -70,88 +56,68 @@ namespace camy
 
 	float2 operator+(const float2 & left, const float2 & right)
 	{
-		float2 ret;
-		store(ret, add(load(left), load(right)));
-		return ret;
+		return float2(
+			left.x + right.x,
+			left.y + right.y
+		);
 	}
 
 	float2 operator-(const float2 & left, const float2 & right)
 	{
-		float2 ret;
-		store(ret, sub(load(left), load(right)));
-		return ret;
+		return float2(
+			left.x - right.x,
+			left.y - right.y
+		);
 	}
 
 	float2 operator*(const float2 & left, const float factor)
 	{
-		float2 ret;
-		store(ret, scale(load(left), factor));
-		return ret;
+		return float2(
+			left.x * factor,
+			left.y * factor
+		);
 	}
 
 	float2 operator/(const float2 & left, const float factor)
 	{
-		float2 ret;
-		store(ret, scale(load(left), 1.f / factor));
-		return ret;
+		float inv = 1.f / factor;
+		return float2(
+			left.x * inv,
+			left.y * inv
+		);
 	}
 
 	// <> Float3
 	float3& float3::operator+=(const float3& right)
 	{
-		store(*this, add(load(*this), load(right)));
+		x += right.x;
+		y += right.y;
+		z += right.z;
 		return *this;
 	}
 
 	float3& float3::operator-=(const float3& right)
 	{
-		store(*this, sub(load(*this), load(right)));
+		x -= right.x;
+		y -= right.y;
+		z -= right.z;
 		return *this;
 	}
 
 	float3 & float3::operator*=(const float factor)
 	{
-		store(*this, scale(load(*this), factor));
+		x *= factor;
+		y *= factor;
+		z *= factor;
 		return *this;
 	}
 
 	float3 & float3::operator/=(const float factor)
 	{
-		store(*this, scale(load(*this), 1.f / factor));
-		return *this;
-	}
-
-	float float3::len() const
-	{
-		return len3(load(*this));
-	}
-
-	float float3::len_squared() const
-	{
-		return len_squared3(load(*this));
-	}
-
-	float float3::dot(float3 & right) const
-	{
-		return dot3(load(*this), load(right));
-	}
-
-	float3 float3::cross(float3 & right) const
-	{
-		float3 ret;
-		store(ret, cross3(load(*this), load(right)));
-		return ret;
-	}
-
-	float3& float3::normalize()
-	{
-		store(*this, normalize3(load(*this)));
-		return *this;
-	}
-
-	float3& float3::transform(const float4x4 & matrix)
-	{
-		store(*this, ::camy::transform(load(*this), load(matrix)));
+		float inv = 1.f / factor;
+		x *= inv;
+		y *= inv;
+		z *= inv;
 		return *this;
 	}
 
@@ -162,88 +128,76 @@ namespace camy
 
 	float3 operator+(const float3 & left, const float3 & right)
 	{
-		float3 ret;
-		store(ret, add(load(left), load(right)));
-		return ret;
+		return float3(
+			left.x + right.x,
+			left.y + right.y,
+			left.z + right.z
+		);
 	}
 
 	float3 operator-(const float3 & left, const float3 & right)
 	{
-		float3 ret;
-		store(ret, sub(load(left), load(right)));
-		return ret;
+		return float3(
+			left.x - right.x,
+			left.y - right.y,
+			left.z - right.z
+		);
 	}
 
 	float3 operator*(const float3 & left, const float factor)
 	{
-		float3 ret;
-		store(ret, scale(load(left), factor));
-		return ret;
+		return float3(
+			left.x * factor,
+			left.y * factor,
+			left.z * factor
+		);
 	}
 
 	float3 operator/(const float3 & left, const float factor)
 	{
-		float3 ret;
-		store(ret, scale(load(left), 1.f / factor));
-		return ret;
+		float inv = 1.f / factor;
+		return float3(
+			left.x * inv,
+			left.y * inv,
+			left.z * inv
+		);
 	}
 
 	// <> Float4
 	float4& float4::operator+=(const float4& right)
 	{
-		store(*this, add(load(*this), load(right)));
+		x += right.x;
+		y += right.y;
+		z += right.z;
+		w += right.w;
 		return *this;
 	}
 
 	float4& float4::operator-=(const float4& right)
 	{
-		store(*this, sub(load(*this), load(right)));
+		x -= right.x;
+		y -= right.y;
+		z -= right.z;
+		w -= right.w;
 		return *this;
 	}
 
 	float4 & float4::operator*=(const float factor)
 	{
-		store(*this, scale(load(*this), factor));
+		x *= factor;
+		y *= factor;
+		z *= factor;
+		w *= factor;
 		return *this;
 	}
 
 	float4 & float4::operator/=(const float factor)
 	{
-		store(*this, scale(load(*this), 1.f / factor));
-		return *this;
-	}
-
-	float float4::len3() const
-	{
-		return ::camy::len3(load(*this));
-	}
-
-	float float4::len_squared3() const
-	{
-		return ::camy::len_squared3(load(*this));
-	}
-
-	float float4::dot3(float4 & right) const
-	{
-		return camy::dot3(load(*this), load(right));
-	}
-
-	float4 float4::cross3(float4 & right) const
-	{
-		float4 ret;
-		store(ret, ::camy::cross3(load(*this), load(right)));
-		return ret;
-	}
-
-	float4& float4::normalize3()
-	{
-		store(*this, ::camy::normalize3(load(*this)));
-		return *this;
-	}
-
-	float4& float4::transform(const float4x4 & matrix)
-	{
-		store(*this, ::camy::transform(load(*this), load(matrix)));
+		float inv = 1.f / factor;
+		x *= inv;
+		y *= inv;
+		z *= inv;
+		w *= inv;
 		return *this;
 	}
 
@@ -254,56 +208,61 @@ namespace camy
 
 	float4 operator+(const float4 & left, const float4 & right)
 	{
-		float4 ret;
-		store(ret, add(load(left), load(right)));
-		return ret;
+		return float4(
+			left.x + right.x,
+			left.y + right.y,
+			left.z + right.z,
+			left.w + right.w
+		);
 	}
 
 	float4 operator-(const float4 & left, const float4 & right)
 	{
-		float4 ret;
-		store(ret, sub(load(left), load(right)));
-		return ret;
+		return float4(
+			left.x - right.x,
+			left.y - right.y,
+			left.z - right.z,
+			left.w - right.w
+		);
 	}
 
 	float4 operator*(const float4 & left, const float factor)
 	{
-		float4 ret;
-		store(ret, scale(load(left), factor));
-		return ret;
+		return float4(
+			left.x * factor,
+			left.y * factor,
+			left.z * factor,
+			left.w * factor
+		);
 	}
 
 	float4 operator/(const float4 & left, const float factor)
 	{
-		float4 ret;
-		store(ret, scale(load(left), 1.f / factor));
-		return ret;
+		float inv = 1.f / factor;
+		return left * inv;
+	}
+
+	float3 operator*(const float3x3& mat, const float3& vec)
+	{
+		return float3(
+			dot(mat.rows[0], vec),
+			dot(mat.rows[1], vec),
+			dot(mat.rows[2], vec)
+		);
 	}
 
     float4x4 operator*(const float4x4 & left, const float4x4 & right)
     {
-        float4x4 ret;
-        store(ret, mul(load(left), load(right)));
-        return ret;
+		return mul(left, right);
     }
 
-	float4x4 & float4x4::transpose()
+	float4 operator*(const float4x4& mat, const float4& vec)
 	{
-		matrix t = ::camy::transpose(load(*this));
-		::camy::store(*this, t);
-		return *this;
-	}
-
-	float4x4 & float4x4::to_shader_order()
-	{
-#			if defined(camy_matrix_shader_order_row_major)
-		// Nothing to do here
-#			elif defined(camy_matrix_shader_order_col_major)
-		transpose();
-#			else
-#			error No shader matrix order specified
-#			endif
-
-		return *this;
+		return float4(
+			dot(mat.rows[0], vec),
+			dot(mat.rows[1], vec),
+			dot(mat.rows[2], vec),
+			dot(mat.rows[3], vec)
+		);
 	}
 }

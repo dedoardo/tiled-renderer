@@ -6,7 +6,7 @@
 * of the MIT license.  See the LICENSE file for details.
 */
 // Header
-#include <camy/core/error.hpp>
+#include <camy/core/os/log.hpp>
 
 // Windows
 #include <Windows.h>
@@ -15,18 +15,21 @@ namespace camy
 {
 	namespace hidden
 	{
-		std::ostream* g_output_stream{ &std::cout };
+		std::ostream* g_output_stream = &std::cout;
 	}
 
-	std::ostream* get_output_stream()
+	namespace API
 	{
-		return hidden::g_output_stream;
-	}
+		std::ostream* get_output_stream()
+		{
+			return hidden::g_output_stream;
+		}
 
-	void set_output_stream(std::ostream* output_stream)
-	{
-		hidden::g_output_stream = output_stream;
+		void set_output_stream(std::ostream* output_stream)
+		{
+			hidden::g_output_stream = output_stream;
 
+		}
 	}
 
 	CONSOLE_SCREEN_BUFFER_INFO last_sbi;

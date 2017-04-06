@@ -10,15 +10,11 @@
 
 // camy
 #include <camy/graphics/render_context.hpp>
+#include <camy/core/os/log.hpp>
 
 namespace camy
 {
-	Program::Program() :
-		m_input_signature(kInvalidHResource),
-		m_shaders{ kInvalidHResource, kInvalidHResource, kInvalidHResource, kInvalidHResource }
-	{
-
-	}
+	Program::Program() { } 
 
 	Program::~Program()
 	{
@@ -50,9 +46,9 @@ namespace camy
 			shader_name.append("_vertex");
 
 			HResource shader = API::rc().create_shader(shader_desc, shader_name.str());
-			if (shader == kInvalidHResource)
+			if (shader.is_invalid())
 			{
-				camy_error("Failed to create vertex shader for program: ", shader_name);
+				cl_create_err("Vertex Shader", name);
 				unload();
 				return false;
 			}
@@ -69,9 +65,9 @@ namespace camy
 			shader_name.append("_pixel");
 
 			HResource shader = API::rc().create_shader(shader_desc, shader_name.str());
-			if (shader == kInvalidHResource)
+			if (shader.is_invalid())
 			{
-				camy_error("Failed to create pixel shader for program: ", shader_name);
+				cl_create_err("Pixel Shader", name);
 				unload();
 				return false;
 			}
@@ -81,7 +77,7 @@ namespace camy
 		if (reflect(ShaderDesc::Type::Vertex, desc.vertex_src, name) == false ||
 			reflect(ShaderDesc::Type::Pixel, desc.pixel_src, name) == false)
 		{
-			camy_error("Failed to reflect shaders");
+			cl_internal_err("Failed to reflect shaders");
 			unload();
 			return false;
 		}
@@ -110,8 +106,8 @@ namespace camy
 		uint64* idx = m_variables[(rsize)type][name];
 		if (idx == nullptr || *idx >= m_bindings[(rsize)type].count())
 		{
-			camy_error("Failed to find shader variable: ", name);
-			return ShaderVariable::invalid();
+			cl_internal_err("");
+			return ShaderVariable::make_invalid();
 		}
 
 		return m_bindings[(rsize)type][(rsize)*idx].var;

@@ -13,6 +13,7 @@
 // camy
 #include <camy/graphics/render_context.hpp>
 #include <camy/core/memory/alloc.hpp>
+#include <camy/core/math/ops.hpp>
 
 // win32
 #include <Windows.h>
@@ -69,8 +70,8 @@ namespace camy
         {
             if (!RegisterClassExA(&wc))
             {
-                camy_error("Failed to Win32::RegisterClassEx");
-                return false;
+				cl_system_err("Win32::RegisterClassEx", GetLastError(), "D3D11 Window Class");
+				return false;
             }
         }
 
@@ -85,7 +86,7 @@ namespace camy
             CW_USEDEFAULT, CW_USEDEFAULT, info.window.width, info.window.height, NULL, NULL, cur_instance, NULL);
         if (ret_handle == NULL)
         {
-            camy_error("Failed to Win32::CreateWindow with error: ", GetLastError());
+			cl_system_err("Win32::CreateWindow", GetLastError(), "D3D11 Window");
             return nullptr;
         }
 
@@ -119,13 +120,13 @@ namespace camy
 			g_render_context = tallocate<RenderContext>(camy_loc, 16);
 			if (g_render_context == nullptr)
 			{
-				camy_error("Failed to startup camy");
+				cl_internal_err("Failed to allocate RenderContext");
 				return false;
 			}
 
 			if (!g_render_context->init(info, g_runtime_info))
 			{
-				camy_error("Failed to startup camy RenderContext");
+				cl_internal_err("Failed to initialize D3D11RenderContext");
 				tdeallocate(g_render_context);
 				return false;
 			}
@@ -139,9 +140,7 @@ namespace camy
 				" \\______/__/     \\__\\ |__|  |__|     |__|\n";
 
 
-			camy_info("Successfully started up camy, enjoy");
-			camy_info_stripped(camy);
-			camy_info_stripped("---------------------------------------------");
+			cl_info("Successfully started up camy, enjoy");
 			return true;
 		}
 
@@ -149,7 +148,7 @@ namespace camy
 		{
 			if (g_render_context == nullptr)
 			{
-				camy_warning("Shutting down non-initialized camy");
+				cl_warn("Shutting down non-initialized camy");
 				return;
 			}
 
@@ -190,9 +189,16 @@ namespace camy
 				return 16; // 4 * 32-bit components
 			case Query::MinConstantsPerUpdate:
 				return 16; // Minimum 16 constants per range
+			case Query::ShaderMatrixOrder:
+				return (rsize)ShaderMatrixOrder::ColMajor;
 			default:
 				return -1;
 			}
+		}
+
+		float4x4 to_shader_order(const float4x4& mat)
+		{
+			return transpose(mat);
 		}
 	}
 }

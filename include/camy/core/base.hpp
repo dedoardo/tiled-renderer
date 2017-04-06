@@ -43,6 +43,19 @@
 #endif
 
 /*
+	OS:
+	camy_os_windows
+	camy_os_linux
+camy_os_macosx
+*/
+#if defined(_WIN32)
+#	define camy_os_windows
+#else
+#error Your OS is not currently supported
+#endif
+
+
+/*
 	Defaulting to col-major
 */
 #if !defined(camy_matrix_shader_order_row_major) && !defined(camy_matrix_shader_order_col_major)
@@ -135,4 +148,4 @@ namespace camy
 	}
 }
 
-#include "error.hpp"
+#include "os/log.hpp"

@@ -97,12 +97,18 @@ namespace camy
 
     struct Parameter
     {
+		struct ParameterResource
+		{
+			HResource handle;
+			uint16	  view;
+		};
+
         union
         {
-            const void*     data;
-            HResource handle;
+			const void*			data;
+			ParameterResource	res;
         };
-        ShaderVariable var;
+		ShaderVariable var = ShaderVariable::invalid();
     };
     static_assert(sizeof(Parameter) == 16, "Parameter not packed as expected. This assert can be removed even though it might be worth investigating the error");
 
@@ -126,7 +132,7 @@ namespace camy
         CacheTag   cache_tag = kInvalidCacheTag;
 
 		void set(rsize slot, ShaderVariable var, void* data);
-		void set(rsize slot, ShaderVariable var, HResource handle);
+		void set(rsize slot, ShaderVariable var, HResource handle, uint16 view = 0);
 	};
     static_assert(sizeof(ParameterBlock) == 16, "ParameterBlock not packed as expected. This assert can be removed even though it might be worth investigating the error");
 
@@ -146,8 +152,8 @@ namespace camy
         HResource pixel_shader = kInvalidHResource;
         HResource geometry_shader = kInvalidHResource;
         HResource input_signature = kInvalidHResource;
-        HParameterBlock parameters[kMaxParameterBlocks] { kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock };
-        DrawCall draw_call;
+        HParameterBlock parameters[kMaxParameterBlocks] { kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock};
+		DrawCall draw_call;
     };
 #pragma pack(pop)
     static_assert(sizeof(RenderItem) == 64, "RenderItem not packed as expected. This assert can be removed even though it might be worth inverstigating the error");

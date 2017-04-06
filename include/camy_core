@@ -8,11 +8,10 @@
 #pragma once
 
 #include <camy/core/base.hpp>
-#include <camy/core/error.hpp>
 #include <camy/core/utils.hpp>
 
 #include <camy/core/math/types.hpp>
-#include <camy/core/math/simd.hpp>
+#include <camy/core/math/ops.hpp>
 #include <camy/core/math/colors.hpp>
 
 #include <camy/core/memory/alloc.hpp>
@@ -30,3 +29,5 @@
 #include <camy/core/memory/vector.hpp>
 
 #include <camy/core/os/time.hpp>
+#include <camy/core/os/file.hpp>
+#include <camy/core/os/log.hpp>

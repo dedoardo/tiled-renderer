@@ -45,8 +45,21 @@ namespace camy
     using TrackableSampler = TrackableResource<Sampler>;
     using TrackableDepthStencilState = TrackableResource<DepthStencilState>;
 
-    using HResource = uint16;
-    const HResource kInvalidHResource = (HResource)-1;
+#pragma pack(push, 1)
+	//! Handle to a resource, wrapped in a struct w/ cast and non-explicit constructur
+	//! in order to provide a similar interface to ShaderVariable.
+	struct camy_api HResource
+	{
+		uint16 _v = (uint16)-1;
+
+		HResource(uint16 val = -1) { _v = val; }
+		operator uint16() { return _v; }
+		bool is_valid()const { return _v != (uint16)-1; }
+		bool is_invalid()const { return _v == (uint16)-1; }
+		
+		constexpr static uint16 make_invalid() { return (uint16)-1; }
+	};
+#pragma pack(pop)
 
     class camy_api ResourceManager final
     {

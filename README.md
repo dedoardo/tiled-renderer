@@ -1,8 +1,9 @@
 **NOTE**   
-This is the dev-branch for the 0.9 version, still heavily working on it
+This is the dev-branch for the 0.9 version, still heavily working on it.
+Mostly working on D3D11.1, working on OGL in the off-time
 
 # camy
-![Preview](https://github.com/sparkon/camy/blob/master/last_sample.png?raw=true)
+![Preview](https://github.com/sparkon/camy/blob/dev-0.9/last_sample.png?raw=true)
 Cross-platform command-list oriented rendering framework to build a renderer upon.
 It is not supposed to be used on it's own, it's still a lowish level API.
 (For different renderer implementations see github.com/sparkon/sparker).

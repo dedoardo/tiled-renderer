@@ -33,7 +33,7 @@ void safe_release_com(ComType*& ptr)
 
 void set_debug_name(ID3D11DeviceChild* child, const camy::char8* name)
 {
-	child->SetPrivateData(WKPDID_D3DDebugObjectName, ::camy::strlen(name), name);
+	child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)::strlen(name), name);
 }
 
 namespace camy
@@ -46,14 +46,14 @@ namespace camy
 	{
 		destroy();
 
-		camy_info("Creating RenderContext..");
-		camy_info("Num concurrent contexts: ", kMaxConcurrentContexts);
+		cl_info("Creating RenderContext..");
+		cl_info("Num concurrent contexts: ", kMaxConcurrentContexts);
 
 		HRESULT result = S_OK;
 		result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_data.factory);
 		if (FAILED(result))
 		{
-			camy_error("Failed to create IDXGIFactory: ", result);
+			cl_system_err("DXGICreateFactory ", result, "");
 			return false;
 		}
 
@@ -97,7 +97,7 @@ namespace camy
 			current_adapter->Release();
 		}
 		else
-			camy_warning("Failed to create adapter on device: ", info_in.preferred_device);
+			cl_warn("Failed to create adapter on device: ", info_in.preferred_device);
 
 		uint32 adapter_idx = 0;
 		while (m_data.factory->EnumAdapters(adapter_idx, &current_adapter) != DXGI_ERROR_NOT_FOUND)
@@ -139,7 +139,7 @@ namespace camy
             ++adapter_idx;
 		}
 
-		camy_error("Failed to find valid D3D11.1 Capable context");
+		cl_internal_err("Failed to find valid D3D11.1 Capable context");
 		return false;
 
     success:
@@ -159,16 +159,16 @@ namespace camy
         UINT quality = 0;
         if (info_in.msaa > 1)
         {
-            UINT quality;
-            m_data.device->CheckMultisampleQualityLevels(sc_desc.BufferDesc.Format, info_in.msaa, &quality);
-            if (quality == 0)
+            UINT rquality;
+            m_data.device->CheckMultisampleQualityLevels(sc_desc.BufferDesc.Format, info_in.msaa, &rquality);
+            if (rquality == 0)
             {
-                camy_warning("MSAA Level: ", info_in.msaa, " not supported, falling back to 1x");
+                cl_warn("MSAA Level: ", info_in.msaa, " not supported, falling back to 1x");
             }
             else
             {
-                sc_desc.SampleDesc.Count = info_in.msaa;
-                sc_desc.SampleDesc.Quality = quality - 1;
+                msaa = info_in.msaa;
+                quality = rquality - 1;
             }
         }
 
@@ -186,8 +186,8 @@ namespace camy
         if (FAILED(result))
         {
             destroy();
-            camy_error("Failed to create swap chain");
-            return false;
+			cl_system_err("IDXGIFactory::CreateSwapChain", result, "");
+			return false;
         }
 
         Surface backbuffer;
@@ -195,7 +195,7 @@ namespace camy
         if (FAILED(result))
         {
             destroy();
-            camy_error("Failed to obtain backbuffer");
+			cl_system_err("IDXGISwapChain::GetBuffer", result, "");
             return false;
         }
 
@@ -205,12 +205,13 @@ namespace camy
         if (FAILED(result))
         {
             destroy();
-            camy_error("Failed to create backbuffer rendertargetview");
+			cl_system_err("ID3D11Device::CreateRenderTargetView", result, "");
             return false;
         }
 
         backbuffer.desc.width = sc_desc.BufferDesc.Width;
         backbuffer.desc.height = sc_desc.BufferDesc.Height;
+		backbuffer.desc.msaa_levels = sc_desc.SampleDesc.Count;
 
         // Finally registering backbuffer
         m_backbuffer_handle = m_resource_manager.allocate<Surface>(camy_loc, "camy default window backbuffer");
@@ -239,10 +240,10 @@ namespace camy
 
 		info_out.dedicated_memory = (uint32)adapter_desc.DedicatedVideoMemory / (1024*1024);
 
-		camy_info("Successfully created RenderContext: ");
-		camy_info("Backend: ", info_out.backend);
-		camy_info("Adapter: ", info_out.gpu_name);
-		camy_info("VRAM: ", info_out.dedicated_memory, "MB");
+		cl_info("Created RenderContext: ");
+		cl_info("Backend: ", info_out.backend);
+		cl_info("Adapter: ", info_out.gpu_name);
+		cl_info("VRAM: ", info_out.dedicated_memory, "MB");
 
 		return true;
 	}
@@ -259,7 +260,7 @@ namespace camy
 
 	bool RenderContext::aquire(ContextID ctx_id)
 	{
-		assert(m_data.is_valid());
+		camy_assert(m_data.is_valid());
 		
 		int avail = m_data.avail_contexts;
 		if (avail > 0 && m_data.avail_contexts.compare_exchange_strong(avail, avail - 1))
@@ -271,7 +272,7 @@ namespace camy
 				if (m_data.contexts[i].locked.compare_exchange_strong(des, true))
 				{
 					m_data.contexts[i].owner = std::this_thread::get_id();
-					camy_info("Successfully acquired concurrent RenderContext: ", ctx_id, " on thread: ", m_data.contexts[i].owner);
+					cl_info("Acquired concurrent RenderContext: ", ctx_id, " on thread: ", m_data.contexts[i].owner);
 					return true;
 				}
 			}
@@ -279,7 +280,7 @@ namespace camy
 			camy_assert(false);
 		}
 
-		camy_error("Failed to acquire context: ", ctx_id, " on thread: ", std::this_thread::get_id());
+		cl_internal_err("Failed to acquire context: ", ctx_id, " on thread: ", std::this_thread::get_id());
 		return false;
 	}
 
@@ -337,9 +338,9 @@ namespace camy
 
 	void RenderContext::clear_color(HResource target, const float4& color)
 	{
-		if (target == kInvalidHResource)
+		if (target.is_invalid())
 		{
-			camy_warning("Tried to clear invalid resource");
+			cl_warn("Tried to clear invalid resource");
 			return;
 		}
 
@@ -349,9 +350,9 @@ namespace camy
 	
 	void RenderContext::clear_depth(HResource target, float depth, sint32 stencil)
 	{
-		if (target == kInvalidHResource)
+		if (target.is_invalid())
 		{
-			camy_warning("Tried to clear invalid resource");
+			cl_warn("Tried to clear invalid resource");
 			return;
 		}
 
@@ -359,6 +360,16 @@ namespace camy
 		UINT flags = D3D11_CLEAR_DEPTH;  
 		flags |= stencil == -1 ? 0 : D3D11_CLEAR_STENCIL;
 		m_data.immediate_context->ClearDepthStencilView(surface.native.dsvs[0], flags, depth, (UINT)stencil);
+	}
+
+	void RenderContext::immediate_cbuffer_update(HResource handle, void* data)
+	{
+		ConstantBuffer& cbuffer = m_resource_manager.get<ConstantBuffer>(handle);
+
+		D3D11_MAPPED_SUBRESOURCE dest;
+		m_data.immediate_context->Map(cbuffer.native.buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dest);
+		memcpy(dest.pData, data, cbuffer.desc.size);
+		m_data.immediate_context->Unmap(cbuffer.native.buffer, 0);
 	}
 
     HResource RenderContext::get_backbuffer_handle() const
@@ -439,15 +450,16 @@ namespace camy
 			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 		default:
-			camy_warning("Failed to translate format to backend API, not supported: ", (uint32)format);
+			cl_warn("Failed to translate format to backend API, not supported: ", (uint32)format);
 			return DXGI_FORMAT_UNKNOWN;
 		}
 	}
 
-    HResource RenderContext::create_surface(const SurfaceDesc& desc, const char8* name)
+    HResource RenderContext::create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces, rsize num_subsurfaces, const char8* name)
     {
         camy_assert(m_data.is_valid());
 
+		HResource ret;
         ID3D11Texture2D* texture = nullptr;
         ID3D11ShaderResourceView* srv = nullptr;
 
@@ -457,53 +469,53 @@ namespace camy
 
         if (desc.type == SurfaceDesc::Type::Surface2D)
         {
-            if (desc.surface_count > 1)
-                camy_warning("Creating Surface2D with greater than 1 surface count, use Surface2DArray as type: ", name);
+            if (desc.array_count > 1)
+                cl_warn("Creating Surface2D with greater than 1 surface count, use Surface2DArray as type: ", name);
             ndesc.ArraySize = 1;
         }
         else if (desc.type == SurfaceDesc::Type::Surface2DArray)
         {
-            if (desc.surface_count == 1)
-                camy_warning("Creating Surface2DArray with 1 surface count, you might want to use Surface2D: ", name);
-            ndesc.ArraySize = desc.surface_count;
+            if (desc.array_count == 1)
+				cl_warn("Creating Surface2DArray with 1 surface count, you might want to use Surface2D: ", name);
+            ndesc.ArraySize = desc.array_count;
         }
         else if (desc.type == SurfaceDesc::Type::SurfaceCube)
         {
-            if (desc.surface_count > 1)
-                camy_warning("Creating SurfaceCube with greater than 1 surface count, use SurfaceCubeArray as type: ", name);
-            ndesc.ArraySize = 1;
+            if (desc.array_count > 1)
+				cl_warn("Creating SurfaceCube with greater than 1 surface count, use SurfaceCubeArray as type: ", name);
+            ndesc.ArraySize =       6;
         }
         else if (desc.type == SurfaceDesc::Type::SurfaceCubeArray)
         {
-            if (desc.surface_count == 1)
-                camy_warning("Creating SurfaceCubeArray with 1 surface count, you might want to use SurfaceCube: ", name);
-            ndesc.ArraySize = 6 * desc.surface_count;
+            if (desc.array_count == 1)
+				cl_warn("Creating SurfaceCubeArray with 1 surface count, you might want to use SurfaceCube: ", name);
+            ndesc.ArraySize = 6 * desc.array_count;
         }
 
-        UINT msaa = 1;
-        UINT quality = 0;
-        if (desc.msaa_levels > 1)
-        {
-            UINT quality;
-            m_data.device->CheckMultisampleQualityLevels(ndesc.Format, desc.msaa_levels, &quality);
-            if (quality == 0)
-            {
-                camy_warning("MSAA Level: ", desc.msaa_levels, " not supported, falling back to 1x");
-            }
-            else
-            {
-                ndesc.SampleDesc.Count = desc.msaa_levels;
-                ndesc.SampleDesc.Quality = quality - 1;
-            }
-        }
+		ndesc.Format = camy_to_dxgi(desc.pixel_format);
+		UINT msaa = 1;
+		UINT quality = 0;
+		if (desc.msaa_levels > 1)
+		{
+			UINT rquality;
+			m_data.device->CheckMultisampleQualityLevels(ndesc.Format, desc.msaa_levels, &rquality);
+			if (rquality == 0)
+			{
+				cl_warn("MSAA Level: ", desc.msaa_levels, " not supported, falling back to 1x");
+			}
+			else
+			{
+				msaa = desc.msaa_levels;
+				quality = rquality - 1;
+			}
+		}
 
         ndesc.SampleDesc.Count = msaa;
         ndesc.SampleDesc.Quality = quality;
 
         ndesc.MipLevels = desc.mip_levels;
-        ndesc.Format = camy_to_dxgi(desc.pixel_format);
-        ndesc.Usage = desc.is_dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
-        ndesc.CPUAccessFlags = desc.is_dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
+        ndesc.Usage = desc.usage == Usage::Dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+        ndesc.CPUAccessFlags = desc.usage == Usage::Dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
         ndesc.BindFlags = 0;
         if (desc.gpu_views & GPUView_ShaderResource)
             ndesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
@@ -520,81 +532,86 @@ namespace camy
             ndesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
 
-        uint32 num_subresources = 1;
+        uint32 num_subresources = ndesc.MipLevels;
         if (desc.type == SurfaceDesc::Type::SurfaceCube)
             num_subresources *= 6;
         if (desc.type == SurfaceDesc::Type::SurfaceCubeArray ||
             desc.type == SurfaceDesc::Type::Surface2DArray)
-            num_subresources *= desc.surface_count;
+            num_subresources *= desc.array_count;
 
+		bool upload_data = false;
         LinearVector<D3D11_SUBRESOURCE_DATA> sub_resources(num_subresources);
-        if (!desc.initial_subsurface_data.empty())
-        {
-            for (uint32 i = 0; i < num_subresources; ++i)
-            {
-                D3D11_SUBRESOURCE_DATA& next = sub_resources.next();
-                next.pSysMem = desc.initial_subsurface_data[i].data;
-                next.SysMemPitch = desc.initial_subsurface_data[i].pitch;
-                next.SysMemSlicePitch = 0;
-            }
-        }
+		if (subsurfaces != nullptr)
+		{
+			if (num_subsurfaces != num_subresources)
+			{
+				cl_invalid_arg_range(num_subsurfaces, num_subresources, num_subresources);
+			}
+			else
+			{
+				for (uint32 i = 0; i < num_subresources; ++i)
+				{
+					D3D11_SUBRESOURCE_DATA& next = sub_resources.next();
+					next.pSysMem = subsurfaces[i].data;
+					next.SysMemPitch = subsurfaces[i].pitch;
+					next.SysMemSlicePitch = 0;
+				}
+				upload_data = true;
+			}
+		}
 
         // Creating views
-        uint32 num_views = 1;
-        if (desc.type == SurfaceDesc::Type::Surface2DArray ||
-            desc.type == SurfaceDesc::Type::SurfaceCubeArray)
-        {
-            num_views *= desc.surface_count;
-        }
-
-        if (desc.type == SurfaceDesc::Type::SurfaceCube ||
-            desc.type == SurfaceDesc::Type::SurfaceCubeArray)
-        {
-            num_views *= 6;
-        }
+		uint32 num_views = 1; // 1 for Type::Surface2D
+		if (desc.type == SurfaceDesc::Type::Surface2DArray)
+			num_views = 1 + desc.array_count; // 1 for the whole resource + 1 for each element
+		else if (desc.type == SurfaceDesc::Type::SurfaceCube)
+			num_views = 1 + 6; // 1 for the whole resource + 1 for each face
+		else if (desc.type == SurfaceDesc::Type::SurfaceCubeArray)
+			num_views = 1 + 6 * desc.array_count; // TODO: check this
 
         ID3D11ShaderResourceView** srvs = nullptr;
         ID3D11RenderTargetView** rtvs = nullptr;
         ID3D11UnorderedAccessView** uavs = nullptr;
         ID3D11DepthStencilView** dsvs = nullptr;
 
-        HRESULT result = m_data.device->CreateTexture2D(&ndesc, desc.initial_subsurface_data.empty() ? nullptr : sub_resources.data(), &texture);
+        HRESULT result = m_data.device->CreateTexture2D(&ndesc, upload_data ? sub_resources.data() : nullptr, &texture);
         if (FAILED(result))
         {
-            camy_error("Failed to create Surface: ", name);
-            goto error;
+			cl_system_err("ID3D11Device::CreateTexture2D", result, name);
+			goto error;
         }
 
         if (desc.gpu_views & GPUView_ShaderResource)
         {
             srvs = tallocate_array<ID3D11ShaderResourceView*>(camy_loc, num_views, 16, nullptr);
 
+			// Whole resource
+			result = m_data.device->CreateShaderResourceView(texture, nullptr, &srvs[0]);
+			if (FAILED(result))
+			{
+				cl_system_err("ID3D11Device::CreateShaderResourceView", result, name);
+				goto error;
+			}
+
+			// Per element
             D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 			ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
             srv_desc.Format = camy_to_dxgi(desc.pixel_format_srv);
 
-            for (uint32 i = 0; i < num_views; ++i)
+            for (uint32 i = 0; i < num_views - 1; ++i)
             {
                 switch (desc.type)
                 {
                 case SurfaceDesc::Type::Surface2D:
-                    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-                    srv_desc.Texture2D.MipLevels = desc.mip_levels;
-                    srv_desc.Texture2D.MostDetailedMip = 0;
-
+					camy_assert("Check num_views generation");
                     break;
+				case SurfaceDesc::Type::SurfaceCube:
                 case SurfaceDesc::Type::Surface2DArray:
                     srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
                     srv_desc.Texture2DArray.MostDetailedMip = 0;
                     srv_desc.Texture2DArray.MipLevels = desc.mip_levels;
                     srv_desc.Texture2DArray.FirstArraySlice = i;
                     srv_desc.Texture2DArray.ArraySize = 1;
-
-                    break;
-                case SurfaceDesc::Type::SurfaceCube:
-                    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-                    srv_desc.TextureCube.MipLevels = desc.mip_levels;
-                    srv_desc.TextureCube.MostDetailedMip = 0;
 
                     break;
                 case SurfaceDesc::Type::SurfaceCubeArray:
@@ -605,11 +622,11 @@ namespace camy
                     srv_desc.TextureCubeArray.NumCubes = 1;
                     break;
                 }
-
-                if (FAILED(m_data.device->CreateShaderResourceView(texture, &srv_desc, &srvs[i])))
+				result = m_data.device->CreateShaderResourceView(texture, &srv_desc, &srvs[1 + i]);
+                if (FAILED(result))
                 {
-                    camy_error("Failed to create GPUView_ShaderResource for surface: ", name, ":", i);
-                    goto error;
+					cl_system_err("ID3D11Device::CreateShaderResourceView", result, name);
+					goto error;
                 }
             }
         }
@@ -617,12 +634,21 @@ namespace camy
         if (desc.gpu_views & GPUView_RenderTarget)
         {
             rtvs = tallocate_array<ID3D11RenderTargetView*>(camy_loc, num_views, 16, nullptr);
+			
+			// Whole resource
+			result = m_data.device->CreateRenderTargetView(texture, nullptr, &rtvs[0]);
+			if (FAILED(result))
+			{
+				cl_system_err("ID3D11Device::CreateRenderTargetView", result, name);
+				goto error;
+			}
 
+			// Per element
             D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
 			ZeroMemory(&rtv_desc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
             rtv_desc.Format = camy_to_dxgi(desc.pixel_format_rtv);
 
-            for (uint32 i = 0; i < num_views; ++i)
+            for (uint32 i = 0; i < num_views - 1; ++i)
             {
                 switch (desc.type)
                 {
@@ -630,21 +656,23 @@ namespace camy
                     rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
                     rtv_desc.Texture2D.MipSlice = 0;
                     break;
+				case SurfaceDesc::Type::SurfaceCubeArray:
                 case SurfaceDesc::Type::Surface2DArray:
                 case SurfaceDesc::Type::SurfaceCube:
-                case SurfaceDesc::Type::SurfaceCubeArray: // TODO: have yet to test surfacecubearray
+					// TODO: have yet to test surfacecubearray
                     rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
                     rtv_desc.Texture2DArray.MipSlice = 0;
                     rtv_desc.Texture2DArray.FirstArraySlice = i;
                     rtv_desc.Texture2DArray.ArraySize = 1;
                     break;
-                default:
+				default:
                     camy_assert(false);
                 }
 
-                if (FAILED(m_data.device->CreateRenderTargetView(texture, &rtv_desc, &rtvs[i])))
+				result = m_data.device->CreateRenderTargetView(texture, &rtv_desc, &rtvs[1 + i]);
+                if (FAILED(result))
                 {
-                    camy_error("Failed to create GPUView_RenderTarget for surface: ", name, ":", i);
+					cl_system_err("ID3D11Device::CreateRenderTargetView", result, name);
                     goto error;
                 }
             }
@@ -654,10 +682,19 @@ namespace camy
         {
             uavs = tallocate_array<ID3D11UnorderedAccessView*>(camy_loc, num_views, 16, nullptr);
 
+			// Whole resource
+			result = m_data.device->CreateUnorderedAccessView(texture, nullptr, &uavs[0]);
+			if (FAILED(result))
+			{
+				cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
+				goto error;
+			}
+
+			// Per element
             D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 			ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
             uav_desc.Format = camy_to_dxgi(desc.pixel_format_uav);
-            for (uint32 i = 0; i < num_views; ++i)
+            for (uint32 i = 0; i < num_views - 1; ++i)
             {
                 switch (desc.type)
                 {
@@ -674,9 +711,10 @@ namespace camy
                     uav_desc.Texture2DArray.ArraySize = 1;
                 }
 
-                if (FAILED(m_data.device->CreateUnorderedAccessView(texture, &uav_desc, &uavs[i])))
+				result = m_data.device->CreateUnorderedAccessView(texture, &uav_desc, &uavs[1 + i]);
+                if (FAILED(result))
                 {
-                    camy_error("Failed to create GPUView_UnorderedAccess for surface: ", name, ":", i);
+					cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
                     goto error;
                 }
             }
@@ -686,10 +724,19 @@ namespace camy
         {
             dsvs = tallocate_array<ID3D11DepthStencilView*>(camy_loc, num_views, 16, nullptr);
 
+			// Whole resource
+			result = m_data.device->CreateDepthStencilView(texture, nullptr, &dsvs[0]);
+			if (FAILED(result))
+			{
+				cl_system_err("ID3D11Device::CreateDepthStencilView", result, name);
+				goto error;
+			}
+
+			// Per element
 			D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
 			ZeroMemory(&dsv_desc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
             dsv_desc.Format = camy_to_dxgi(desc.pixel_format_uav);
-            for (uint32 i = 0; i < num_views; ++i)
+            for (uint32 i = 0; i < num_views - 1; ++i)
             {
                 switch (desc.type)
                 {
@@ -706,9 +753,10 @@ namespace camy
                     dsv_desc.Texture2DArray.ArraySize = 1;
                 }
 
-                if (FAILED(m_data.device->CreateDepthStencilView(texture, &dsv_desc, &dsvs[i])))
+				result = m_data.device->CreateDepthStencilView(texture, &dsv_desc, &dsvs[1 + i]);
+                if (FAILED(result))
                 {
-                    camy_error("Failed to create GPUView_DepthStencil for surface: ", name, ":", i);
+					cl_system_err("ID3D11Device::CreateDepthStencilView", result, name);
                     goto error;
                 }
             }
@@ -717,17 +765,18 @@ namespace camy
         if (name != nullptr)
             set_debug_name(texture, name);
 
-        HResource ret = m_resource_manager.allocate<Surface>(camy_loc, name);
+        ret = m_resource_manager.allocate<Surface>(camy_loc, name);
         Surface& res = m_resource_manager.get<Surface>(ret);
 
         res.desc = desc;
+		res.desc.msaa_levels = ndesc.SampleDesc.Count;
 		res.native.texture2d = texture;
         res.native.srvs = srvs;
         res.native.rtvs = rtvs;
         res.native.uavs = uavs;
         res.native.dsvs = dsvs;
 
-        camy_info("Successfully created Surface: ", name, "[", desc.width, "x", desc.height, "]");
+        cl_info("Created Surface: ", name, "[", desc.width, "x", desc.height, "]");
         return ret;
 
     error:
@@ -736,31 +785,22 @@ namespace camy
         tdeallocate(rtvs);
         tdeallocate(srvs);
         safe_release_com(texture);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
     HResource RenderContext::create_buffer(const BufferDesc& desc, const char8* name)
     {
         camy_assert(m_data.is_valid());
 
+		HResource ret;
         ID3D11Buffer* buffer = nullptr;
         ID3D11ShaderResourceView* srv = nullptr;
 		ID3D11UnorderedAccessView* uav = nullptr;
 
-        // Resource
-        if (!(desc.gpu_views & GPUView_ShaderResource))
-            camy_warning("Can't create a buffer not as shader resource");
-
         D3D11_BUFFER_DESC ndesc;
         ndesc.ByteWidth = desc.num_elements * desc.element_size;
         ndesc.Usage = D3D11_USAGE_DYNAMIC;
-        ndesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-        if (desc.gpu_views & GPUView_UnorderedAccess)
-        {
-            ndesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
-            ndesc.Usage = D3D11_USAGE_DEFAULT;
-        }
+		ndesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
         ndesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         ndesc.StructureByteStride = desc.element_size;
 
@@ -772,7 +812,7 @@ namespace camy
         HRESULT result = m_data.device->CreateBuffer(&ndesc, nullptr, &buffer);
         if (FAILED(result))
         {
-            camy_error("Failed to create buffer: ", result);
+			cl_system_err("ID3D11Device::CreateBuffer", result, name);
             goto error;
         }
 
@@ -786,31 +826,29 @@ namespace camy
         result = m_data.device->CreateShaderResourceView(buffer, &srv_desc, &srv);
         if (FAILED(result))
         {
-            camy_error("Failed to create GPUView_ShaderResource: ", result);
+			cl_system_err("ID3D11Device::CreateShaderResourceView", result, name);
             goto error;
         }
 
         // Unordered access view
-        if (desc.gpu_views & GPUView_UnorderedAccess)
-        {
-            D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-            uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-            uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-            uav_desc.Buffer.FirstElement = 0;
-            uav_desc.Buffer.NumElements = desc.num_elements;
-            uav_desc.Buffer.Flags = 0;
+        D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+        uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+        uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+        uav_desc.Buffer.FirstElement = 0;
+        uav_desc.Buffer.NumElements = desc.num_elements;
+        uav_desc.Buffer.Flags = 0;
 
-            result = m_data.device->CreateUnorderedAccessView(buffer, &uav_desc, &uav);
-            if (FAILED(result))
-            {
-                camy_error("Failed to create GPUView_UnorderedAccess: ", result);
-                goto error;
-            }
+        result = m_data.device->CreateUnorderedAccessView(buffer, &uav_desc, &uav);
+        if (FAILED(result))
+        {
+			cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
+            goto error;
         }
+
         if (name != nullptr)
             set_debug_name(buffer, name);
 
-        HResource ret = m_resource_manager.allocate<Buffer>(camy_loc, name);
+        ret = m_resource_manager.allocate<Buffer>(camy_loc, name);
         Buffer& res = m_resource_manager.get<Buffer>(ret);
 
         res.desc = desc;
@@ -818,108 +856,115 @@ namespace camy
         res.native.srv = srv;
         res.native.uav = uav;
 
-        camy_info("Successfully created buffer: ", name, "[", desc.element_size, "x", desc.num_elements, "]");
+        cl_info("Created Buffer: ", name, "[", desc.element_size, "x", desc.num_elements, "]");
         return ret;
+
     error:
         safe_release_com(uav);
         safe_release_com(srv);
         safe_release_com(buffer);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
-    HResource RenderContext::create_vertex_buffer(const VertexBufferDesc& desc, const char8* name)
+    HResource RenderContext::create_vertex_buffer(const VertexBufferDesc& desc, const void* data, const char8* name)
     {
         camy_assert(m_data.is_valid());
 
+		HResource ret;
         ID3D11Buffer* buffer = nullptr;
 
         D3D11_BUFFER_DESC ndesc;
         ndesc.ByteWidth = desc.num_elements * desc.element_size;
-        ndesc.Usage = desc.is_dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+        ndesc.Usage = desc.usage == Usage::Dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
         ndesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        ndesc.CPUAccessFlags = desc.is_dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
+        ndesc.CPUAccessFlags = desc.usage == Usage::Dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
         ndesc.MiscFlags = 0;
         ndesc.StructureByteStride = 0;
 
         D3D11_SUBRESOURCE_DATA vb_data;
-        vb_data.pSysMem = desc.initial_data;
+		vb_data.pSysMem = data;
         vb_data.SysMemPitch = vb_data.SysMemSlicePitch = 0;
 
-        HRESULT result = m_data.device->CreateBuffer(&ndesc, (desc.initial_data != nullptr) ? &vb_data : nullptr, &buffer);
+        HRESULT result = m_data.device->CreateBuffer(&ndesc, (data != nullptr) ? &vb_data : nullptr, &buffer);
         if (FAILED(result))
         {
-            camy_error("Faile to create buffer: ", name);
+			cl_system_err("ID3D11Device::CreateBuffer", result, name);
             goto error;
         }
 
         if (name == nullptr)
             set_debug_name(buffer, name);
 
-        HResource ret = m_resource_manager.allocate<VertexBuffer>(camy_loc, name);
+		ret = m_resource_manager.allocate<VertexBuffer>(camy_loc, name);
         VertexBuffer& res = m_resource_manager.get<VertexBuffer>(ret);
 
         res.desc = desc;
         res.native.buffer = buffer;
         res.native.stride = desc.element_size;
 
-        camy_info("Successfully created vertex buffer: ", name);
+        cl_info("Created VertexBuffer: ", name);
         return ret;
 
     error:
         safe_release_com(buffer);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
-    HResource RenderContext::create_index_buffer(const IndexBufferDesc& desc, const char8* name)
+    HResource RenderContext::create_index_buffer(const IndexBufferDesc& desc, const void* data, const char8* name)
     {
         camy_assert(m_data.is_valid());
 
+		HResource ret;
         ID3D11Buffer* buffer = nullptr;
+		rsize element_size = 2;
+		if (desc.extended32)
+			element_size = 4;
 
         D3D11_BUFFER_DESC ndesc;
-        ndesc.ByteWidth = desc.num_elements * desc.element_size;
-        ndesc.Usage = desc.is_dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+		ndesc.ByteWidth = desc.num_elements * element_size;
+        ndesc.Usage = desc.usage == Usage::Dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
         ndesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-        ndesc.CPUAccessFlags = desc.is_dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
+        ndesc.CPUAccessFlags = desc.usage == Usage::Dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
         ndesc.MiscFlags = 0;
         ndesc.StructureByteStride = 0;
 
         D3D11_SUBRESOURCE_DATA vb_data;
-        vb_data.pSysMem = desc.initial_data;
+        vb_data.pSysMem = data;
         vb_data.SysMemPitch = vb_data.SysMemSlicePitch = 0;
 
-        HRESULT result = m_data.device->CreateBuffer(&ndesc, (desc.initial_data != nullptr) ? &vb_data : nullptr, &buffer);
+        HRESULT result = m_data.device->CreateBuffer(&ndesc, (data != nullptr) ? &vb_data : nullptr, &buffer);
         if (FAILED(result))
         {
-            camy_error("Faile to create buffer: ", name);
+			cl_system_err("ID3D11Device::CreateBuffer", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(buffer, name);
 
-        HResource ret = m_resource_manager.allocate<IndexBuffer>(camy_loc, name);
+        ret = m_resource_manager.allocate<IndexBuffer>(camy_loc, name);
         IndexBuffer& res = m_resource_manager.get<IndexBuffer>(ret);
 
         res.desc = desc;
         res.native.buffer = buffer;
-        if (desc.element_size == 2)
+        if (!desc.extended32)
             res.native.dxgi_format = DXGI_FORMAT_R16_UINT;
         else
             res.native.dxgi_format = DXGI_FORMAT_R32_UINT;
 
-        camy_info("Successfully created index buffer: ", name, "[", desc.element_size, "x", desc.num_elements, "]");
+        cl_info("Created IndexBuffer: ", name, "[", element_size, "x", desc.num_elements, "]");
         return ret;
 
     error:
         safe_release_com(buffer);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
     HResource RenderContext::create_constant_buffer(const ConstantBufferDesc& desc, const char8* name)
     {
         camy_assert(m_data.is_valid());
 
+		HResource ret;
         ID3D11Buffer* buffer = nullptr;
 
         D3D11_BUFFER_DESC ndesc;
@@ -933,24 +978,24 @@ namespace camy
         HRESULT result = m_data.device->CreateBuffer(&ndesc, nullptr, &buffer);
         if (FAILED(result))
         {
-            camy_error("Failed to create constant buffer: ", name);
+			cl_system_err("ID3D11Device::CreateBuffer", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(buffer, name);
 
-        HResource ret = m_resource_manager.allocate<ConstantBuffer>(camy_loc, name);
+        ret = m_resource_manager.allocate<ConstantBuffer>(camy_loc, name);
         ConstantBuffer& res = m_resource_manager.get<ConstantBuffer>(ret);
         
         res.desc = desc;
         res.native.buffer = buffer;
 
-        camy_info("Successfully created ConstantBuffer: ", name, "[", desc.size, "]");
+        cl_info("Created ConstantBuffer: ", name, "[", desc.size, "]");
         return ret;
     error:
         safe_release_com(buffer);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 	
     void compile_from_camy(BlendStateDesc::Type blend_mode, D3D11_BLEND_DESC& bs_desc)
@@ -1030,28 +1075,30 @@ namespace camy
         D3D11_BLEND_DESC bs_desc;
         compile_from_camy(desc.type, bs_desc);
 
+		HResource ret;
         ID3D11BlendState* blend_state = nullptr;
-        if (FAILED(m_data.device->CreateBlendState(&bs_desc, &blend_state)))
+		HRESULT result = m_data.device->CreateBlendState(&bs_desc, &blend_state);
+        if (FAILED(result))
         {
-            camy_error("Failed to create BlendState: ", name);
+            cl_system_err("ID3D11Device::CreateBlendState", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(blend_state, name);
 
-        HResource ret = m_resource_manager.allocate<BlendState>(camy_loc, name);
+        ret = m_resource_manager.allocate<BlendState>(camy_loc, name);
         BlendState& res = m_resource_manager.get<BlendState>(ret);
 
         res.desc = desc;
         res.native.state = blend_state;
 
-        camy_info("Successfully created BlendState");
+        cl_info("Created BlendState");
         return ret;
 
     error:
         safe_release_com(blend_state);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
     HResource RenderContext::create_rasterizer_state(const RasterizerStateDesc& desc, const char8* name)
@@ -1070,34 +1117,38 @@ namespace camy
         rs_desc.MultisampleEnable = true;
         rs_desc.AntialiasedLineEnable = false;
 
+		HResource ret;
         ID3D11RasterizerState* rasterizer_state = nullptr;
-        if (FAILED(m_data.device->CreateRasterizerState(&rs_desc, &rasterizer_state)))
+		HRESULT result = m_data.device->CreateRasterizerState(&rs_desc, &rasterizer_state);
+		if (FAILED(result))
         {
-            camy_error("Failed to create RasterizerState: ", name);
+			cl_system_err("ID3D11Device::CreateRasterizerState", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(rasterizer_state, name);
 
-        HResource ret = m_resource_manager.allocate<RasterizerState>(camy_loc, name);
+        ret = m_resource_manager.allocate<RasterizerState>(camy_loc, name);
         RasterizerState& res = m_resource_manager.get<RasterizerState>(ret);
 
         res.desc = desc;
         res.native.state = rasterizer_state;
 
-        camy_info("Successfully created RasterizerState: ", name);
+        cl_info("Created RasterizerState: ", name);
         return ret;
 
     error:
         safe_release_com(rasterizer_state);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
     DXGI_FORMAT camy_to_d3d11(InputElement::Type type)
     {
         switch (type)
         {
+		case InputElement::Type::UInt:
+			return DXGI_FORMAT_R32_UINT;
 		case InputElement::Type::Float2:
 			return DXGI_FORMAT_R32G32_FLOAT;
         case InputElement::Type::Float3:
@@ -1112,6 +1163,10 @@ namespace camy
     HResource RenderContext::create_input_signature(const InputSignatureDesc& desc, const char8* name)
     {
         camy_assert(m_data.device != nullptr);
+
+		// Perfectly fine, just hardware generated values
+		if (desc.num_elements == 0)
+			return HResource::make_invalid();
 
         LinearVector<D3D11_INPUT_ELEMENT_DESC> input_elements(desc.num_elements);
         for (unsigned int i = 0; i < desc.num_elements; ++i)
@@ -1135,28 +1190,30 @@ namespace camy
             }
         }
 
+		HResource ret;
         ID3D11InputLayout* input_layout = nullptr;
-        if (FAILED(m_data.device->CreateInputLayout(input_elements.data(), desc.num_elements, desc.bytecode.data, desc.bytecode.byte_size, &input_layout)))
+		HRESULT result = m_data.device->CreateInputLayout(input_elements.data(), desc.num_elements, desc.bytecode.data, desc.bytecode.byte_size, &input_layout);
+        if (FAILED(result))
         {
-            camy_error("Failed to create InputSignature: ", name);
+            cl_system_err("ID3D11Device::CreateInputLayout", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(input_layout, name);
 
-        HResource ret = m_resource_manager.allocate<InputSignature>(camy_loc, name);
+        ret = m_resource_manager.allocate<InputSignature>(camy_loc, name);
         InputSignature& res = m_resource_manager.get<InputSignature>(ret);
 
         res.desc = desc;
         res.native.input_layout = input_layout;
 
-        camy_info("Successfully create InputSignature: ", name);
+        cl_info("create InputSignature: ", name);
         return ret;
 
     error:
         safe_release_com(input_layout);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
     D3D11_TEXTURE_ADDRESS_MODE camy_to_d3d11(SamplerDesc::Address address_mode)
@@ -1223,28 +1280,30 @@ namespace camy
             s_desc.BorderColor[2] =
             s_desc.BorderColor[3] = 1.f;
 
+		HResource ret;
         ID3D11SamplerState* sampler;
-        if (FAILED(m_data.device->CreateSamplerState(&s_desc, &sampler)))
+		HRESULT result = m_data.device->CreateSamplerState(&s_desc, &sampler);
+        if (FAILED(result))
         {
-            camy_error("Failed to create Sampler: ", name);
+			cl_system_err("ID3D11Device::CreateSamplerState", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(sampler, name);
 
-        HResource ret = m_resource_manager.allocate<Sampler>(camy_loc, name);
+        ret = m_resource_manager.allocate<Sampler>(camy_loc, name);
         Sampler& res = m_resource_manager.get<Sampler>(ret);
 
         res.desc = desc;
         res.native.sampler = sampler;
 
-        camy_info("Successfully created Sampler: ", name);
+        cl_info("Created Sampler: ", name);
         return ret;
 
     error:
         sampler = nullptr;
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
 	D3D11_COMPARISON_FUNC camy_to_d3d11(DepthStencilStateDesc::DepthFunc func)
@@ -1269,34 +1328,37 @@ namespace camy
 		dss_desc.DepthFunc = camy_to_d3d11(desc.depth_func);
         dss_desc.StencilEnable = false;
 
+		HResource ret;
         ID3D11DepthStencilState* depth_stencil_state = nullptr;
-        if (FAILED(m_data.device->CreateDepthStencilState(&dss_desc, &depth_stencil_state)))
+		HRESULT result = m_data.device->CreateDepthStencilState(&dss_desc, &depth_stencil_state);
+		if (FAILED(result))
         {
-            camy_error("Failed to create DepthStencilState: ", name);
+			cl_system_err("ID3D11Device::CreateDepthStencilState", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(depth_stencil_state, name);
 
-        HResource ret = m_resource_manager.allocate<DepthStencilState>(camy_loc, name);
+        ret = m_resource_manager.allocate<DepthStencilState>(camy_loc, name);
         DepthStencilState& res = m_resource_manager.get<DepthStencilState>(ret);
 
         res.desc = desc;
         res.native.state = depth_stencil_state;
 
-        camy_info("Successfully created DepthStencilState: ", name);
+        cl_info("Created DepthStencilState: ", name);
         return ret;
 
     error:
         safe_release_com(depth_stencil_state);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
     HResource RenderContext::create_shader(const ShaderDesc& desc, const char8* name)
     {
         camy_assert(m_data.device != nullptr);
 
+		HResource ret;
         ID3D11DeviceChild* shader = nullptr;
         HRESULT result = S_FALSE;
         switch (desc.type)
@@ -1319,30 +1381,30 @@ namespace camy
 
         if (FAILED(result))
         {
-            camy_error("Failed to create Shader: ", name);
+            cl_system_err("ID3D11Device::Create***Shader", result, name);
             goto error;
         }
 
         if (name != nullptr)
             set_debug_name(shader, name);
 
-        HResource ret = m_resource_manager.allocate<Shader>(camy_loc, name);
+        ret = m_resource_manager.allocate<Shader>(camy_loc, name);
         Shader& res = m_resource_manager.get<Shader>(ret);
 
         res.desc = desc;
         res.native.shader = shader;
 
-        camy_info("Successfully created Shader: ", name);
+        cl_info("Created Shader: ", name);
         return ret;
 
     error:
         safe_release_com(shader);
-        return kInvalidHResource;
+        return HResource::make_invalid();
     }
 
 	void RenderContext::destroy_surface(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         Surface& surface = m_resource_manager.get<Surface>(handle);
 
 		if (surface.native.srvs != nullptr)
@@ -1374,7 +1436,7 @@ namespace camy
 
 	void RenderContext::destroy_buffer(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         Buffer& buffer = m_resource_manager.get<Buffer>(handle);
 
 		safe_release_com(buffer.native.uav);
@@ -1386,7 +1448,7 @@ namespace camy
 
 	void RenderContext::destroy_vertex_buffer(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         VertexBuffer& vertex_buffer = m_resource_manager.get<VertexBuffer>(handle);
 
 		safe_release_com(vertex_buffer.native.buffer);
@@ -1396,7 +1458,7 @@ namespace camy
 
 	void RenderContext::destroy_index_buffer(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         IndexBuffer& index_buffer = m_resource_manager.get<IndexBuffer>(handle);
 
 		safe_release_com(index_buffer.native.buffer);
@@ -1406,7 +1468,7 @@ namespace camy
 
 	void RenderContext::destroy_constant_buffer(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         ConstantBuffer& constant_buffer = m_resource_manager.get<ConstantBuffer>(handle);
         
         safe_release_com(constant_buffer.native.buffer);
@@ -1416,7 +1478,7 @@ namespace camy
 
 	void RenderContext::destroy_blend_state(HResource handle)
     {
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         BlendState& blend_state = m_resource_manager.get<BlendState>(handle);
 
 		safe_release_com(blend_state.native.state);
@@ -1426,7 +1488,7 @@ namespace camy
 
 	void RenderContext::destroy_rasterizer_state(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         RasterizerState& rasterizer_state = m_resource_manager.get<RasterizerState>(handle);
 
 		safe_release_com(rasterizer_state.native.state);
@@ -1436,7 +1498,7 @@ namespace camy
 
 	void RenderContext::destroy_input_signature(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         InputSignature& input_signature = m_resource_manager.get<InputSignature>(handle);
 
 		safe_release_com(input_signature.native.input_layout);
@@ -1446,7 +1508,7 @@ namespace camy
 
 	void RenderContext::destroy_sampler(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         Sampler& sampler = m_resource_manager.get<Sampler>(handle);
 
 		safe_release_com(sampler.native.sampler);
@@ -1456,7 +1518,7 @@ namespace camy
 
 	void RenderContext::destroy_depth_stencil_state(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         DepthStencilState& depth_stencil_state = m_resource_manager.get<DepthStencilState>(handle);
 
 		safe_release_com(depth_stencil_state.native.state);
@@ -1466,7 +1528,7 @@ namespace camy
 
 	void RenderContext::destroy_shader(HResource handle)
 	{
-        if (handle == kInvalidHResource) return;
+        if (handle.is_invalid()) return;
         Shader& shader = m_resource_manager.get<Shader>(handle);
 
 		safe_release_com(shader.native.shader);
@@ -1476,67 +1538,67 @@ namespace camy
 
     Surface& RenderContext::get_surface(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<Surface>(handle);
     }
 
     Buffer& RenderContext::get_buffer(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<Buffer>(handle);
     }
 
     VertexBuffer& RenderContext::get_vertex_buffer(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<VertexBuffer>(handle);
     }
 
     IndexBuffer& RenderContext::get_index_buffer(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<IndexBuffer>(handle);
     }
 
     ConstantBuffer& RenderContext::get_constant_buffer(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<ConstantBuffer>(handle);
     }
 
     BlendState& RenderContext::get_blend_state(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<BlendState>(handle);
     }
 
     RasterizerState& RenderContext::get_rasterizer_state(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<RasterizerState>(handle);
     }
 
     InputSignature& RenderContext::get_input_signature(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<InputSignature>(handle);
     }
 
     Sampler& RenderContext::get_sampler(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<Sampler>(handle);
     }
 
     DepthStencilState& RenderContext::get_depth_stencil_state(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<DepthStencilState>(handle);
     }
 
     Shader& RenderContext::get_shader(HResource handle)
     {
-        camy_assert(handle != kInvalidHResource);
+        camy_assert(handle.is_valid());
         return m_resource_manager.get<Shader>(handle);
     }
 }

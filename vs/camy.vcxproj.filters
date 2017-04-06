@@ -65,16 +65,10 @@
     <ClInclude Include="..\include\camy\core\base.hpp">
       <Filter>include\camy\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\camy\core\error.hpp">
-      <Filter>include\camy\core</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\camy\core\utils.hpp">
       <Filter>include\camy\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\camy\core\math\colors.hpp">
-      <Filter>include\camy\core\math</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\camy\core\math\simd.hpp">
       <Filter>include\camy\core\math</Filter>
     </ClInclude>
     <ClInclude Include="..\include\camy\core\math\types.hpp">
@@ -119,9 +113,6 @@
     <ClInclude Include="..\include\camy\core\memory\vector.hpp">
       <Filter>include\camy\core\memory</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\camy\core\os\time.hpp">
-      <Filter>include\camy\core\os</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\camy\graphics\base.hpp">
       <Filter>include\camy\graphics</Filter>
     </ClInclude>
@@ -164,17 +155,20 @@
     <ClInclude Include="..\include\camy\graphics\opengl4\opengl4_impl_base.hpp">
       <Filter>include\camy\graphics\opengl4</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\camy\core\math\ops.hpp">
+      <Filter>include\camy\core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\camy\core\os\time.hpp">
+      <Filter>include\camy\core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\camy\core\os\file.hpp">
+      <Filter>include\camy\core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\camy\core\os\log.hpp">
+      <Filter>include\camy\core\os</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\core\error.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\utils.cpp">
-      <Filter>src\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\math\simd.cpp">
-      <Filter>src\core\math</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\math\types.cpp">
       <Filter>src\core\math</Filter>
     </ClCompile>
@@ -225,6 +219,15 @@
     </ClCompile>
     <ClCompile Include="..\src\graphics\opengl4\opengl4_program.cpp">
       <Filter>src\graphics\opengl4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\math\ops.cpp">
+      <Filter>src\core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\os\file.cpp">
+      <Filter>src\core\os</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\os\log.cpp">
+      <Filter>src\core\os</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -38,7 +38,7 @@ namespace camy
         void set_vertex_shader(HResource handle);
         void set_geometry_shader(HResource handle);
         void set_pixel_shader(HResource handle);
-        void set_targets(const HResource* render_targets, rsize num_render_targets, HResource depth_buffer);
+        void set_targets(const HResource* render_targets, rsize num_render_targets, HResource depth_buffer, uint8* views = nullptr);
 
         void set_primitive_topology();
 		void set_rasterizer_state(HResource handle);
@@ -50,8 +50,9 @@ namespace camy
         void set_vertex_buffers(rsize slot, const HResource* handles, rsize num_handles);
         void set_index_buffer(HResource handle);
 
-        void set_parameter(ShaderVariable var, const void* data, HResource handle, rsize offset);
-        void set_parameter(ShaderVariable var, HResource handle);
+		void set_cbuffer(ShaderVariable var, HResource handle);
+        void set_cbuffer_off(ShaderVariable var, HResource handle, rsize offset);
+        void set_parameter(ShaderVariable var, HResource handle, uint8 view = 0);
 
         void draw(uint32 vertex_count, uint32 vertex_offset);
         void draw_indexed(uint32 index_count, uint32 index_offset, uint32 vertex_offset);

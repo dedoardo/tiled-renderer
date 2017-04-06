@@ -124,7 +124,7 @@ namespace camy
             Entry& cur = m_buffer[(base + i) & (m_capacity - 1)];
             if (cur.key == key)
             {
-                camy_warning("Inserting item: ", key, " already present");
+                cl_warn("Inserting item: ", key, " already present");
                 return nullptr;
             }
 
@@ -162,7 +162,8 @@ namespace camy
                 return;
             }
         }
-        camy_warning("Failed to remove: ", key, " from Int2IntMap as it doesn't exist");
+		
+        cl_internal_err("Failed to remove: ", key, " from Int2IntMap as it doesn't exist");
     }
 
     void Int2IntMap::remove(const char8 * name)

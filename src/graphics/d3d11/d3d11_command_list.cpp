@@ -75,7 +75,7 @@ namespace camy
         _camy_cl_assert;
 
         ID3D11VertexShader* shader = nullptr;
-        if (handle != kInvalidHResource)
+        if (handle.is_valid())
             shader = (ID3D11VertexShader*)API::rc().get_shader(handle).native.shader;
 
         m_data.ctx->VSSetShader(shader, nullptr, 0);
@@ -86,7 +86,7 @@ namespace camy
         _camy_cl_assert;
     
         ID3D11GeometryShader* shader = nullptr;
-        if (handle != kInvalidHResource)
+        if (handle.is_valid())
             shader = (ID3D11GeometryShader*)API::rc().get_shader(handle).native.shader;
 
         m_data.ctx->GSSetShader(shader, nullptr, 0);
@@ -97,25 +97,29 @@ namespace camy
         _camy_cl_assert;
 
         ID3D11PixelShader* shader = nullptr;
-        if (handle != kInvalidHResource)
+        if (handle.is_valid())
             shader = (ID3D11PixelShader*)API::rc().get_shader(handle).native.shader;
 
         m_data.ctx->PSSetShader(shader, nullptr, 0);
     }
 
-    void CommandList::set_targets(const HResource* render_targets, rsize num_render_targets, HResource depth_buffer)
+    void CommandList::set_targets(const HResource* render_targets, rsize num_render_targets, HResource depth_buffer, uint8* views)
     {
+		uint8 default_views[kMaxBindableRenderTargets] = { 0, 0 };
+		if (views == nullptr)
+			views = default_views;
+
         _camy_cl_assert;
 
         ID3D11DepthStencilView* dsv = nullptr;
-        if (depth_buffer != kInvalidHResource)
+        if (depth_buffer.is_valid())
             dsv = API::rc().get_surface(depth_buffer).native.dsvs[0];
 
         ID3D11RenderTargetView* rtvs[kMaxBindableRenderTargets]{ nullptr, nullptr };
         for (rsize i = 0; i < num_render_targets; ++i)
         {
-            if (render_targets[i] != kInvalidHResource)
-                rtvs[i] = API::rc().get_surface(render_targets[i]).native.rtvs[0];
+            if (render_targets[i].is_valid())
+                rtvs[i] = API::rc().get_surface(render_targets[i]).native.rtvs[views[i]];
         }
 
         m_data.ctx->OMSetRenderTargets(num_render_targets, rtvs, dsv);
@@ -134,7 +138,7 @@ namespace camy
 
 		ID3D11RasterizerState* rss = nullptr;
 
-		if (handle != kInvalidHResource)
+		if (handle.is_valid())
 			rss = API::rc().get_rasterizer_state(handle).native.state;
 
 		m_data.ctx->RSSetState(rss);
@@ -146,7 +150,7 @@ namespace camy
 
 		ID3D11DepthStencilState* dss = nullptr;
 
-		if (handle != kInvalidHResource)
+		if (handle.is_valid())
 			dss = API::rc().get_depth_stencil_state(handle).native.state;
 
 		m_data.ctx->OMSetDepthStencilState(dss, 1); // TODO: Add stencil
@@ -158,7 +162,7 @@ namespace camy
 
         ID3D11InputLayout* layout = nullptr;
 
-        if (handle != kInvalidHResource)
+        if (handle.is_valid())
             layout = API::rc().get_input_signature(handle).native.input_layout;
 
         m_data.ctx->IASetInputLayout(layout);
@@ -187,7 +191,7 @@ namespace camy
 
         ID3D11Buffer* buffer = nullptr;
         UINT stride = 0;
-        if (handle != kInvalidHResource)
+        if (handle.is_valid())
         {
             VertexBuffer& vb = API::rc().get_vertex_buffer(handle);
             buffer = vb.native.buffer;
@@ -207,7 +211,7 @@ namespace camy
         UINT offsets[kMaxBindableVertexBuffers];
         for (rsize i = 0; i < num_handles; ++i)
         {
-            if (handles[i] != kInvalidHResource)
+            if (handles[i].is_valid())
             {
                 VertexBuffer& vertex_buffer = API::rc().get_vertex_buffer(handles[i]);
                 vbs[i] = vertex_buffer.native.buffer;
@@ -229,7 +233,7 @@ namespace camy
 
         ID3D11Buffer* buffer = nullptr;
         DXGI_FORMAT format = DXGI_FORMAT_R16_UINT;
-        if (handle != kInvalidHResource)
+        if (handle.is_valid())
         {
             IndexBuffer& ib = API::rc().get_index_buffer(handle);
             buffer = ib.native.buffer;
@@ -239,10 +243,27 @@ namespace camy
         m_data.ctx->IASetIndexBuffer(buffer, format, 0);
     }
 
-    void CommandList::set_parameter(ShaderVariable var, const void* data, HResource handle, rsize offset)
+	void CommandList::set_cbuffer(ShaderVariable var, HResource handle)
+	{
+		_camy_cl_assert;
+
+		ConstantBuffer& cbuffer = API::rc().get_constant_buffer(handle);
+
+		switch ((ShaderDesc::Type)var.shader())
+		{
+		case ShaderDesc::Type::Vertex:
+			m_data.ctx->VSSetConstantBuffers(var.slot(), 1, &cbuffer.native.buffer);
+		case ShaderDesc::Type::Pixel:
+			m_data.ctx->PSSetConstantBuffers(var.slot(), 1, &cbuffer.native.buffer);
+		case ShaderDesc::Type::Geometry:
+			m_data.ctx->GSSetConstantBuffers(var.slot(), 1, &cbuffer.native.buffer);
+		
+		}
+	}
+
+    void CommandList::set_cbuffer_off(ShaderVariable var, HResource handle, rsize offset)
     {
         _camy_cl_assert;
-        camy_assert(data != nullptr);
 
         ConstantBuffer& cbuffer = API::rc().get_constant_buffer(handle);
         camy_assert(cbuffer.desc.size % 16 == 0);
@@ -262,67 +283,67 @@ namespace camy
         }
     }
 
-    void _set_sampler_vs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_sampler_vs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->VSSetSamplers(var.slot(), 1, &API::rc().get_sampler(handle).native.sampler);
     }
 
-    void _set_surface_vs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_surface_vs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
-        ctx->VSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[0]);
+        ctx->VSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[view]);
     }
 
-    void _set_buffer_vs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_buffer_vs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->VSSetShaderResources(var.slot(), 1, &API::rc().get_buffer(handle).native.srv);
     }
 
-    void _set_sampler_gs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_sampler_gs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->GSSetSamplers(var.slot(), 1, &API::rc().get_sampler(handle).native.sampler);
     }
 
-    void _set_surface_gs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_surface_gs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
-        ctx->GSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[0]);
+        ctx->GSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[view]);
     }
 
-    void _set_buffer_gs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_buffer_gs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->GSSetShaderResources(var.slot(), 1, &API::rc().get_buffer(handle).native.srv);
     }
 
-    void _set_sampler_ps(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_sampler_ps(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->PSSetSamplers(var.slot(), 1, &API::rc().get_sampler(handle).native.sampler);
     }
 
-    void _set_surface_ps(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_surface_ps(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
-        ctx->PSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[0]);
+        ctx->PSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[view]);
     }
 
-    void _set_buffer_ps(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_buffer_ps(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->PSSetShaderResources(var.slot(), 1, &API::rc().get_buffer(handle).native.srv);
     }
 
-    void _set_sampler_cs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_sampler_cs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->CSSetSamplers(var.slot(), 1, &API::rc().get_sampler(handle).native.sampler);
     }
 
-    void _set_surface_cs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_surface_cs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
-        ctx->CSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[0]);
+        ctx->CSSetShaderResources(var.slot(), 1, &API::rc().get_surface(handle).native.srvs[view]);
     }
 
-    void _set_buffer_cs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle)
+    void _set_buffer_cs(ID3D11DeviceContext1* ctx, ShaderVariable var, HResource handle, uint8 view)
     {
         ctx->CSSetShaderResources(var.slot(), 1, &API::rc().get_buffer(handle).native.srv);
     }
 
-    void (*_set_ftable[])(ID3D11DeviceContext1*, ShaderVariable, HResource)
+    void (*_set_ftable[])(ID3D11DeviceContext1*, ShaderVariable, HResource, uint8)
     {
         _set_sampler_vs,
         _set_surface_vs,
@@ -341,12 +362,12 @@ namespace camy
         _set_buffer_cs
     };
 
-    void CommandList::set_parameter(ShaderVariable var, HResource handle)
+    void CommandList::set_parameter(ShaderVariable var, HResource handle, uint8 view)
     {
         _camy_cl_assert;
 
         rsize lookup_idx = (rsize)var.shader() * 3 + var.type();
-        _set_ftable[lookup_idx](m_data.ctx, var, handle);
+        _set_ftable[lookup_idx](m_data.ctx, var, handle, view);
     }
 
     void CommandList::draw(uint32 vertex_count, uint32 vertex_offset)

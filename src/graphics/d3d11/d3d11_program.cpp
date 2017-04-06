@@ -39,12 +39,11 @@ namespace camy
 			macros.append({ opts.defs[i].name, opts.defs[i].val });
 		macros.append({ nullptr, nullptr });
 
-		HRESULT res = D3DCompile(text.data, text.byte_size, opts.base_path,
+		HRESULT result = D3DCompile(text.data, text.byte_size, opts.base_path,
 			macros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, opts.entry_point, target, 0, 0, &bytecode, &err_msg);
-		if (FAILED(res))
+		if (FAILED(result))
 		{
-			camy_error("Failed to compile shader:");
-			camy_error_stripped((char8*)err_msg->GetBufferPointer());
+			cl_system_err("D3DCompile", result, "");
 			return false;
 		}
 		
@@ -72,7 +71,7 @@ namespace camy
 
 			if (cbuffer_desc.Type == D3D_CT_TBUFFER)
 			{
-				camy_warning("TextureBuffers are not supported yet");
+				cl_warn("TextureBuffers are not supported yet");
 				continue;
 			}
 
@@ -121,7 +120,7 @@ namespace camy
 			case D3D_SIT_TEXTURE:
 				type = BindType::Surface; break;
 			default:
-				camy_warning("Resource: ", bind_desc.Name, " has a not-recognized / not supported type, skipping"); continue;
+				cl_warn("Resource: ", bind_desc.Name, " has a not-recognized / not supported type, skipping"); continue;
 			}
 
 			Binding binding;
@@ -187,9 +186,10 @@ namespace camy
 			isd.num_elements = elements.count();
 
 			m_input_signature = API::rc().create_input_signature(isd, is_name.str());
-			if (m_input_signature == kInvalidHResource)
+			// If no elements (just hardware generated values) a invalid input layout is perfectly fine
+			if (isd.num_elements > 0 && m_input_signature.is_invalid())
 			{
-				camy_error("Failed to create InputSignature");
+				cl_create_err("Input Signature", is_name.str());
 				return false;
 			}
 		}

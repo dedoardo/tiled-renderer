@@ -126,7 +126,7 @@ namespace camy
     template <rsize kCharCount>
     inline bool StaticString<kCharCount>::equals(const char8* other)
     {
-        return ::camy::strcmp(m_buffer, other);
+		return strcmp(m_buffer, other) == 0;
     }
 
     template <rsize kCharCount>
@@ -143,8 +143,8 @@ namespace camy
     template <rsize kCharCount>
     inline void StaticString<kCharCount>::append(const char* str)
     {
-        rsize len = (rsize)::camy::strlen(str);
-        ::camy::strncpy(m_buffer + m_char_count, str, ::camy::min(kCharCount - m_char_count, len));
+        rsize len = (rsize)::camy::s_strlen(str);
+        strncpy(m_buffer + m_char_count, str, ::camy::min(kCharCount - m_char_count, len));
     }
 
     template <rsize kCharCount>
@@ -165,9 +165,9 @@ namespace camy
         {
             if (len == (rsize)-1) 
                 len = kCharCount;
-            ::camy::strncpy(m_buffer, src, ::camy::min(kCharCount, len));
+            ::strncpy(m_buffer, src, ::camy::min(kCharCount, len));
             m_buffer[kCharCount] = '\0';
-            m_char_count = ::camy::strlen(m_buffer);
+            m_char_count = ::camy::s_strlen(m_buffer);
         }
     }
 }
