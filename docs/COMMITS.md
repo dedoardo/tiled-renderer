@@ -44,4 +44,4 @@ Starting from 1/4/2017
 
 + ostream overloads for vectors
 ! Fixed bug in LinearPage::next_array() and PagedLinearVector::next_array()
-! Fixed bug in RenderContext::_compile() block caching now working
+! Fixed bug in RenderBucket::_compile() block caching now working
