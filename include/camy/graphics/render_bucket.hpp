@@ -19,6 +19,8 @@
 namespace camy
 {
 #pragma pack(push, 1)
+	//! Draw call
+	//! see make_***
 	struct camy_api DrawCall
 	{
 		enum class Type : uint16
@@ -80,7 +82,7 @@ namespace camy
 		Info info;
 	};
 
-	struct PipelineState
+	struct camy_api PipelineState
 	{
 		HResource render_targets[kMaxBindableRenderTargets];
 		HResource depth_buffer;
@@ -95,7 +97,7 @@ namespace camy
 #pragma pack(pop)
 	static_assert(sizeof(DrawCall) == 22, "Drawcall not packed as expected. This assert can be removed even though it might be worth investigating the error");
 
-	struct Parameter
+	struct camy_api Parameter
 	{
 		//! Need to define it because of the union
 		Parameter() { data = nullptr; }
@@ -125,7 +127,7 @@ namespace camy
 	// and everytime you set a material generate an ID based on the material. You can use the 
 	// same one used for sorting for instance and cram it into 16-bits. There is nothing to lose
 	// while having a possible speed increase.
-	struct ParameterBlock
+	struct camy_api ParameterBlock
 	{
 		using CacheTag = uint16;
 		static const CacheTag kInvalidCacheTag = (CacheTag)-1;
@@ -140,7 +142,7 @@ namespace camy
 	static_assert(sizeof(ParameterBlock) == 16, "ParameterBlock not packed as expected. This assert can be removed even though it might be worth investigating the error");
 
 #pragma pack(push, 1)
-	struct HParameterBlock
+	struct camy_api HParameterBlock
 	{
 		uint32 _v = (uint32)-1;
 		
@@ -171,6 +173,8 @@ namespace camy
 #pragma pack(pop)
 	static_assert(sizeof(RenderItem) == 64, "RenderItem not packed as expected. This assert can be removed even though it might be worth inverstigating the error");
 
+	//! <RenderBucket> 
+	//! Manages and sorts RenderItems, every RenderItem 
 	class camy_api RenderBucket final : public IBucket
 	{
 	public:
@@ -185,7 +189,12 @@ namespace camy
 		RenderBucket();
 		~RenderBucket();
 
-		void begin(const PipelineState& pipeline_state, SortMode sort);
+		//! Initial parameters can be temporary indeed
+		void begin(const PipelineState& pipeline_state, SortMode sort, Parameter* shared_parameters = nullptr, rsize num_shared_parameters = 0);
+		
+		//! This is the very function that you want to multithread as it sorts
+		//! and compiles command into the command list that can be then flushed 
+		//! to the GPU
 		void end();
 
 		RenderItem&     next();
@@ -205,8 +214,9 @@ namespace camy
 		Vector<uint32> m_sorted_indices;
 	
 		SortMode       m_sort;
-		PipelineState m_pipeline_state;
-
+		PipelineState  m_pipeline_state;
+		Vector<Parameter> m_shared_parameters;
+		
 		struct ConstantBufferUpload
 		{
 			HResource handle;

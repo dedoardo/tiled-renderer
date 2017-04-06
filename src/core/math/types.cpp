@@ -265,4 +265,25 @@ namespace camy
 			dot(mat.rows[3], vec)
 		);
 	}
+
+#if camy_enable_logging > 0
+	std::ostream& operator<<(std::ostream& stream, const float2& val)
+	{
+		stream << std::fixed << std::setprecision(5) << "<" << val.x << "," << val.y << ">";
+		return stream;
+	}
+
+	std::ostream& operator<<(std::ostream& stream, const float3& val)
+	{
+		stream << std::fixed << std::setprecision(5) << "<" << val.x << "," << val.y << "," << val.z << ">";
+		return stream;
+	}
+
+	std::ostream& operator<<(std::ostream& stream, const float4& val)
+	{
+		stream << std::fixed << std::setprecision(5) << "<" << val.x << "," << val.y << "," << val.z << "," << val.w << ">";
+		return stream;
+	}
+
+#endif
 }

@@ -116,9 +116,11 @@ namespace camy
 			// Append new page if at last
 			if (m_cur->next == nullptr)
 				_append_page();
+			else
+				m_cur = (PageType*)m_cur->next;
 			ret = m_cur->next_array(count);
 		}
-
+		camy_assert(ret != nullptr);
 		return ret;
 	}
 

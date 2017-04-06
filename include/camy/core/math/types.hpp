@@ -161,3 +161,14 @@ namespace camy
 	float4x4 operator*(const float4x4& left, const float4x4& right);
 	float4 operator*(const float4x4& mat, const float4& vec);
 }
+
+#if camy_enable_logging > 0
+#include <ostream>
+#include <iomanip>
+namespace camy
+{
+	std::ostream& operator<<(std::ostream& stream, const float2& val);
+	std::ostream& operator<<(std::ostream& stream, const float3& val);
+	std::ostream& operator<<(std::ostream& stream, const float4& val);
+}
+#endif

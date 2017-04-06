@@ -87,13 +87,25 @@ namespace camy
 
 	}
 
-	void RenderBucket::begin(const PipelineState& pipeline_state, SortMode sort)
+	void RenderBucket::begin(const PipelineState& pipeline_state, SortMode sort, Parameter* shared_parameters, rsize num_shared_parameters)
 	{
 		m_sort = sort;
 		m_pipeline_state = pipeline_state;
 		m_items.reset();
 		m_parameters.reset();
 		m_parameter_blocks.reset();
+
+		if (shared_parameters != nullptr && num_shared_parameters == 0 ||
+			shared_parameters == nullptr && num_shared_parameters > 0)
+		{
+			cl_invalid_arg(shared_parameters);
+			cl_invalid_arg(num_shared_parameters);
+			return;
+		}
+
+		m_shared_parameters.clear();
+		for (rsize i = 0; i < num_shared_parameters; ++i)
+			m_shared_parameters.append(shared_parameters[i]);
 	}
 
 	camy_inline bool _cmp_op_greater(RenderItem::Key a, RenderItem::Key b)
@@ -123,7 +135,9 @@ namespace camy
 				m_sorted_indices[i] = (uint32)i;
 		}
 
-		// Sort
+		// Sorting
+		// Temporal coherency going for the good old insertion sort
+		// https://www.gamedev.net/topic/661114-temporal-coherence-and-render-queue-sorting/
 		if (m_sort != SortMode::None)
 		{
 			bool (*cmp_fun)(RenderItem::Key, RenderItem::Key) = nullptr;
@@ -151,7 +165,7 @@ namespace camy
 
 	RenderItem& RenderBucket::next()
 	{
-		return m_items.next();
+return m_items.next();
 	}
 
 	ParameterBlock RenderBucket::next_block(rsize num_parameters, ParameterBlock::CacheTag tag)
@@ -229,12 +243,12 @@ namespace camy
 			dc.info.indexed_instanced.index_offset, dc.info.indexed_instanced.vertex_offset, dc.info.indexed_instanced.instance_offset);
 	}
 
-	void (*_draw_ftable[])(CommandList& command_list, const DrawCall& dc)
+	void(*_draw_ftable[])(CommandList& command_list, const DrawCall& dc)
 	{
 		_draw_default,
-		_draw_indexed,
-		_draw_instanced,
-		_draw_indexed_instanced
+			_draw_indexed,
+			_draw_instanced,
+			_draw_indexed_instanced
 	};
 
 	void RenderBucket::_compile()
@@ -246,8 +260,37 @@ namespace camy
 
 		m_command_list.begin();
 
+		// Pipeline State
 		_set_pipeline_state(m_command_list, m_pipeline_state);
 
+		// Shared state
+		for (rsize i = 0; i < m_shared_parameters.count(); ++i)
+		{
+			Parameter& param = m_shared_parameters[i];
+			if (!param.var.valid())
+			{
+				cl_invalid_arg("Trying to set invalid *shared* parameter, likely a call to Program::var() failed somewhere");
+				continue;
+			}
+
+			if ((BindType)param.var.type() == BindType::Constant)
+			{
+				cl_internal_err("Can't set individual constants: ", param.var);
+				continue;
+			}
+
+			if ((BindType)param.var.type() != BindType::ConstantBuffer)
+				m_command_list.set_parameter(param.var, param.res.handle, (uint8)param.res.view);
+			else
+			{
+				HResource handle;
+				rsize offset;
+				_incr_alloc(param, handle, offset);
+				m_command_list.set_cbuffer_off(param.var, handle, offset);
+			}
+		}
+
+		// Items
 		PipelineStateCache cache;
 		for (rsize i = 0; i < m_sorted_indices.count(); ++i)
 		{
@@ -300,8 +343,17 @@ namespace camy
 					{
 						Parameter& param = block.parameters[p];
 						if (!param.var.valid())
+						{
+							cl_invalid_arg("Trying to set invalid parameter, likely a call to Program::var() failed somewhere");
 							continue;
-						camy_assert((BindType)param.var.type() != BindType::Constant);
+						}
+
+						if ((BindType)param.var.type() == BindType::Constant)
+						{
+							cl_internal_err("Can't set individual constants: ", param.var);
+							continue;
+						}
+
 						if ((BindType)param.var.type() != BindType::ConstantBuffer)
 							m_command_list.set_parameter(param.var, param.res.handle, (uint8)param.res.view);
 						else
@@ -312,10 +364,13 @@ namespace camy
 							m_command_list.set_cbuffer_off(param.var, handle, offset);
 						}
 					}
+
+					cache.cache_tags[b] = block.cache_tag;
 				}
 			}
 
-			_draw_ftable[(rsize)item.draw_call.type](m_command_list, item.draw_call);
+			if (item.draw_call.type != DrawCall::Type::None)
+				_draw_ftable[(rsize)item.draw_call.type](m_command_list, item.draw_call);
 		}
 
 		for (int i = 0; i <= m_current_upload; ++i)

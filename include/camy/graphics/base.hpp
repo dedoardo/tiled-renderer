@@ -85,7 +85,7 @@ namespace camy
 		Volume where the scene is projected. 
 		left|top|right|bottom are in pixels
 	!*/
-	struct Viewport
+	struct camy_api Viewport
 	{
 		uint16 left		= 0;
 		uint16 top		= 0;
@@ -99,7 +99,7 @@ namespace camy
 		Wrapper for raw data. Unifies allocation / deallocation behind the
 		courtains
 	!*/
-	struct Blob
+	struct camy_api Blob
 	{
 		void* data = nullptr;
 		rsize byte_size = 0;
@@ -114,7 +114,7 @@ namespace camy
 		For DX10+ users they map directly to views.
 		OGL ?
 	!*/
-	enum GPUView
+	enum camy_api GPUView
 	{
 		GPUView_None = 0,
 		GPUView_ShaderResource = 1,
@@ -123,14 +123,14 @@ namespace camy
 		GPUView_DepthStencil = 1 << 4,
 	};
 
-	enum class Usage
+	enum class camy_api Usage
 	{
 		Static,
 		Dynamic
 	};
 
 	//! Supported pixel formats
-	enum class PixelFormat : uint8
+	enum class camy_api PixelFormat : uint8
 	{
 		Unknown,
 
@@ -183,7 +183,7 @@ namespace camy
 		Width and Heights are not really needed as they can be derived from the surface
 		description and their position in the array.
 	!*/
-	struct SubSurface
+	struct camy_api SubSurface
 	{
 		//! Pointer to the base of the data array
 		const void* data = nullptr;
@@ -196,7 +196,7 @@ namespace camy
 		Description of a Surface, currently only 2D textures, cubemaps and their 
 		relative array versions are supported.
 	!*/
-	struct SurfaceDesc
+	struct camy_api SurfaceDesc
 	{
 		//! Type of the resource in use
 		enum class Type : uint8
@@ -258,7 +258,7 @@ namespace camy
 		This simply holds data and binds it to the GPU as either a ShaderResourceView or
 		UnorderedAccessView depending on the stage.
 	!*/
-	struct BufferDesc
+	struct camy_api BufferDesc
 	{
 		//! Describes the data contained inside the buffer
 		enum class Type
@@ -284,7 +284,7 @@ namespace camy
 	camy_declare_resource(Buffer);
 
 	//! Description of a vertex buffer, layout is detailed by <InputSignature>
-	struct VertexBufferDesc
+	struct camy_api VertexBufferDesc
 	{
 		//! Number of elements
 		uint32 num_elements = 0;
@@ -300,7 +300,7 @@ namespace camy
 	camy_declare_resource(VertexBuffer);
 
 	//! Description of a index buffer, indices are either 
-	struct IndexBufferDesc
+	struct camy_api IndexBufferDesc
 	{
 		//! Number of elements
 		uint32 num_elements = 0;
@@ -315,7 +315,7 @@ namespace camy
 	//! <IndexBuffer>
 	camy_declare_resource(IndexBuffer);
 
-	struct ConstantBufferDesc
+	struct camy_api ConstantBufferDesc
 	{
 		uint32 size = 0;
 	};
@@ -325,7 +325,7 @@ namespace camy
 
 	//! Describes how blending should work, currently only presets are enabled
 	//! Todo: Options
-	struct BlendStateDesc
+	struct camy_api BlendStateDesc
 	{
 		enum class Type
 		{
@@ -341,7 +341,7 @@ namespace camy
 
 	//! Description of the rasterizer stage
 	//! Todo: Options
-	struct RasterizerStateDesc
+	struct camy_api RasterizerStateDesc
 	{
 		enum class Fill
 		{
@@ -367,7 +367,7 @@ namespace camy
 
 	//! Description of a single shader stage. stages are grouped into a Program,
 	//! just like D3D.
-	struct ShaderDesc
+	struct camy_api ShaderDesc
 	{
 		enum class Type
 		{
@@ -384,7 +384,7 @@ namespace camy
 	camy_declare_resource(Shader);
 
 	//! Type of the specific shader binding
-	enum class BindType : uint32
+	enum class camy_api BindType : uint32
 	{
 		Sampler = 0,
 		Surface,
@@ -456,7 +456,7 @@ namespace camy
 
 	//! Description of a single input element for the first vertex-processing
 	//! stage (usually VS or GS).
-	struct InputElement
+	struct camy_api InputElement
 	{
 		using Name = StaticString<25>;
 
@@ -486,7 +486,7 @@ namespace camy
 	//! Description of the vertex buffer layout. Do not touch this directly,
 	//! rely on reflection to generate them for you: Program::input_signature()
 	//! TODO: Instancing is in the workings
-	struct InputSignatureDesc
+	struct camy_api InputSignatureDesc
 	{
 		Blob bytecode;
 		InputElement* elements;
@@ -497,7 +497,7 @@ namespace camy
 
 	//! Sampler object description
 	//! Todo: Options
-	struct SamplerDesc
+	struct camy_api SamplerDesc
 	{
 		enum class Address
 		{
@@ -529,7 +529,7 @@ namespace camy
 
 	//! Depth stencil state description
 	//! Todo: Options
-	struct DepthStencilStateDesc
+	struct camy_api DepthStencilStateDesc
 	{
 		enum class DepthFunc
 		{
@@ -542,6 +542,15 @@ namespace camy
 
 	camy_declare_resource(DepthStencilState);
 }
+
+//! Helper 
+#if camy_enable_logging > 0
+#include <ostream>
+namespace camy
+{
+	std::ostream& operator<<(std::ostream& stream, const ShaderVariable& val);
+}
+#endif
 
 #if defined(camy_backend_d3d11)
 #	include "d3d11/d3d11_impl_base.hpp"

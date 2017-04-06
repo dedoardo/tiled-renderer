@@ -41,3 +41,7 @@ Starting from 1/4/2017
 + All resources and subresources are now named appropriately and typed
 + path_extract_filename
 ! Fixed StaticString::append
+
++ ostream overloads for vectors
+! Fixed bug in LinearPage::next_array() and PagedLinearVector::next_array()
+! Fixed bug in RenderContext::_compile() block caching now working

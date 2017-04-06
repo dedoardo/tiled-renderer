@@ -321,13 +321,14 @@ namespace camy
 	{
 		camy_assert(count * kElementSize <= byte_size);
 		
-		if (counter + count >= element_count)
+		if (counter + count > element_count)
 			return nullptr;
 
 		ElementType* ret = &((ElementType*)buffer)[counter];
 		rsize i = 0;
 		while (i < count)
 			new (&ret[i++]) ElementType();
+		counter += count;
 		return ret;
 	}
 
