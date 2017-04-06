@@ -354,7 +354,7 @@ namespace camy
 
 				ConstantBufferDesc cbd;
 				cbd.size = 1024 * API::query(API::Query::ConstantByteSize);
-				upload.handle = API::rc().create_constant_buffer(cbd, "__camy_incr_cbuffer_d3d11__");
+				upload.handle = API::rc().create_constant_buffer(cbd, "Incremental ConstantBuffer1 __internal");
 				upload.data = (byte*)allocate(camy_loc, cbd.size);
 				upload.count = 1024;
 				upload.cur = 0;

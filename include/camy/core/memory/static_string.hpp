@@ -145,6 +145,7 @@ namespace camy
 	{
 		rsize len = (rsize)::camy::s_strlen(str);
 		strncpy(m_buffer + m_char_count, str, ::camy::min(kCharCount - m_char_count, len));
+		m_char_count += len;
 	}
 
 	template <rsize kCharCount>

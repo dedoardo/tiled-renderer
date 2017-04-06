@@ -93,4 +93,16 @@ namespace camy
 
 	//! Reads bytes_to_read into buffer from a valid HFile, returns the number of bytes read
 	rsize file_read(HFile hfile, byte* buffer, rsize bytes_to_read);
+
+	//! Path utility that returns the filename given the path.
+	//! the pointer returned is part of the same input buffer
+	//! This is a very trivial implementation, extracting a path is very straightforward
+	//! 99% of the cases and that's exactly what's covered.
+	//! Both forward and backward slash separators are supported
+	//! Device specification as in Windows is supported aswell
+	//! UNC works out of the box as it is treated as a relative path
+	//! Note: Assuming the string is null-terminated
+	//! Example: C:\\Users\\test\\Documents\\file.obj.ext returns file.obj.ext
+	//! As the buffer returns is simply an incremented pointer
+	const char8* path_extract_filename(const char8* path);
 }

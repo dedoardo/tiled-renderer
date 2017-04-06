@@ -33,3 +33,12 @@ template implementation. When logging is disabled no code is generated.
 <> Naming
 Resources and objects are named throughout the framework, but the name is not 
 lookupable, it's just for easier debugging (makes life a lot easier when reading log).
+Naming resources is highly suggested and incurs in no real additional cost.
+When naming resources distinction is made between:
+- Generated ~ Additional resources generated from a load() or create() (e.g. InputSignature from a VertexShader)
+- Internal  ~ Resources used for internal management.
+Naming is same as custom C++ compiler attributes:
+<type>::<name> 
+<type>::<name> __gen(type)
+<type>::<name> __internal
+

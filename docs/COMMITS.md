@@ -37,3 +37,7 @@ Starting from 1/4/2017
 + Uniform declaration for all handles. struct w/ custom operators and no more global variables to check against is_valid() is_invalid() make_invalid()
 + Added simple filesystem interface: os/file
 + Reworked logging adding presets and moved it to os/log.hpp
+
++ All resources and subresources are now named appropriately and typed
++ path_extract_filename
+! Fixed StaticString::append

@@ -31,9 +31,28 @@ void safe_release_com(ComType*& ptr)
 	ptr = nullptr;
 }
 
-void set_debug_name(ID3D11DeviceChild* child, const camy::char8* name)
+void set_debug_name(ID3D11DeviceChild* child, const camy::char8* type, const camy::char8* name, const camy::char8* gen = nullptr, int idx = 0)
 {
-	child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)::strlen(name), name);
+	if (child == nullptr)
+	{
+		cl_invalid_arg(child);
+		return;
+	}
+
+	camy::StaticString<255> debug_name = type;
+	debug_name.append("::");
+	debug_name.append(name);
+	if (gen != nullptr)
+	{
+		char idx_buf[3];
+		itoa(idx, idx_buf, 10);
+
+		debug_name.append(" __gen(");
+		debug_name.append(gen);
+		debug_name.append(idx_buf);
+		debug_name.append(")");
+	}
+	child->SetPrivateData(WKPDID_D3DDebugObjectName, debug_name.len(), debug_name.str());
 }
 
 namespace camy
@@ -580,6 +599,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateTexture2D", result, name);
 			goto error;
 		}
+		set_debug_name(texture, "Surface", name);
 
 		if (desc.gpu_views & GPUView_ShaderResource)
 		{
@@ -592,6 +612,7 @@ namespace camy
 				cl_system_err("ID3D11Device::CreateShaderResourceView", result, name);
 				goto error;
 			}
+			set_debug_name(srvs[0],"Surface", name, "SRV");
 
 			// Per element
 			D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -628,6 +649,7 @@ namespace camy
 					cl_system_err("ID3D11Device::CreateShaderResourceView", result, name);
 					goto error;
 				}
+				set_debug_name(srvs[1 + i], "Surface", name, "SRV", 1 + i);
 			}
 		}
 
@@ -642,6 +664,7 @@ namespace camy
 				cl_system_err("ID3D11Device::CreateRenderTargetView", result, name);
 				goto error;
 			}
+			set_debug_name(rtvs[0], "Surface", name, "RTV");
 
 			// Per element
 			D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
@@ -675,6 +698,7 @@ namespace camy
 					cl_system_err("ID3D11Device::CreateRenderTargetView", result, name);
 					goto error;
 				}
+				set_debug_name(rtvs[1 + i], "Surface", name, "RTV", 1 + i);
 			}
 		}
 
@@ -689,6 +713,7 @@ namespace camy
 				cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
 				goto error;
 			}
+			set_debug_name(uavs[0], "Surface", name, "UAV");
 
 			// Per element
 			D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
@@ -717,6 +742,7 @@ namespace camy
 					cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
 					goto error;
 				}
+				set_debug_name(uavs[1 + i], "Surface", name, "UAV", 1 + i);
 			}
 		}
 
@@ -731,6 +757,7 @@ namespace camy
 				cl_system_err("ID3D11Device::CreateDepthStencilView", result, name);
 				goto error;
 			}
+			set_debug_name(dsvs[0], "Surface", name, "DSV");
 
 			// Per element
 			D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
@@ -759,11 +786,9 @@ namespace camy
 					cl_system_err("ID3D11Device::CreateDepthStencilView", result, name);
 					goto error;
 				}
+				set_debug_name(dsvs[1 + i], "Surface", name, "DSV", 1 + i);
 			}
 		}
-
-		if (name != nullptr)
-			set_debug_name(texture, name);
 
 		ret = m_resource_manager.allocate<Surface>(camy_loc, name);
 		Surface& res = m_resource_manager.get<Surface>(ret);
@@ -815,6 +840,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateBuffer", result, name);
 			goto error;
 		}
+		set_debug_name(buffer, "Buffer", name);
 
 		// Shader Resource View
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -829,6 +855,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateShaderResourceView", result, name);
 			goto error;
 		}
+		set_debug_name(srv, "Buffer", name, "SRV");
 
 		// Unordered access view
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
@@ -844,9 +871,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(buffer, name);
+		set_debug_name(srv, "Buffer", name, "UAV");
 
 		ret = m_resource_manager.allocate<Buffer>(camy_loc, name);
 		Buffer& res = m_resource_manager.get<Buffer>(ret);
@@ -891,9 +916,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateBuffer", result, name);
 			goto error;
 		}
-
-		if (name == nullptr)
-			set_debug_name(buffer, name);
+		set_debug_name(buffer, "VertexBuffer", name);
 
 		ret = m_resource_manager.allocate<VertexBuffer>(camy_loc, name);
 		VertexBuffer& res = m_resource_manager.get<VertexBuffer>(ret);
@@ -938,9 +961,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateBuffer", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(buffer, name);
+		set_debug_name(buffer, "IndexBuffer", name);
 
 		ret = m_resource_manager.allocate<IndexBuffer>(camy_loc, name);
 		IndexBuffer& res = m_resource_manager.get<IndexBuffer>(ret);
@@ -981,9 +1002,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateBuffer", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(buffer, name);
+		set_debug_name(buffer, "ConstantBuffer", name);
 
 		ret = m_resource_manager.allocate<ConstantBuffer>(camy_loc, name);
 		ConstantBuffer& res = m_resource_manager.get<ConstantBuffer>(ret);
@@ -1083,9 +1102,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateBlendState", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(blend_state, name);
+		set_debug_name(blend_state, "BlendState", name);
 
 		ret = m_resource_manager.allocate<BlendState>(camy_loc, name);
 		BlendState& res = m_resource_manager.get<BlendState>(ret);
@@ -1125,9 +1142,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateRasterizerState", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(rasterizer_state, name);
+		set_debug_name(rasterizer_state, "RasterizerState", name);
 
 		ret = m_resource_manager.allocate<RasterizerState>(camy_loc, name);
 		RasterizerState& res = m_resource_manager.get<RasterizerState>(ret);
@@ -1198,9 +1213,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateInputLayout", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(input_layout, name);
+		set_debug_name(input_layout, "InputSignature", name);
 
 		ret = m_resource_manager.allocate<InputSignature>(camy_loc, name);
 		InputSignature& res = m_resource_manager.get<InputSignature>(ret);
@@ -1208,7 +1221,7 @@ namespace camy
 		res.desc = desc;
 		res.native.input_layout = input_layout;
 
-		cl_info("create InputSignature: ", name);
+		cl_info("Created InputSignature: ", name);
 		return ret;
 
 	error:
@@ -1288,9 +1301,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateSamplerState", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(sampler, name);
+		set_debug_name(sampler, "Sampler", name);
 
 		ret = m_resource_manager.allocate<Sampler>(camy_loc, name);
 		Sampler& res = m_resource_manager.get<Sampler>(ret);
@@ -1336,9 +1347,7 @@ namespace camy
 			cl_system_err("ID3D11Device::CreateDepthStencilState", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(depth_stencil_state, name);
+		set_debug_name(depth_stencil_state, "DepthStencilState", name);
 
 		ret = m_resource_manager.allocate<DepthStencilState>(camy_loc, name);
 		DepthStencilState& res = m_resource_manager.get<DepthStencilState>(ret);
@@ -1384,9 +1393,7 @@ namespace camy
 			cl_system_err("ID3D11Device::Create***Shader", result, name);
 			goto error;
 		}
-
-		if (name != nullptr)
-			set_debug_name(shader, name);
+		set_debug_name(shader, "Shader", name);
 
 		ret = m_resource_manager.allocate<Shader>(camy_loc, name);
 		Shader& res = m_resource_manager.get<Shader>(ret);

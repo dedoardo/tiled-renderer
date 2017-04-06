@@ -177,19 +177,16 @@ namespace camy
 				elements.append(next);
 			}
 
-			StaticString<60> is_name = name;
-			is_name.append("_input_signature");
-
 			InputSignatureDesc isd;
 			isd.bytecode = data;
 			isd.elements = elements.data();
 			isd.num_elements = elements.count();
 
-			m_input_signature = API::rc().create_input_signature(isd, is_name.str());
+			m_input_signature = API::rc().create_input_signature(isd, name);
 			// If no elements (just hardware generated values) a invalid input layout is perfectly fine
 			if (isd.num_elements > 0 && m_input_signature.is_invalid())
 			{
-				cl_create_err("Input Signature", is_name.str());
+				cl_create_err("Input Signature", name);
 				return false;
 			}
 		}

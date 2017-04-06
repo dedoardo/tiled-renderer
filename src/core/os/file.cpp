@@ -161,3 +161,42 @@ namespace camy
 #else
 #	error No implementation available for this platform
 #endif
+
+namespace camy
+{
+	const char8* path_extract_filename(const char8* path)
+	{
+		if (path == nullptr || *path == '\0')
+		{
+			cl_invalid_arg(path);
+			return nullptr;
+		}
+
+		const char8* cur = path;
+		
+		// Checking if there is a device name
+		// [A-Z]: Ignoring : as ':' is a reserved character 
+		// https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#file_and_directory_names
+		if (*(path + 1) == ':')
+			cur += 2;
+
+		const char8* ret = cur;
+		// Navigating directories
+		while (true)
+		{
+			char ch = *cur;
+			// EOS
+			if (ch == '\0')
+				break;
+
+			// Everytime we find a new separator we set the ret to 
+			// the character right after, eventually it will return the filename w/ extension.
+			if (ch == '\\' || ch == '/')
+				ret = cur + 1;
+
+			++cur;
+		}
+
+		return ret;
+	}
+}
