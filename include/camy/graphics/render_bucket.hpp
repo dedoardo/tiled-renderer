@@ -71,10 +71,10 @@ namespace camy
             IndexedInstanced indexed_instanced;
         };
 
-        void set_default(uint32 vertex_count, uint32 vertex_offset);
-        void set_indexed(uint32 index_count, uint32 index_offset, uint32 vertex_offset);
-        void set_instanced(uint32 vertex_count, uint32 instance_count, uint32 vertex_offset, uint32 instance_offset);
-        void set_indexed_instanced(uint32 index_count, uint32 instance_count, uint32 index_offset, uint32 vertex_offset, uint32 instance_offset);
+        void make_default(uint32 vertex_count, uint32 vertex_offset);
+        void make_indexed(uint32 index_count, uint32 index_offset, uint32 vertex_offset);
+        void make_instanced(uint32 vertex_count, uint32 instance_count, uint32 vertex_offset, uint32 instance_offset);
+        void make_indexed_instanced(uint32 index_count, uint32 instance_count, uint32 index_offset, uint32 vertex_offset, uint32 instance_offset);
 
 		Type type = Type::None;
         Info info;
@@ -82,11 +82,11 @@ namespace camy
 
     struct PipelineState
     {
-        HResource render_targets[kMaxBindableRenderTargets]{ kInvalidHResource, kInvalidHResource };
-        HResource depth_buffer = kInvalidHResource;
-        HResource rasterizer_state = kInvalidHResource;
-        HResource blend_state = kInvalidHResource;
-		HResource depth_stencil_state = kInvalidHResource;
+        HResource render_targets[kMaxBindableRenderTargets];
+		HResource depth_buffer;
+        HResource rasterizer_state;
+        HResource blend_state;
+		HResource depth_stencil_state;
         Viewport  viewport;
 
         static PipelineState default();
@@ -97,6 +97,9 @@ namespace camy
 
     struct Parameter
     {
+		//! Need to define it because of the union
+		Parameter() { data = nullptr; }
+
 		struct ParameterResource
 		{
 			HResource handle;
@@ -108,7 +111,7 @@ namespace camy
 			const void*			data;
 			ParameterResource	res;
         };
-		ShaderVariable var = ShaderVariable::invalid();
+		ShaderVariable var = ShaderVariable::make_invalid();
     };
     static_assert(sizeof(Parameter) == 16, "Parameter not packed as expected. This assert can be removed even though it might be worth investigating the error");
 
@@ -136,23 +139,33 @@ namespace camy
 	};
     static_assert(sizeof(ParameterBlock) == 16, "ParameterBlock not packed as expected. This assert can be removed even though it might be worth investigating the error");
 
-    using HParameterBlock = uint32;
-    const HParameterBlock kInvalidHParameterBlock = (HParameterBlock)-1;
-    using HResource = uint16;
+#pragma pack(push, 1)
+	struct HParameterBlock
+	{
+		uint32 _v = (uint32)-1;
+		
+		HParameterBlock(uint32 val = -1) { _v = val; }
+		operator uint32() { return _v; }
+		bool is_valid()const { return _v != (uint32)-1; }
+		bool is_invalid()const { return _v == (uint32)-1; }
+
+		constexpr static uint32 make_invalid() { return (uint32)-1; }
+	};
+#pragma pack(pop)
 
 #pragma pack(push, 1)
     struct camy_api RenderItem
     {
- //       RenderItem() = default;
         using Key = uint64;
+
         Key key = (Key)-1;
-        HResource vertex_buffers[kMaxBindableVertexBuffers]{ kInvalidHResource, kInvalidHResource };
-        HResource index_buffer = kInvalidHResource;
-        HResource vertex_shader = kInvalidHResource;
-        HResource pixel_shader = kInvalidHResource;
-        HResource geometry_shader = kInvalidHResource;
-        HResource input_signature = kInvalidHResource;
-        HParameterBlock parameters[kMaxParameterBlocks] { kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock, kInvalidHParameterBlock};
+        HResource vertex_buffers[kMaxBindableVertexBuffers];
+        HResource index_buffer;
+        HResource vertex_shader;
+        HResource pixel_shader;
+        HResource geometry_shader;
+        HResource input_signature;
+        HParameterBlock parameters[kMaxParameterBlocks];
 		DrawCall draw_call;
     };
 #pragma pack(pop)
@@ -180,7 +193,7 @@ namespace camy
         HParameterBlock next_block_handle(const ParameterBlock& block);
 
         CommandList& to_command_list()override;
-        bool is_ready()const override;
+        bool		 is_ready()const override;
     private:
         void _compile();
         void _incr_alloc(const Parameter& parameter, HResource& handle, rsize& offset);
@@ -196,7 +209,7 @@ namespace camy
 
         struct ConstantBufferUpload
         {
-            HResource handle = kInvalidHResource;
+			HResource handle;
             byte*     data = nullptr;
             rsize     count = 0;
             rsize     cur = 0;

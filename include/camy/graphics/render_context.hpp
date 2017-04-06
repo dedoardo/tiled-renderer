@@ -76,10 +76,10 @@ namespace camy
         Surface&    get_backbuffer();
         void        swap_buffers();
 
-        HResource create_surface(const SurfaceDesc& desc, const char8* name = nullptr);
+        HResource create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces = nullptr, rsize num_subsurfaces = 0, const char8* name = nullptr);
         HResource create_buffer(const BufferDesc& desc, const char8* name = nullptr);
-        HResource create_vertex_buffer(const VertexBufferDesc&, const char8* name = nullptr);
-        HResource create_index_buffer(const IndexBufferDesc& desc, const char8* name = nullptr);
+        HResource create_vertex_buffer(const VertexBufferDesc&, const void* data = nullptr, const char8* name = nullptr);
+        HResource create_index_buffer(const IndexBufferDesc& desc, const void* data = nullptr, const char8* name = nullptr);
         HResource create_constant_buffer(const ConstantBufferDesc& desc, const char8* name = nullptr);
         HResource create_blend_state(const BlendStateDesc& desc, const char8* name = nullptr);
         HResource create_rasterizer_state(const RasterizerStateDesc& desc, const char8* name = nullptr);

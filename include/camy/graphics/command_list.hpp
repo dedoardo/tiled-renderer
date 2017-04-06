@@ -50,8 +50,8 @@ namespace camy
         void set_vertex_buffers(rsize slot, const HResource* handles, rsize num_handles);
         void set_index_buffer(HResource handle);
 
-		void set_cbuffer(ShaderVariable var, HResource handle);
-        void set_cbuffer_off(ShaderVariable var, HResource handle, rsize offset);
+		void set_cbuffer(ShaderVariable var, HResource handle); // Binds the entire Cbuffer to the pipeline stage
+        void set_cbuffer_off(ShaderVariable var, HResource handle, rsize offset); // Binds a section of the cbuffer going from [offset to offset + var.size()] as input to the shader 
         void set_parameter(ShaderVariable var, HResource handle, uint8 view = 0);
 
         void draw(uint32 vertex_count, uint32 vertex_offset);
