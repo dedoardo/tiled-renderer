@@ -13,11 +13,11 @@
 
 namespace camy
 {
-    /*
-        Paged version of a linear vector. Preserves pointers.
-        API is **much** simpler as memory is not contiguous and
-        methods such as data() would be misleading.
-    */
+	/*
+		Paged version of a linear vector. Preserves pointers.
+		API is **much** simpler as memory is not contiguous and
+		methods such as data() would be misleading.
+	*/
 	template <typename ElementType, uint16 kAlignment = kDefaultAlignment>
 	class camy_api PagedLinearVector final
 	{
@@ -28,31 +28,31 @@ namespace camy
 		PagedLinearVector(rsize elements_per_page = 100);
 		~PagedLinearVector();
 
-        PagedLinearVector(PagedLinearVector&& other);
-        PagedLinearVector(PagedLinearVector& other) = delete; // TODO
+		PagedLinearVector(PagedLinearVector&& other);
+		PagedLinearVector(PagedLinearVector& other) = delete; // TODO
 
-        PagedLinearVector& operator=(PagedLinearVector&& other);
-        PagedLinearVector& operator=(PagedLinearVector& other) = delete; // TODO
+		PagedLinearVector& operator=(PagedLinearVector&& other);
+		PagedLinearVector& operator=(PagedLinearVector& other) = delete; // TODO
 
-        ElementType& next();
-        ElementType* next_array(rsize count);
+		ElementType& next();
+		ElementType* next_array(rsize count);
 		void reset();
 	private:
 		void _append_page();
 
-        PageType* m_cur;
-        rsize m_elements_per_page;
+		PageType* m_cur;
+		rsize m_elements_per_page;
 	};
 
-    template<typename ElementType, uint16 kAlignment>
-    inline PagedLinearVector<ElementType, kAlignment>::PagedLinearVector(rsize elements_per_page) : 
-        m_cur(nullptr),
-        m_elements_per_page(elements_per_page)
-    {
-        _append_page();
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline PagedLinearVector<ElementType, kAlignment>::PagedLinearVector(rsize elements_per_page) : 
+		m_cur(nullptr),
+		m_elements_per_page(elements_per_page)
+	{
+		_append_page();
+	}
 
-    template<typename ElementType, uint16 kAlignment>
+	template<typename ElementType, uint16 kAlignment>
 	inline PagedLinearVector<ElementType, kAlignment>::~PagedLinearVector()
 	{
 		// Simplifies the release by making sure we are at index 0
@@ -67,86 +67,86 @@ namespace camy
 		}
 	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline PagedLinearVector<ElementType, kAlignment>::PagedLinearVector(PagedLinearVector&& other)
-    {
-        m_cur = other.m_cur;
-        m_elements_per_page = other.m_elements_per_page;
-        other.m_cur = nullptr;
-        other.m_elements_per_page = 0;
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline PagedLinearVector<ElementType, kAlignment>::PagedLinearVector(PagedLinearVector&& other)
+	{
+		m_cur = other.m_cur;
+		m_elements_per_page = other.m_elements_per_page;
+		other.m_cur = nullptr;
+		other.m_elements_per_page = 0;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline PagedLinearVector<ElementType, kAlignment> & PagedLinearVector<ElementType, kAlignment>::operator=(PagedLinearVector&& other)
-    {
-        m_cur = other.m_cur;
-        m_elements_per_page = other.m_elements_per_page;
-        other.m_cur = nullptr;
-        other.m_elements_per_page = 0;
+	template<typename ElementType, uint16 kAlignment>
+	inline PagedLinearVector<ElementType, kAlignment> & PagedLinearVector<ElementType, kAlignment>::operator=(PagedLinearVector&& other)
+	{
+		m_cur = other.m_cur;
+		m_elements_per_page = other.m_elements_per_page;
+		other.m_cur = nullptr;
+		other.m_elements_per_page = 0;
 
-        return *this;
-    }
+		return *this;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline ElementType& PagedLinearVector<ElementType, kAlignment>::next()
-    {
-        ElementType* ret = m_cur->_next();
+	template<typename ElementType, uint16 kAlignment>
+	inline ElementType& PagedLinearVector<ElementType, kAlignment>::next()
+	{
+		ElementType* ret = m_cur->_next();
 
-        // Next page **has** to have a free slot
-        if (ret == nullptr)
-        {
-            // Append new page if at last
-            if (m_cur->next == nullptr)
-                _append_page();
-            ret = m_cur->_next();
-        }
+		// Next page **has** to have a free slot
+		if (ret == nullptr)
+		{
+			// Append new page if at last
+			if (m_cur->next == nullptr)
+				_append_page();
+			ret = m_cur->_next();
+		}
 
-        return *ret;
-    }
+		return *ret;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline ElementType * PagedLinearVector<ElementType, kAlignment>::next_array(rsize count)
-    {
-        if (count == 0) return nullptr;
-        ElementType* ret = m_cur->next_array(count);
+	template<typename ElementType, uint16 kAlignment>
+	inline ElementType * PagedLinearVector<ElementType, kAlignment>::next_array(rsize count)
+	{
+		if (count == 0) return nullptr;
+		ElementType* ret = m_cur->next_array(count);
 
-        // Next page **has** to have a free slot
-        if (ret == nullptr)
-        {
-            // Append new page if at last
-            if (m_cur->next == nullptr)
-                _append_page();
-            ret = m_cur->next_array(count);
-        }
+		// Next page **has** to have a free slot
+		if (ret == nullptr)
+		{
+			// Append new page if at last
+			if (m_cur->next == nullptr)
+				_append_page();
+			ret = m_cur->next_array(count);
+		}
 
-        return ret;
-    }
+		return ret;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline void PagedLinearVector<ElementType, kAlignment>::reset()
-    {
-        PageType* prev = m_cur; // from cur onwards they should be reset already from previous call
-        while (prev != nullptr)
-        {
-            prev->reset();
-            m_cur = prev;
-            prev = (PageType*)prev->previous;
-        }
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline void PagedLinearVector<ElementType, kAlignment>::reset()
+	{
+		PageType* prev = m_cur; // from cur onwards they should be reset already from previous call
+		while (prev != nullptr)
+		{
+			prev->reset();
+			m_cur = prev;
+			prev = (PageType*)prev->previous;
+		}
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline void PagedLinearVector<ElementType, kAlignment>::_append_page()
-    {
-        if (m_cur == nullptr)
-        {
-            m_cur = tallocate<PageType>(camy_loc, kAlignment, m_elements_per_page);
-        }
-        else
-        {
-            PageType* old = m_cur;
-            m_cur = tallocate<PageType>(camy_loc, kAlignment, m_elements_per_page);
-            old->next = m_cur;
-            m_cur->previous = old;
-        }
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline void PagedLinearVector<ElementType, kAlignment>::_append_page()
+	{
+		if (m_cur == nullptr)
+		{
+			m_cur = tallocate<PageType>(camy_loc, kAlignment, m_elements_per_page);
+		}
+		else
+		{
+			PageType* old = m_cur;
+			m_cur = tallocate<PageType>(camy_loc, kAlignment, m_elements_per_page);
+			old->next = m_cur;
+			m_cur->previous = old;
+		}
+	}
 }

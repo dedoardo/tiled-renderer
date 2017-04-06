@@ -1,3 +1,10 @@
+/* types.hpp
+*
+* Copyright (C) 2017 Edoardo Dominici
+*
+* This software may be modified and distributed under the terms
+* of the MIT license.  See the LICENSE file for details.
+*/
 #pragma once
 
 // camy
@@ -133,11 +140,11 @@ namespace camy
 	{
 		float4 rows[4];
 
-		float4x4() : rows{  { 1.f, 0.f, 0.f, 0.f },
+		float4x4() : rows{ { 1.f, 0.f, 0.f, 0.f },
 							{ 0.f, 1.f, 0.f, 0.f },
 							{ 0.f, 0.f, 1.f, 0.f },
 							{ 0.f, 0.f, 0.f, 1.f }
-							} { }
+		} { }
 
 		float4x4(float r00, float r01, float r02, float r03,
 			float r10, float r11, float r12, float r13,
@@ -148,9 +155,9 @@ namespace camy
 					{ r10, r11, r12, r13},
 					{ r20, r21, r22, r23},
 					{ r30, r31, r32, r33}
-					} { }
+		} { }
 	};
 
-    float4x4 operator*(const float4x4& left, const float4x4& right);
+	float4x4 operator*(const float4x4& left, const float4x4& right);
 	float4 operator*(const float4x4& mat, const float4& vec);
 }

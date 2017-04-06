@@ -44,7 +44,7 @@ namespace camy
 		IDXGIFactory* factory = nullptr;
 		IDXGISwapChain* swap_chain = nullptr;
 		IDXGIAdapter* adapter = nullptr;
-        Surface      surface;
+		Surface      surface;
 	};
 
 	struct CommandListData;
@@ -64,9 +64,9 @@ namespace camy
 
 	struct camy_api CommandListData
 	{
-        ID3D11CommandList*    command_list = nullptr;
-        ID3D11DeviceContext1* ctx = nullptr;
-    };
+		ID3D11CommandList*    command_list = nullptr;
+		ID3D11DeviceContext1* ctx = nullptr;
+	};
 }
 
 #endif

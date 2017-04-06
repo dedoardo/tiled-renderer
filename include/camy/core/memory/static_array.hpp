@@ -23,11 +23,11 @@ namespace camy
 	public:
 		StaticArray() = default;
 
-        StaticArray(StaticArray&& other) = default;
-        StaticArray(StaticArray& other) = default;
+		StaticArray(StaticArray&& other) = default;
+		StaticArray(StaticArray& other) = default;
 
-        StaticArray& operator=(StaticArray&& other) = default;
-        StaticArray& operator=(StaticArray& other) = default;
+		StaticArray& operator=(StaticArray&& other) = default;
+		StaticArray& operator=(StaticArray& other) = default;
 
 		// TODO: Might write emplacement new version ?
 		// Not really needed tho since most contained elements

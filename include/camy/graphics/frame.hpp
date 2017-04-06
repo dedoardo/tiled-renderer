@@ -15,20 +15,20 @@
 
 namespace camy
 {
-    /*
-        Groups and flushes compiled buckets
-    */
-    class camy_api Frame final
-    {
-    public:
-        Frame();
-        ~Frame();
+	/*
+		Groups and flushes compiled buckets
+	*/
+	class camy_api Frame final
+	{
+	public:
+		Frame();
+		~Frame();
 
-        void add_bucket(IBucket& bucket, rsize pass);
-        void remove_bucket(IBucket& bucket);
-        void render();
+		void add_bucket(IBucket& bucket, rsize pass);
+		void remove_bucket(IBucket& bucket);
+		void render();
 
-    private:
-        Vector<IBucket*> m_buckets[kMaxPasses];
-    };
+	private:
+		Vector<IBucket*> m_buckets[kMaxPasses];
+	};
 }

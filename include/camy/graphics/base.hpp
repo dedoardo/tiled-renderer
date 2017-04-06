@@ -75,11 +75,11 @@ namespace camy
 	!*/
 	constexpr rsize kMaxBindableVertexBuffers = 2u;
 	constexpr rsize kMaxBindableRenderTargets = 2u;
-    constexpr rsize kMaxParameterBlocks = 5u;
+	constexpr rsize kMaxParameterBlocks = 5u;
 	constexpr rsize kMaxConstantBufferSize = 2 << 16;
 	constexpr rsize kMaxBindableShaderResources = 2 << 7;
 	constexpr rsize kMaxBindableConstantBuffers = 6;
-    constexpr rsize kMaxPasses = 4;
+	constexpr rsize kMaxPasses = 4;
 
 	/*!
 		Volume where the scene is projected. 
@@ -91,8 +91,8 @@ namespace camy
 		uint16 top		= 0;
 		uint16 right	= 0;
 		uint16 bottom	= 0;
-        float  near = 0.01f;
-        float  far = 1.f;
+		float  near = 0.01f;
+		float  far = 1.f;
 	};
 
 	/*!
@@ -140,28 +140,28 @@ namespace camy
 		BC5Unorm, // DXT5
 
 		//! Typeless formats, used for surfaces with different views (TODO: Reevaluate their use when the OpenGL backend is terminated)
-        R8Typeless,
+		R8Typeless,
 		R16Typeless,
 		R32Typeless,
 		R24G8Typeless,
 		R24UnormX8Typeless,
 
-        //! Single channel uncompressed
-        R8Unorm,
-        R16Unorm,
+		//! Single channel uncompressed
+		R8Unorm,
+		R16Unorm,
 		R16Float,
 		R32Float,
 
-        //! Two channels uncompressed
-        RG8Unorm,
-        RG16Unorm,
-        RG16Float,
-        RG32Float,
+		//! Two channels uncompressed
+		RG8Unorm,
+		RG16Unorm,
+		RG16Float,
+		RG32Float,
 
-        //! Four channels uncompressed
-        RGBA8Unorm,
-        RGBA16Float,
-        RGBA32Float,
+		//! Four channels uncompressed
+		RGBA8Unorm,
+		RGBA16Float,
+		RGBA32Float,
 
 		//! Depth + Stencil formats
 		D16Unorm,
@@ -186,7 +186,7 @@ namespace camy
 	struct SubSurface
 	{
 		//! Pointer to the base of the data array
-        const void* data = nullptr;
+		const void* data = nullptr;
 
 		//! Stride in bytes of each line(row).
 		uint32 pitch = 0;
@@ -214,37 +214,37 @@ namespace camy
 		uint16 height = 0;
 
 		//! Format of the actual resource
-        PixelFormat pixel_format = PixelFormat::Unknown;
+		PixelFormat pixel_format = PixelFormat::Unknown;
 
 		//! Representation of the resource as seen from a GPUView_ShaderResourceView
-        PixelFormat pixel_format_srv = PixelFormat::Unknown;
+		PixelFormat pixel_format_srv = PixelFormat::Unknown;
 
 		//! Representation of the resource as seen from a GPUView_RenderTargetView
-        PixelFormat pixel_format_rtv = PixelFormat::Unknown;
+		PixelFormat pixel_format_rtv = PixelFormat::Unknown;
 
 		//! Representation of the resource as seen from a GPUView_DepthStencilView
-        PixelFormat pixel_format_dsv = PixelFormat::Unknown;
+		PixelFormat pixel_format_dsv = PixelFormat::Unknown;
 
 		//! Representation of the resource as seen from a GPUView_UnorderedAccessView
-        PixelFormat pixel_format_uav = PixelFormat::Unknown;
+		PixelFormat pixel_format_uav = PixelFormat::Unknown;
 		
 		//! Views enabled for the cc
-        uint8  gpu_views = GPUView_None;
+		uint8  gpu_views = GPUView_None;
 
 		//! Number of miplevels of the specified resource
 		//! Note: All subresources **HAVE TO HAVE** the same amount of miplevels
-        uint8  mip_levels = 1;
+		uint8  mip_levels = 1;
 
 		//! MSAA level of the surface, care about incompatibilities w/ shaders
-        uint8  msaa_levels = 1;
+		uint8  msaa_levels = 1;
 
 		//! Number of surfaces **NOT** subresources. Makes sense only for Type::***Array types
-        //! If the array_count doesn't match the type, then the array count is set to 1 and
+		//! If the array_count doesn't match the type, then the array count is set to 1 and
 		// a warning is posted.
 		uint8  array_count = 1;
 
 		//! Type of the resource
-        Type   type = Type::Surface2D;
+		Type   type = Type::Surface2D;
 
 		//! Set this to dynamic if you plan to update this resource frequently (e.g. on a frame-by-frame basis)
 		Usage usage = Usage::Static;
@@ -375,7 +375,7 @@ namespace camy
 			Geometry,
 			Pixel,
 			Compute,
-            Count
+			Count
 		};
 		Type type;
 		Blob bytecode;
@@ -390,8 +390,8 @@ namespace camy
 		Surface,
 		Buffer,
 		ConstantBuffer,
-        Constant, // Invalid as PipelineParameter
-        LastValue
+		Constant, // Invalid as PipelineParameter
+		LastValue
 	};
 
 	//! All possible information about a shader binding. Never create them yourself

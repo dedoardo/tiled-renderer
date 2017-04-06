@@ -58,7 +58,7 @@ namespace camy
 		// Here simply to avoid friend classes, you should never touch it, 
 		// Except if you need to interface with something that requires 
 		// D3D/OGL data
-        RenderContextData& get_platform_data();
+		RenderContextData& get_platform_data();
 		
 		// Rendering
 		/*
@@ -68,54 +68,54 @@ namespace camy
 		*/
 		void flush(CommandList& command_list);
 
-        void        immediate_clear(); // Resets the state of the immediate context (D3D11)
+		void        immediate_clear(); // Resets the state of the immediate context (D3D11)
 		void		clear_color(HResource target, const float4& color);  // helper (use commandlist)
 		void		clear_depth(HResource target, float depth, sint32 stencil = -1);  // helper (use commandlist)
 		void		immediate_cbuffer_update(HResource handle, void* data); 
 		HResource   get_backbuffer_handle()const;
-        Surface&    get_backbuffer();
-        void        swap_buffers();
+		Surface&    get_backbuffer();
+		void        swap_buffers();
 
-        HResource create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces = nullptr, rsize num_subsurfaces = 0, const char8* name = nullptr);
-        HResource create_buffer(const BufferDesc& desc, const char8* name = nullptr);
-        HResource create_vertex_buffer(const VertexBufferDesc&, const void* data = nullptr, const char8* name = nullptr);
-        HResource create_index_buffer(const IndexBufferDesc& desc, const void* data = nullptr, const char8* name = nullptr);
-        HResource create_constant_buffer(const ConstantBufferDesc& desc, const char8* name = nullptr);
-        HResource create_blend_state(const BlendStateDesc& desc, const char8* name = nullptr);
-        HResource create_rasterizer_state(const RasterizerStateDesc& desc, const char8* name = nullptr);
-        HResource create_input_signature(const InputSignatureDesc& desc, const char8* name = nullptr);
-        HResource create_sampler(const SamplerDesc& desc, const char8* name = nullptr);
-        HResource create_depth_stencil_state(const DepthStencilStateDesc& desc, const char8* name = nullptr);
-        HResource create_shader(const ShaderDesc& desc, const char8* name = nullptr);
+		HResource create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces = nullptr, rsize num_subsurfaces = 0, const char8* name = nullptr);
+		HResource create_buffer(const BufferDesc& desc, const char8* name = nullptr);
+		HResource create_vertex_buffer(const VertexBufferDesc&, const void* data = nullptr, const char8* name = nullptr);
+		HResource create_index_buffer(const IndexBufferDesc& desc, const void* data = nullptr, const char8* name = nullptr);
+		HResource create_constant_buffer(const ConstantBufferDesc& desc, const char8* name = nullptr);
+		HResource create_blend_state(const BlendStateDesc& desc, const char8* name = nullptr);
+		HResource create_rasterizer_state(const RasterizerStateDesc& desc, const char8* name = nullptr);
+		HResource create_input_signature(const InputSignatureDesc& desc, const char8* name = nullptr);
+		HResource create_sampler(const SamplerDesc& desc, const char8* name = nullptr);
+		HResource create_depth_stencil_state(const DepthStencilStateDesc& desc, const char8* name = nullptr);
+		HResource create_shader(const ShaderDesc& desc, const char8* name = nullptr);
 
-        // Type not embedded in the handle. it has to be explicit
-        void destroy_surface(HResource handle);
-        void destroy_buffer(HResource handle);
-        void destroy_vertex_buffer(HResource handle);
-        void destroy_index_buffer(HResource handle);
-        void destroy_constant_buffer(HResource handle);
-        void destroy_blend_state(HResource handle);
-        void destroy_rasterizer_state(HResource handle);
-        void destroy_input_signature(HResource handle);
-        void destroy_sampler(HResource handle);
-        void destroy_depth_stencil_state(HResource handle);
-        void destroy_shader(HResource handle);
+		// Type not embedded in the handle. it has to be explicit
+		void destroy_surface(HResource handle);
+		void destroy_buffer(HResource handle);
+		void destroy_vertex_buffer(HResource handle);
+		void destroy_index_buffer(HResource handle);
+		void destroy_constant_buffer(HResource handle);
+		void destroy_blend_state(HResource handle);
+		void destroy_rasterizer_state(HResource handle);
+		void destroy_input_signature(HResource handle);
+		void destroy_sampler(HResource handle);
+		void destroy_depth_stencil_state(HResource handle);
+		void destroy_shader(HResource handle);
 
-        Surface&            get_surface(HResource handle);
-        Buffer&             get_buffer(HResource handle);
-        VertexBuffer&       get_vertex_buffer(HResource handle);
-        IndexBuffer&        get_index_buffer(HResource handle);
-        ConstantBuffer&     get_constant_buffer(HResource handle);
-        BlendState&         get_blend_state(HResource handle);
-        RasterizerState&    get_rasterizer_state(HResource handle);
-        InputSignature&     get_input_signature(HResource handle);
-        Sampler&            get_sampler(HResource handle);
-        DepthStencilState&  get_depth_stencil_state(HResource handle);
-        Shader&             get_shader(HResource handle);
+		Surface&            get_surface(HResource handle);
+		Buffer&             get_buffer(HResource handle);
+		VertexBuffer&       get_vertex_buffer(HResource handle);
+		IndexBuffer&        get_index_buffer(HResource handle);
+		ConstantBuffer&     get_constant_buffer(HResource handle);
+		BlendState&         get_blend_state(HResource handle);
+		RasterizerState&    get_rasterizer_state(HResource handle);
+		InputSignature&     get_input_signature(HResource handle);
+		Sampler&            get_sampler(HResource handle);
+		DepthStencilState&  get_depth_stencil_state(HResource handle);
+		Shader&             get_shader(HResource handle);
 
 	private:
 		RenderContextData m_data;
 		ResourceManager   m_resource_manager;
-        HResource         m_backbuffer_handle;
+		HResource         m_backbuffer_handle;
 	};
 }

@@ -12,15 +12,15 @@
 
 namespace camy
 {
-    class CommandList;
+	class CommandList;
 
-    class camy_api IBucket
-    {
-    public:
-        virtual ~IBucket() = default;
+	class camy_api IBucket
+	{
+	public:
+		virtual ~IBucket() = default;
 
-        // compiled version of the bucket
-        virtual CommandList& to_command_list() = 0;
-        virtual bool         is_ready()const = 0;
-    }; 
+		// compiled version of the bucket
+		virtual CommandList& to_command_list() = 0;
+		virtual bool         is_ready()const = 0;
+	}; 
 }

@@ -27,17 +27,17 @@ namespace camy
 	{
 		return ::strcmp(a, b) == 0;
 	}
-    
-    // Here just in case someone includes Windows w/o NOMINMAX
+	
+	// Here just in case someone includes Windows w/o NOMINMAX
 #	if defined(min)
 #		undef min
 #	endif
 #	if defined(max)
 #	    undef max
 #	endif
-    template <typename T> 
+	template <typename T> 
 	camy_inline T min(const T& a, const T& b) { return a < b ? a : b; }
-    
+	
 	template <typename T> 
 	camy_inline T max(const T& a, const T& b) { return a < b ? b : a; }
 	

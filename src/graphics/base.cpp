@@ -10,24 +10,24 @@
 
 namespace camy
 {
-    bool Blob::contains_data() const
-    {
-        return byte_size > 0 && data != nullptr;
-    }
+	bool Blob::contains_data() const
+	{
+		return byte_size > 0 && data != nullptr;
+	}
 
-    void Blob::allocate_data(const byte * in_data, rsize in_byte_size)
-    {
-        free_data();
-        data = allocate(camy_loc, in_byte_size);
-        if (in_data != nullptr)
-            std::memcpy(data, in_data, in_byte_size);
-        byte_size = in_byte_size;
+	void Blob::allocate_data(const byte * in_data, rsize in_byte_size)
+	{
+		free_data();
+		data = allocate(camy_loc, in_byte_size);
+		if (in_data != nullptr)
+			std::memcpy(data, in_data, in_byte_size);
+		byte_size = in_byte_size;
 
-    }
+	}
 
-    void Blob::free_data()
-    {
-        deallocate(data);
-        byte_size = 0;
-    }
+	void Blob::free_data()
+	{
+		deallocate(data);
+		byte_size = 0;
+	}
 }

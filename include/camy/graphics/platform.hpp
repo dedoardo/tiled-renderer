@@ -119,7 +119,7 @@ namespace camy
 
 		//! Index of the preferred device to be used. Otherwise the first one supporting the 
 		//! backend is used
-        uint8	preferred_device = 0;
+		uint8	preferred_device = 0;
 	};
 
 	//! Values currently being used by camy. Can be compared w/ StartupInfo

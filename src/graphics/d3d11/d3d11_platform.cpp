@@ -25,7 +25,7 @@ namespace camy
 		RuntimeInfo		 g_runtime_info;
 		RenderContext*	 g_render_context = nullptr;
 		WindowDesc::Proc g_custom_winproc = nullptr;
-    }
+	}
 
 	struct ProcData
 	{
@@ -46,61 +46,61 @@ namespace camy
 		return DefWindowProcA(hwnd, msg, wparam, lparam);
 	}
 
-    HWND create_window(const StartupInfo& info, bool is_registered = false)
-    {
-        const char* class_name = "camy@d3d11.1@classname";
+	HWND create_window(const StartupInfo& info, bool is_registered = false)
+	{
+		const char* class_name = "camy@d3d11.1@classname";
 
-        WNDCLASSEXA wc;
-        HINSTANCE cur_instance = GetModuleHandle(NULL);
+		WNDCLASSEXA wc;
+		HINSTANCE cur_instance = GetModuleHandle(NULL);
 			
-        wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-        wc.lpfnWndProc = g_winproc;
-        wc.cbClsExtra = 0;
-        wc.cbWndExtra = 0;
-        wc.hInstance = cur_instance;
-        wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
-        wc.hIconSm = wc.hIcon;
-        wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-        wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-        wc.lpszMenuName = NULL;
-        wc.lpszClassName = class_name;
-        wc.cbSize = sizeof(WNDCLASSEXA);
+		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		wc.lpfnWndProc = g_winproc;
+		wc.cbClsExtra = 0;
+		wc.cbWndExtra = 0;
+		wc.hInstance = cur_instance;
+		wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+		wc.hIconSm = wc.hIcon;
+		wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+		wc.lpszMenuName = NULL;
+		wc.lpszClassName = class_name;
+		wc.cbSize = sizeof(WNDCLASSEXA);
 
-        if (!is_registered)
-        {
-            if (!RegisterClassExA(&wc))
-            {
+		if (!is_registered)
+		{
+			if (!RegisterClassExA(&wc))
+			{
 				cl_system_err("Win32::RegisterClassEx", GetLastError(), "D3D11 Window Class");
 				return false;
-            }
-        }
+			}
+		}
 
-        float screen_width = (float)GetSystemMetrics(SM_CXVIRTUALSCREEN);
-        float screen_height = (float)GetSystemMetrics(SM_CYVIRTUALSCREEN);
+		float screen_width = (float)GetSystemMetrics(SM_CXVIRTUALSCREEN);
+		float screen_height = (float)GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-        DWORD style = WS_OVERLAPPEDWINDOW;
-        if (info.window.style == WindowDesc::Style::Popup)
-            style = WS_POPUP;
+		DWORD style = WS_OVERLAPPEDWINDOW;
+		if (info.window.style == WindowDesc::Style::Popup)
+			style = WS_POPUP;
 
-        HWND ret_handle = CreateWindowA(class_name, info.window.name, style,
-            CW_USEDEFAULT, CW_USEDEFAULT, info.window.width, info.window.height, NULL, NULL, cur_instance, NULL);
-        if (ret_handle == NULL)
-        {
+		HWND ret_handle = CreateWindowA(class_name, info.window.name, style,
+			CW_USEDEFAULT, CW_USEDEFAULT, info.window.width, info.window.height, NULL, NULL, cur_instance, NULL);
+		if (ret_handle == NULL)
+		{
 			cl_system_err("Win32::CreateWindow", GetLastError(), "D3D11 Window");
-            return nullptr;
-        }
+			return nullptr;
+		}
 
-        ShowWindow(ret_handle, SW_SHOW);
+		ShowWindow(ret_handle, SW_SHOW);
 
 		g_custom_winproc = info.window.proc;
 
-        return ret_handle;
-    }
+		return ret_handle;
+	}
 
-    void destroy_window(HWND hwnd)
-    {
-        DestroyWindow(hwnd);
-    }
+	void destroy_window(HWND hwnd)
+	{
+		DestroyWindow(hwnd);
+	}
 
 	namespace API
 	{

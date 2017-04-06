@@ -123,7 +123,7 @@ namespace camy
 	using sint64 = std::int64_t;
 
 	using byte = uint8;
-    using rsize = uint32;
+	using rsize = uint32;
 
 	using char8 = char;
 	using char16 = char16_t;
@@ -132,7 +132,7 @@ namespace camy
 	using pointer_size = std::intptr_t;
 
 	template <typename Type>
-    camy_api inline void safe_release(Type*& ptr)
+	camy_api inline void safe_release(Type*& ptr)
 	{
 		// Delete on nullptr is perfectly valid
 		delete ptr;
@@ -140,7 +140,7 @@ namespace camy
 	}
 
 	template <typename Type>
-    camy_api inline void safe_release_array(Type*& ptr)
+	camy_api inline void safe_release_array(Type*& ptr)
 	{
 		// Delete on nullptr is perfectly valid
 		delete[] ptr;

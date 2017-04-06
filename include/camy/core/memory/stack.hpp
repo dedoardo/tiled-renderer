@@ -13,159 +13,159 @@
 
 namespace camy
 {
-    template <typename ElementType, uint16 kAlignment = kDefaultAlignment>
-    class Stack final
-    {
-    public:
-        static const rsize kElementSize = sizeof(ElementType);
+	template <typename ElementType, uint16 kAlignment = kDefaultAlignment>
+	class Stack final
+	{
+	public:
+		static const rsize kElementSize = sizeof(ElementType);
 
-    public:
-        Stack(rsize initial_capacity = 2);
-        ~Stack();
+	public:
+		Stack(rsize initial_capacity = 2);
+		~Stack();
 
-        Stack(Stack&& other);
-        Stack(Stack& other);
+		Stack(Stack&& other);
+		Stack(Stack& other);
 
-        Stack& operator=(Stack&& other);
-        Stack& operator=(const Stack& other);
+		Stack& operator=(Stack&& other);
+		Stack& operator=(const Stack& other);
 
-        void         push(const ElementType& el);
-        void         push(ElementType&& el);
-        ElementType& pop();
-        void         clear();
-        rsize        count()const;
-        rsize        capacity()const;
-        bool         empty()const;
+		void         push(const ElementType& el);
+		void         push(ElementType&& el);
+		ElementType& pop();
+		void         clear();
+		rsize        count()const;
+		rsize        capacity()const;
+		bool         empty()const;
 
-    private:
-        void _realloc();
+	private:
+		void _realloc();
 
-        ElementType* m_base;
-        ElementType* m_cur;
-        ElementType* m_top;
-    };
+		ElementType* m_base;
+		ElementType* m_cur;
+		ElementType* m_top;
+	};
 
-    template<typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::Stack(rsize initial_capacity) : 
-        m_base(nullptr),
-        m_cur(nullptr)
-    {
-        m_base = (ElementType*)allocate(camy_loc, kElementSize * initial_capacity, kAlignment);
-        m_cur = m_base;
-        m_top = m_base + initial_capacity;
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline Stack<ElementType, kAlignment>::Stack(rsize initial_capacity) : 
+		m_base(nullptr),
+		m_cur(nullptr)
+	{
+		m_base = (ElementType*)allocate(camy_loc, kElementSize * initial_capacity, kAlignment);
+		m_cur = m_base;
+		m_top = m_base + initial_capacity;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::~Stack()
-    {
-        deallocate(m_base);
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline Stack<ElementType, kAlignment>::~Stack()
+	{
+		deallocate(m_base);
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::Stack(Stack && other)
-    {
-        m_base = other.m_base;
-        m_cur = other.m_cur;
-        m_top = other.m_top;
-        other.m_base = other.m_cur = other.m_top = nullptr;
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline Stack<ElementType, kAlignment>::Stack(Stack && other)
+	{
+		m_base = other.m_base;
+		m_cur = other.m_cur;
+		m_top = other.m_top;
+		other.m_base = other.m_cur = other.m_top = nullptr;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::Stack(Stack & other)
-    {
-        m_base = (ElementType*)allocate(camy_loc, kElementSize * other.capacity(), kAlignment);
-        m_top = m_base + other.capacity();
+	template<typename ElementType, uint16 kAlignment>
+	inline Stack<ElementType, kAlignment>::Stack(Stack & other)
+	{
+		m_base = (ElementType*)allocate(camy_loc, kElementSize * other.capacity(), kAlignment);
+		m_top = m_base + other.capacity();
 
-        m_cur = m_base;
-        for (rsize i = 0; i < other.count(); ++i)
-            new (m_cur++) ElementType(other.m_base + [i]);
-    }
+		m_cur = m_base;
+		for (rsize i = 0; i < other.count(); ++i)
+			new (m_cur++) ElementType(other.m_base + [i]);
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment> & Stack<ElementType, kAlignment>::operator=(Stack && other)
-    {
-        m_base = other.m_base;
-        m_cur = other.m_cur;
-        m_top = other.m_top;
-        other.m_base = other.m_cur = other.m_top = nullptr;
-        return *this;
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline Stack<ElementType, kAlignment> & Stack<ElementType, kAlignment>::operator=(Stack && other)
+	{
+		m_base = other.m_base;
+		m_cur = other.m_cur;
+		m_top = other.m_top;
+		other.m_base = other.m_cur = other.m_top = nullptr;
+		return *this;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment> & Stack<ElementType, kAlignment>::operator=(const Stack & other)
-    {
-        m_base = (ElementType*)allocate(camy_loc, kElementSize * other.capacity(), kAlignment);
-        m_top = m_base + other.capacity();
-        m_cur = m_base;
-        for (rsize i = 0; i < other.count(); ++i)
-            new (m_cur++) ElementType(other.m_base + [i]);
-        return *this;
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline Stack<ElementType, kAlignment> & Stack<ElementType, kAlignment>::operator=(const Stack & other)
+	{
+		m_base = (ElementType*)allocate(camy_loc, kElementSize * other.capacity(), kAlignment);
+		m_top = m_base + other.capacity();
+		m_cur = m_base;
+		for (rsize i = 0; i < other.count(); ++i)
+			new (m_cur++) ElementType(other.m_base + [i]);
+		return *this;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::push(const ElementType& el)
-    {
-        if (m_cur == m_top)
-            _realloc();
+	template<typename ElementType, uint16 kAlignment>
+	inline void Stack<ElementType, kAlignment>::push(const ElementType& el)
+	{
+		if (m_cur == m_top)
+			_realloc();
 
-        new (m_cur++) ElementType(el);
-    }
+		new (m_cur++) ElementType(el);
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::push(ElementType&& el)
-    {
-        if (m_cur == m_top)
-            _realloc();
-        
-        new (m_cur++) ElementType(el);
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline void Stack<ElementType, kAlignment>::push(ElementType&& el)
+	{
+		if (m_cur == m_top)
+			_realloc();
+		
+		new (m_cur++) ElementType(el);
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline ElementType & Stack<ElementType, kAlignment>::pop()
-    {
-        camy_assert(m_cur != m_base);
-        return *(--m_cur);
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline ElementType & Stack<ElementType, kAlignment>::pop()
+	{
+		camy_assert(m_cur != m_base);
+		return *(--m_cur);
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::clear()
-    {
-        ElementType* cur = m_cur;
-        while (cur != m_base)
-            (cur++)->~ElementType();
-        m_cur = m_base;
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline void Stack<ElementType, kAlignment>::clear()
+	{
+		ElementType* cur = m_cur;
+		while (cur != m_base)
+			(cur++)->~ElementType();
+		m_cur = m_base;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline rsize Stack<ElementType, kAlignment>::count()const 
-    {
-        return (rsize)(m_cur - m_base);
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline rsize Stack<ElementType, kAlignment>::count()const 
+	{
+		return (rsize)(m_cur - m_base);
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline rsize Stack<ElementType, kAlignment>::capacity()const 
-    {
-        return (rsize)(m_top - m_base);
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline rsize Stack<ElementType, kAlignment>::capacity()const 
+	{
+		return (rsize)(m_top - m_base);
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline bool Stack<ElementType, kAlignment>::empty() const
-    {
-        return count() == 0;
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline bool Stack<ElementType, kAlignment>::empty() const
+	{
+		return count() == 0;
+	}
 
-    template<typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::_realloc()
-    {
-        ElementType* old_buffer = m_base;
-        rsize old_capacity = capacity();
-        rsize new_capacity = old_capacity * 2;
-        m_base = (ElementType*)allocate(camy_loc, kElementSize * new_capacity, kAlignment);
-        m_top = m_base + new_capacity;
-        m_cur = m_base;
-        for (rsize i = 0; i < old_capacity; ++i)
-            new (m_cur++) ElementType(std::move(old_buffer[i]));
-        
-        deallocate(old_buffer);
-    }
+	template<typename ElementType, uint16 kAlignment>
+	inline void Stack<ElementType, kAlignment>::_realloc()
+	{
+		ElementType* old_buffer = m_base;
+		rsize old_capacity = capacity();
+		rsize new_capacity = old_capacity * 2;
+		m_base = (ElementType*)allocate(camy_loc, kElementSize * new_capacity, kAlignment);
+		m_top = m_base + new_capacity;
+		m_cur = m_base;
+		for (rsize i = 0; i < old_capacity; ++i)
+			new (m_cur++) ElementType(std::move(old_buffer[i]));
+		
+		deallocate(old_buffer);
+	}
 }
