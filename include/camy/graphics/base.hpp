@@ -278,6 +278,9 @@ namespace camy
 	
 		//! Set this to dynamic if you plan to update this resource frequently (e.g. on a frame-by-frame basis)
 		Usage usage = Usage::Static;
+
+		//! ShaderResource by default, true if you also want a uav
+		bool is_uav = false;
 	};
 
 	//! <Buffer>

@@ -167,6 +167,9 @@
     <ClInclude Include="..\include\camy\core\os\log.hpp">
       <Filter>include\camy\core\os</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\camy\graphics\effect_bucket.hpp">
+      <Filter>include\camy\graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\core\math\types.cpp">
@@ -228,6 +231,9 @@
     </ClCompile>
     <ClCompile Include="..\src\core\os\log.cpp">
       <Filter>src\core\os</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\graphics\effect_bucket.cpp">
+      <Filter>src\graphics</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

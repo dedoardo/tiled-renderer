@@ -42,3 +42,39 @@ Naming is same as custom C++ compiler attributes:
 <type>::<name> __gen(type)
 <type>::<name> __internal
 
+<> Shading
+Indirect diffuse:
+starting from Lo = Le + { f * Li * cos }
+Indirect diffuse is prefiltered offline, the diffuse BRDF is the classic lambert
+f(x) = c / PI
+as it is constant we can move it out of the rendering equation integral having
+Lo = Le + c/PI * { Li * cos }
+Parameterizing the surface integral in spherical coordinates. 
+The why there is an added sin is pretty easy to understand as the area of
+the small bits of surface is reduced as we move along phi(zenit). The mathematical
+reason is related to the change of variable theorem in multi-variable calculus.
+http://math.stackexchange.com/questions/904483/solid-angle-integration
+http://math.stackexchange.com/questions/188490/why-is-the-differential-solid-angle-have-a-sin-theta-term-in-integration-in-s
+http://mathworld.wolfram.com/ChangeofVariablesTheorem.html
+(removing emissive)
+Lo = c/PI { Li * cos(theta) * sin(theta) * d_theta * d_phi }
+Now we run the simulation offline using a montecarlo estimator where for each possible direction L we calculate the accumulated irradiance.
+phi = [0, PI / 2]
+theta = [0, 2 * PI]
+Thus we need to multiply by the area and divide for the number of samples. The result
+is a double sum:
+((c/PI) * (2*PI/samples_theta) * ((PI/2)/samples_phi)) * sum_phi(sum_theta(Li * cos(theta) * sin(theta))).
+This is run in the pixel shader one per face. Pretty much the same as:
+http://www.codinglabs.net/article_physically_based_rendering.aspx.
+
+Indirect specular
+
+<> Vignette
+Vignette is probably one of the few things that has no inspiration from 
+any online resource. I saw the result and tried to implement it. It's very simple, to avoid passing viewport 
+information to the pixel shader, I let the vertex shader output the position in 
+homogeneous clip space coordinates and then manually do the perspective divide in
+the pixel shader (thus avoiding the viewport transform).
+The darkness is scaled gradually from the center of the screen (smoothstep).
+Some sort of noise is added, this is exclusively to avoid banding, no artistic reason behind it.
+The next step would be tweaking the vignette using some pattern or noise texture.

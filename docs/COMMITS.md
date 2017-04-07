@@ -45,3 +45,5 @@ Starting from 1/4/2017
 + ostream overloads for vectors
 ! Fixed bug in LinearPage::next_array() and PagedLinearVector::next_array()
 ! Fixed bug in RenderBucket::_compile() block caching now working
+? Temporarly included DirectXMath for matrix inversion
+! Fixed bug in PagedLinearVector destructor

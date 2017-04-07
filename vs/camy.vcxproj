@@ -160,6 +160,7 @@
     <ClInclude Include="..\include\camy\graphics\compute_bucket.hpp" />
     <ClInclude Include="..\include\camy\graphics\d3d11\d3d11_graphics_base.hpp" />
     <ClInclude Include="..\include\camy\graphics\d3d11\d3d11_impl_base.hpp" />
+    <ClInclude Include="..\include\camy\graphics\effect_bucket.hpp" />
     <ClInclude Include="..\include\camy\graphics\frame.hpp" />
     <ClInclude Include="..\include\camy\graphics\ibucket.hpp" />
     <ClInclude Include="..\include\camy\graphics\opengl4\opengl4_graphics_base.hpp" />
@@ -184,6 +185,7 @@
     <ClCompile Include="..\src\graphics\d3d11\d3d11_platform.cpp" />
     <ClCompile Include="..\src\graphics\d3d11\d3d11_render_context.cpp" />
     <ClCompile Include="..\src\graphics\d3d11\d3d11_program.cpp" />
+    <ClCompile Include="..\src\graphics\effect_bucket.cpp" />
     <ClCompile Include="..\src\graphics\frame.cpp" />
     <ClCompile Include="..\src\graphics\opengl4\opengl4_command_list.cpp" />
     <ClCompile Include="..\src\graphics\opengl4\opengl4_platform.cpp" />

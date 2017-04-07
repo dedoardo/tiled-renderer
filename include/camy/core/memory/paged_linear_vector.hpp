@@ -62,8 +62,9 @@ namespace camy
 		while (cur != nullptr)
 		{
 			cur->reset();
+			PageType* old = cur;
 			cur = (PageType*)cur->next;
-			deallocate(cur);
+			deallocate(old);
 		}
 	}
 

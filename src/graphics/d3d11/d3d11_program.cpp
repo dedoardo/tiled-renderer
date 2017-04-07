@@ -39,11 +39,17 @@ namespace camy
 			macros.append({ opts.defs[i].name, opts.defs[i].val });
 		macros.append({ nullptr, nullptr });
 
+		int flags = 0x0;
+#if defined(camy_enable_layers_validation)
+		flags |= (D3DCOMPILE_DEBUG);
+#endif
+
 		HRESULT result = D3DCompile(text.data, text.byte_size, opts.base_path,
-			macros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, opts.entry_point, target, 0, 0, &bytecode, &err_msg);
+			macros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, opts.entry_point, target, flags, 0, &bytecode, &err_msg);
 		if (FAILED(result))
 		{
 			cl_system_err("D3DCompile", result, "");
+			cl_err((char*)err_msg->GetBufferPointer());
 			return false;
 		}
 		

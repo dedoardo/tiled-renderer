@@ -74,6 +74,7 @@ namespace camy
 	{
 		float3() : x(0.f), y(0.f), z(0.f) { }
 		float3(float x, float y, float z) : x(x), y(y), z(z) { }
+		float3(float splat) : x(splat), y(splat), z(splat) { }
 
 		float3& operator+=(const float3& right);
 		float3& operator-=(const float3& right);
@@ -96,6 +97,7 @@ namespace camy
 		float4(float x, float y, float z) : x(x), y(y), z(z), w(1.f) { }
 		float4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) { }
 		float4(const float3& xyz, float w) : x(xyz.x), y(xyz.y), z(xyz.z), w(w) { }
+		float4(float splat) : x(splat), y(splat), z(splat), w(splat) { }
 
 		float4& operator+=(const float4& right);
 		float4& operator-=(const float4& right);

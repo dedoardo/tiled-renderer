@@ -8,6 +8,8 @@
 // Header
 #include <camy/core/math/ops.hpp>
 
+#include <DirectXMath.h>
+
 namespace camy
 {
 	float len(const float2& vec)
@@ -139,6 +141,15 @@ namespace camy
 			mat.rows[0].z, mat.rows[1].z, mat.rows[2].z, mat.rows[3].z,
 			mat.rows[0].w, mat.rows[1].w, mat.rows[2].w, mat.rows[3].w
 		);
+	}
+
+	float4x4 invert(const float4x4 & mat)
+	{
+		using namespace DirectX;
+		XMMATRIX _mat = XMLoadFloat4x4((XMFLOAT4X4*)&mat);
+		float4x4 ret;
+		XMStoreFloat4x4((XMFLOAT4X4*)&ret, XMMatrixInverse(nullptr, _mat));
+		return ret;
 	}
 
 	float3x3 rotation(const float3& dir, float angle)

@@ -34,6 +34,7 @@ namespace camy
 	float4   mul(const float4x4& mat, const float4& vec);
 	float4x4 mul(const float4x4& left, const float4x4& right);
 	float4x4 transpose(const float4x4& mat);
+	float4x4 invert(const float4x4& mat);
 
 	float3x3 rotation(const float3& dir, float angle);
 	float4x4 look_at(const float3& pos, const float3& at, const float3& up);

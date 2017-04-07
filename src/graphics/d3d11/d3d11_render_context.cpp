@@ -813,9 +813,17 @@ namespace camy
 		return HResource::make_invalid();
 	}
 
-	HResource RenderContext::create_buffer(const BufferDesc& desc, const char8* name)
+	HResource RenderContext::create_buffer(const BufferDesc& desc, const void* data, const char8* name)
 	{
 		camy_assert(m_data.is_valid());
+
+		if (desc.is_uav == true && desc.usage == Usage::Dynamic)
+		{
+			cl_internal_err("Can't create a dynamic buffer with GPUView_UnorderedAccess");
+			cl_invalid_arg((int)desc.usage);
+			cl_invalid_arg((int)desc.is_uav);
+			return HResource::make_invalid();
+		}
 
 		HResource ret;
 		ID3D11Buffer* buffer = nullptr;
@@ -825,7 +833,7 @@ namespace camy
 		D3D11_BUFFER_DESC ndesc;
 		ndesc.ByteWidth = desc.num_elements * desc.element_size;
 		ndesc.Usage = D3D11_USAGE_DYNAMIC;
-		ndesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+		ndesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | (desc.is_uav ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		ndesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		ndesc.StructureByteStride = desc.element_size;
 
@@ -834,7 +842,11 @@ namespace camy
 			misc_flags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 		ndesc.MiscFlags = misc_flags;
 
-		HRESULT result = m_data.device->CreateBuffer(&ndesc, nullptr, &buffer);
+		D3D11_SUBRESOURCE_DATA initial_data;
+		initial_data.pSysMem = data;
+		initial_data.SysMemPitch = 0;
+
+		HRESULT result = m_data.device->CreateBuffer(&ndesc, data == nullptr ? nullptr : &initial_data, &buffer);
 		if (FAILED(result))
 		{
 			cl_system_err("ID3D11Device::CreateBuffer", result, name);
@@ -858,20 +870,23 @@ namespace camy
 		set_debug_name(srv, "Buffer", name, "SRV");
 
 		// Unordered access view
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-		uav_desc.Format = DXGI_FORMAT_UNKNOWN;
-		uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-		uav_desc.Buffer.FirstElement = 0;
-		uav_desc.Buffer.NumElements = desc.num_elements;
-		uav_desc.Buffer.Flags = 0;
-
-		result = m_data.device->CreateUnorderedAccessView(buffer, &uav_desc, &uav);
-		if (FAILED(result))
+		if (desc.is_uav)
 		{
-			cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
-			goto error;
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+			uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+			uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+			uav_desc.Buffer.FirstElement = 0;
+			uav_desc.Buffer.NumElements = desc.num_elements;
+			uav_desc.Buffer.Flags = 0;
+
+			result = m_data.device->CreateUnorderedAccessView(buffer, &uav_desc, &uav);
+			if (FAILED(result))
+			{
+				cl_system_err("ID3D11Device::CreateUnorderedAccessView", result, name);
+				goto error;
+			}
+			set_debug_name(srv, "Buffer", name, "UAV");
 		}
-		set_debug_name(srv, "Buffer", name, "UAV");
 
 		ret = m_resource_manager.allocate<Buffer>(camy_loc, name);
 		Buffer& res = m_resource_manager.get<Buffer>(ret);

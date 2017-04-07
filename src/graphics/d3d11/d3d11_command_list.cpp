@@ -269,6 +269,12 @@ namespace camy
 		camy_assert(cbuffer.desc.size % 16 == 0);
 		rsize cbuffer_num_constants = var.size() / 16;
 
+		if (cbuffer_num_constants % 16 != 0)
+		{
+			cl_internal_err("Constant Buffers must be multiples of 256 bytes in size that is multiples of 16 constants (4 * 32-bit)");
+			return;
+		}
+
 		switch ((ShaderDesc::Type)var.shader())
 		{
 		case ShaderDesc::Type::Vertex:
