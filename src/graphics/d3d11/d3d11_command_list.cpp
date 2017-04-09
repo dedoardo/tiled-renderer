@@ -272,6 +272,7 @@ namespace camy
 		if (cbuffer_num_constants % 16 != 0)
 		{
 			cl_internal_err("Constant Buffers must be multiples of 256 bytes in size that is multiples of 16 constants (4 * 32-bit)");
+			cl_internal_err("> The provided one has: ", cbuffer_num_constants, " constants");
 			return;
 		}
 

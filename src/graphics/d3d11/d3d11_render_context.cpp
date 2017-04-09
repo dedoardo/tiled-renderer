@@ -419,6 +419,8 @@ namespace camy
 			return DXGI_FORMAT_BC1_UNORM;
 		case PixelFormat::BC3Unorm:
 			return DXGI_FORMAT_BC3_UNORM;
+		case PixelFormat::BC5Unorm:
+			return DXGI_FORMAT_BC5_UNORM;
 
 			// Typeless formats
 		case PixelFormat::R8Typeless:
@@ -469,7 +471,7 @@ namespace camy
 			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 		default:
-			cl_warn("Failed to translate format to backend API, not supported: ", (uint32)format);
+			cl_warn("Failed to translate format to D3D11.1, not supported: ", (uint32)format);
 			return DXGI_FORMAT_UNKNOWN;
 		}
 	}
@@ -548,8 +550,7 @@ namespace camy
 		ndesc.MiscFlags = 0;
 		if (desc.type == SurfaceDesc::Type::SurfaceCube ||
 			desc.type == SurfaceDesc::Type::SurfaceCubeArray)
-			ndesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
-
+			ndesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
 		uint32 num_subresources = ndesc.MipLevels;
 		if (desc.type == SurfaceDesc::Type::SurfaceCube)

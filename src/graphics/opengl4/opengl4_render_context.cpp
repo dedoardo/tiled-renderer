@@ -10,6 +10,9 @@
 
 #if defined(camy_backend_opengl4)
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 namespace camy
 {
 	HWND create_window(const StartupInfo& info, bool is_registered = false);
@@ -27,12 +30,12 @@ namespace camy
 
 		if (!dummy_hwnd)
 		{
-			camy_error("Failed to create dummy window");
+			cl_internal_err("Failed to create dummy window");
 			return false;
 		}
 
-		camy_info("Creating RenderContext..");
-		camy_info("Num concurrent contexts: ", kMaxConcurrentContexts);
+		cl_info("Creating RenderContext..");
+		cl_info("Num concurrent contexts: ", kMaxConcurrentContexts);
 	
 		HDC dummy_hdc = GetDC(dummy_hwnd);
 
@@ -60,7 +63,7 @@ namespace camy
 		int dummy_pf = ChoosePixelFormat(dummy_hdc, &dummy_pfd);
 		if (dummy_pf == 0)
 		{
-			camy_error("Failed to find matching pixel format");
+			cl_internal_err("Failed to find matching pixel format");
 			return false;
 		}
 		SetPixelFormat(dummy_hdc, dummy_pf, &dummy_pfd);
@@ -71,7 +74,7 @@ namespace camy
 		glewExperimental = true;
 		if (glewInit() != GLEW_OK)
 		{
-			camy_error("Failed to initialize glew");
+			cl_internal_err("Failed to initialize glew");
 			ReleaseDC(dummy_hwnd, dummy_hdc);
 			return false;
 		}
@@ -86,7 +89,7 @@ namespace camy
 		HWND hwnd = create_window(info_in, true);
 		if (!hwnd)
 		{
-			camy_error("Failed to create window");
+			cl_internal_err("Failed to create window");
 			return false;
 		}
 
@@ -129,8 +132,7 @@ namespace camy
 		m_data.hrc = wglCreateContextAttribsARB(hdc, nullptr, ctx_attribs);
 		if (!m_data.hrc)
 		{
-			auto err = GetLastError();
-			camy_error("Failed to create OpenGL4.5 context");
+			cl_system_err("WGLEW::CreateContextAttribsARB", GetLastError(), "");
 			ReleaseDC(hwnd, hdc);
 			destroy_window(hwnd);
 			return false;
@@ -185,9 +187,14 @@ namespace camy
 	
 	}
 
-	void RenderContext::clear_depth(HResource target)
+	void RenderContext::clear_depth(HResource target, float depth, sint32 stencil)
 	{
 	
+	}
+
+	void RenderContext::immediate_cbuffer_update(HResource handle, void* data)
+	{
+
 	}
 
 	HResource RenderContext::get_backbuffer_handle() const
@@ -204,31 +211,271 @@ namespace camy
 	{
 	}
 
-	HResource RenderContext::create_surface(const SurfaceDesc& desc, const char8* name)
+	bool ogl_is_compressed(PixelFormat pformat)
 	{
-
-
-		return kInvalidHResource;
+		switch (pformat)
+		{
+		case PixelFormat::BC1Unorm:
+		case PixelFormat::BC5Unorm:
+			return true;
+		default:
+			return false;
+		}
 	}
 
-	HResource RenderContext::create_buffer(const BufferDesc& desc, const char8* name)
+	void ogl_to_camy(PixelFormat pformat, GLenum& iformat, GLenum& format, GLenum& type)
 	{
-		return kInvalidHResource;
+		switch (pformat)
+		{
+		case PixelFormat::Unknown:
+			camy_assert(false); // DXGI_FORMAT_UNKNOWN ?
+
+			// Compressed formats
+		case PixelFormat::BC1Unorm:
+			iformat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+		case PixelFormat::BC3Unorm:
+			iformat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+		case PixelFormat::BC5Unorm:
+			iformat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+
+			// Typeless formats
+		case PixelFormat::R8Typeless:
+		case PixelFormat::R16Typeless:
+		case PixelFormat::R32Typeless:
+		case PixelFormat::R24G8Typeless:
+		case PixelFormat::R24UnormX8Typeless:
+			camy_assert(false);
+
+			// -> Single channel uncompressed
+		case PixelFormat::R8Unorm:
+			iformat = GL_R8;
+			format = GL_RED;
+			type = GL_UNSIGNED_BYTE;
+			return;
+		case PixelFormat::R16Unorm:
+			iformat = GL_R16;
+			format = GL_RED;
+			type = GL_UNSIGNED_SHORT;
+			return;
+		case PixelFormat::R16Float:
+			iformat = GL_R16F;
+			format = GL_RED;
+			type = GL_FLOAT;
+			return;
+		case PixelFormat::R32Float:
+			iformat = GL_R32F;
+			format = GL_RED;
+			type = GL_FLOAT;
+			return;
+
+			// -> Two channels uncompressed
+		case PixelFormat::RG8Unorm:
+			iformat = GL_RG8;
+			format = GL_RG;
+			type = GL_UNSIGNED_BYTE;
+			return;
+		case PixelFormat::RG16Unorm:
+			iformat = GL_RG16;
+			format = GL_RG;
+			type = GL_UNSIGNED_SHORT;
+			return;
+		case PixelFormat::RG16Float:
+			iformat = GL_RG16F;
+			format = GL_RG;
+			type = GL_FLOAT;
+			return;
+		case PixelFormat::RG32Float:
+			iformat = GL_RG32F;
+			format = GL_RG;
+			type = GL_FLOAT;
+			return;
+
+			// -> Four channels uncompressed
+		case PixelFormat::RGBA8Unorm:
+			iformat = GL_RGBA8;
+			format = GL_RGBA;
+			type = GL_UNSIGNED_BYTE;
+			return;
+		case PixelFormat::RGBA16Float:
+			iformat = GL_RGBA16F;
+			format = GL_RGBA;
+			type = GL_FLOAT;
+			return;
+		case PixelFormat::RGBA32Float:
+			iformat = GL_RGBA32F;
+			format = GL_RGBA;
+			type = GL_FLOAT;
+			return;
+
+			// Depth formats
+		case PixelFormat::D16Unorm:
+			iformat = GL_DEPTH_COMPONENT;
+			format = GL_DEPTH_COMPONENT;
+			type = GL_UNSIGNED_SHORT;
+			return;
+		case PixelFormat::D32Float:
+			iformat = GL_DEPTH_COMPONENT;
+			format = GL_DEPTH_COMPONENT;
+			type = GL_UNSIGNED_SHORT;
+			return;
+		case PixelFormat::D24UNorm_S8Uint:
+			iformat = GL_DEPTH_STENCIL;
+			format = GL_DEPTH_STENCIL;
+			type = GL_UNSIGNED_INT_24_8;
+			return;
+
+		default:
+			cl_warn("Failed to translate format to OpenGL4.5, not supported: ", (uint32)format);		
+		}
 	}
 
-	HResource RenderContext::create_vertex_buffer(const VertexBufferDesc& desc, const char8* name)
+	rsize ogl_compute_stride(PixelFormat format, rsize w)
+	{
+		switch (format)
+		{
+		case PixelFormat::Unknown:
+			camy_assert(false); // DXGI_FORMAT_UNKNOWN ?
+
+		// Compressed formats
+		case PixelFormat::BC1Unorm:
+		case PixelFormat::BC3Unorm:
+		case PixelFormat::BC5Unorm:
+			camy_assert(false); // TODO
+		default:
+			return 0;
+		}
+	}
+
+	HResource RenderContext::create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces, rsize num_subsurfaces, const char8* name)
+	{
+		if (desc.type == SurfaceDesc::Type::Surface2DArray ||
+			desc.type == SurfaceDesc::Type::SurfaceCubeArray)
+		{
+			cl_internal_err("OpenGL4.5 backend hasn't implemented texture arrays");
+			return HResource::make_invalid();
+		}
+
+		if (desc.mip_levels == 0)
+		{
+			cl_invalid_arg(desc.mip_levels);
+			return HResource::make_invalid();
+		}
+
+		rsize expected_num_subsurfaces = desc.mip_levels;
+		if (desc.type == SurfaceDesc::Type::SurfaceCube)
+			expected_num_subsurfaces *= 6;
+
+		if (subsurfaces != nullptr &&
+			expected_num_subsurfaces != num_subsurfaces)
+		{
+			cl_invalid_arg_range(num_subsurfaces,expected_num_subsurfaces, expected_num_subsurfaces);
+			return HResource::make_invalid();
+		}
+
+		bool failed = false;
+		GLuint texture;
+		glGenTextures(1, &texture);
+		if (desc.type == SurfaceDesc::Type::SurfaceCube)
+		{
+			glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+			
+			for (rsize f = 0; f < 6; ++f)
+			{
+				uint16 w = desc.width;
+				uint16 h = desc.height;
+
+				for (rsize m = 0; m < desc.mip_levels; ++m)
+				{
+					rsize ss_idx = f * desc.mip_levels + m;
+					const void* cur_data = subsurfaces == nullptr ? nullptr : subsurfaces[ss_idx].data;
+
+					GLenum iformat, format, type;
+					ogl_to_camy(desc.pixel_format, iformat, format, type);
+					if (ogl_is_compressed(desc.pixel_format))
+					{
+						GLuint num_bytes = ogl_compute_stride(desc.pixel_format, w) * w * h;
+						glCompressedTexImage2D(GL_PROXY_TEXTURE_2D,
+							m, iformat, w, h, 0, num_bytes, cur_data);
+					}
+					else
+					{
+						glTexImage2D(GL_TEXTURE_2D,
+							m, iformat, w, h, 0, format, type, cur_data);
+					}
+					failed = gl_err() ? true : failed;
+
+					// TODO: Check for non-power of two
+					w /= 2;
+					h /= 2;
+				}
+			}
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, texture);
+			
+			uint16 w = desc.width;
+			uint16 h = desc.height;
+			for (rsize m = 0; m < desc.mip_levels; ++m)
+			{
+				const void* cur_data = subsurfaces == nullptr ? nullptr : subsurfaces[m].data;
+
+				GLenum iformat, format, type;
+				ogl_to_camy(desc.pixel_format, iformat, format, type);
+				if (ogl_is_compressed(desc.pixel_format))
+				{
+					GLuint num_bytes = ogl_compute_stride(desc.pixel_format, w) * w * h;
+					glCompressedTexImage2D(GL_PROXY_TEXTURE_2D,
+						m, iformat, w, h, 0, num_bytes, cur_data);
+				}
+				else
+				{
+					glTexImage2D(GL_TEXTURE_2D,
+						m, iformat, w, h, 0, format, type, cur_data);
+				}
+				failed = gl_err() ? true : failed;
+				
+				// TODO: Check for non-power of two
+				w /= 2;
+				h /= 2;
+			}
+		}
+
+		if (failed)
+		{
+			glDeleteTextures(1, &texture);
+			cl_internal_err("Failed to create Texture, see above for more details");
+			return HResource::make_invalid();
+		}
+
+		HResource ret = m_resource_manager.allocate<Surface>(camy_loc, name);
+		Surface& res = m_resource_manager.get<Surface>(ret);
+		
+		res.desc = desc;
+		res.native.texture = texture;
+
+		cl_info("Created Surface: ", name, "[", desc.width, "x", desc.height, "]");
+		return ret;
+	}
+
+	HResource RenderContext::create_buffer(const BufferDesc& desc, const void* data, const char8* name)
+	{
+		return HResource::make_invalid();
+	}
+
+	HResource RenderContext::create_vertex_buffer(const VertexBufferDesc& desc, const void* data, const char8* name)
 	{
 		GLuint buffer;
 		glGenBuffers(1, &buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
 		glBufferData(GL_ARRAY_BUFFER, desc.num_elements * desc.element_size,
-			desc.initial_data, desc.is_dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+			data, desc.usage == Usage::Dynamic? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
 		if (gl_err())
 		{
 			glDeleteBuffers(1, &buffer);
-			camy_error("Failed to create vertex buffer, see above for more details");
-			return kInvalidHResource;
+			cl_internal_err ("Failed to create VertexBuffer, see above for more details");
+			return HResource::make_invalid();
 		}
 
 		HResource ret = m_resource_manager.allocate<VertexBuffer>(camy_loc, name);
@@ -237,24 +484,24 @@ namespace camy
 		res.desc = desc;
 		res.native.buffer = buffer;
 		
-		camy_info("Successfully created vertex buffer: ", name);
+		cl_info("Created VertexBuffer: ", name);
 
 		return ret;
 	}
 
-	HResource RenderContext::create_index_buffer(const IndexBufferDesc& desc, const char8* name)
+	HResource RenderContext::create_index_buffer(const IndexBufferDesc& desc, const void* data, const char8* name)
 	{
 		GLuint buffer;
 		glGenBuffers(1, &buffer);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, desc.num_elements * desc.element_size,
-			desc.initial_data, desc.is_dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, desc.num_elements * desc.extended32 ? sizeof(uint32) : sizeof(uint16),
+			data, desc.usage == Usage::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
 		if (gl_err())
 		{
 			glDeleteBuffers(1, &buffer);
-			camy_error("Failed to create index buffer, see above for more details");
-			return kInvalidHResource;
+			cl_err("Failed to create IndexBuffer, see above for more details");
+			return HResource::make_invalid();
 		}
 
 		HResource ret = m_resource_manager.allocate<IndexBuffer>(camy_loc, name);
@@ -263,7 +510,7 @@ namespace camy
 		res.desc = desc;
 		res.native.buffer = buffer;
 
-		camy_info("Successfully created index buffer: ", name);
+		cl_info("Created IndexBuffer: ", name);
 
 		return ret;
 	}
@@ -278,8 +525,8 @@ namespace camy
 		if (gl_err())
 		{
 			glDeleteBuffers(1, &buffer);
-			camy_error("Failed to create constant buffer, see above for more details");
-			return kInvalidHResource;
+			cl_internal_err("Failed to create ConstantBuffer, see above for more details");
+			return HResource::make_invalid();
 		}
 
 		HResource ret = m_resource_manager.allocate<ConstantBuffer>(camy_loc, name);
@@ -288,19 +535,19 @@ namespace camy
 		res.desc = desc;
 		res.native.buffer = buffer;
 
-		camy_info("Successfully created constant buffer: ", name);
+		cl_info("Successfully created constant buffer: ", name);
 
 		return ret;
 	}
 
 	HResource RenderContext::create_blend_state(const BlendStateDesc& desc, const char8* name)
 	{
-		return kInvalidHResource;
+		return HResource::make_invalid();
 	}
 
 	HResource RenderContext::create_rasterizer_state(const RasterizerStateDesc& desc, const char8* name)
 	{
-		return kInvalidHResource;
+		return HResource::make_invalid();
 	}
 
 	int camy_to_bytesize(InputElement::Type type)
@@ -359,17 +606,17 @@ namespace camy
 				GL_FALSE, offset);
 		}
 
-		return kInvalidHResource;
+		return HResource::make_invalid();
 	}
 
 	HResource RenderContext::create_sampler(const SamplerDesc& desc, const char8* name)
 	{
-		return kInvalidHResource;
+		return HResource::make_invalid();
 	}
 
 	HResource RenderContext::create_depth_stencil_state(const DepthStencilStateDesc& desc, const char8* name)
 	{
-		return kInvalidHResource;
+		return HResource::make_invalid();
 	}
 
 	GLenum camy_to_opengl(ShaderDesc::Type type)
@@ -400,11 +647,11 @@ namespace camy
 			RawAutoPtr<GLchar> log_msg = (GLchar*)allocate(camy_loc, log_len);
 			glGetShaderInfoLog(shader, log_len, &log_len, log_msg);
 
-			camy_error("Failed to compile shader: ");
-			camy_error_stripped((GLchar*)log_msg);
+			cl_system_err("OpenGL4.5", "glCompileShader", "");
+			cl_internal_err((GLchar*)log_msg);
 
 			glDeleteShader(shader);
-			return kInvalidHResource;
+			return HResource::make_invalid();
 		}
 
 		HResource ret = m_resource_manager.allocate<Shader>(camy_loc, name);
@@ -412,10 +659,8 @@ namespace camy
 
 		res.desc = desc;
 		res.native.shader = ret;
-
-		gl_err();
 		
-		camy_info("Successfully created Shader: ", name);
+		cl_info("Created Shader: ", name);
 		return ret;
 	}
 
@@ -470,67 +715,67 @@ namespace camy
 
 	Surface& RenderContext::get_surface(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<Surface>(handle);
 	}
 
 	Buffer& RenderContext::get_buffer(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<Buffer>(handle);
 	}
 
 	VertexBuffer& RenderContext::get_vertex_buffer(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<VertexBuffer>(handle);
 	}
 
 	IndexBuffer& RenderContext::get_index_buffer(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<IndexBuffer>(handle);
 	}
 
 	ConstantBuffer& RenderContext::get_constant_buffer(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<ConstantBuffer>(handle);
 	}
 
 	BlendState& RenderContext::get_blend_state(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<BlendState>(handle);
 	}
 
 	RasterizerState& RenderContext::get_rasterizer_state(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<RasterizerState>(handle);
 	}
 
 	InputSignature& RenderContext::get_input_signature(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<InputSignature>(handle);
 	}
 
 	Sampler& RenderContext::get_sampler(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<Sampler>(handle);
 	}
 
 	DepthStencilState& RenderContext::get_depth_stencil_state(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<DepthStencilState>(handle);
 	}
 
 	Shader& RenderContext::get_shader(HResource handle)
 	{
-		camy_assert(handle != kInvalidHResource);
+		camy_assert(handle.is_valid());
 		return m_resource_manager.get<Shader>(handle);
 	}
 }

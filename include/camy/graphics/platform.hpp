@@ -9,6 +9,7 @@
 
 // camy
 #include <camy/core/base.hpp>
+#include <camy/graphics/base.hpp>
 
 // math
 #include <camy/core/math/types.hpp>
@@ -20,20 +21,6 @@
 */
 #if !defined(camy_gpu_dedicated) || !defined(camy_gpu_integrated)
 #	define camy_gpu_dedicated
-#endif
-
-/*
-	Backend:
-	camy_backend_d3d11
-	camy_backend_opengl4
-*/
-//#define camy_backend_opengl4
-#if !defined(camy_backend_d3d11) && !defined(camy_backend_opengl4)
-#	if defined(camy_os_windows)
-#		define camy_backend_d3d11
-#	else
-#		define camy_backend_opengl4
-#	endif
 #endif
 
 /*

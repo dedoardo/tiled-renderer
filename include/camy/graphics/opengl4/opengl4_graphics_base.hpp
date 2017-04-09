@@ -7,10 +7,15 @@
 */
 #pragma once
 
-// OpenGL
+// camy
+#include <camy/core/base.hpp>
+
+// GLEW
 #include <GL/glew.h>
 #undef near
 #undef far
+#undef min
+#undef max
 
 namespace camy
 {
@@ -18,9 +23,7 @@ namespace camy
 
 	struct NativeSurface
 	{
-		GLuint frame_buffer;
-		GLuint texture_buffer;
-		GLuint depth_buffer;
+		GLuint texture;
 	};
 
 	struct NativeBuffer

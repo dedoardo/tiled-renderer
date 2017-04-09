@@ -18,6 +18,7 @@
 	After the header is included checks are made to ensure that all the required
 	types have been declared.
 */
+#define camy_backend_opengl4
 #if defined(camy_backend_d3d11)
 #	include "d3d11/d3d11_graphics_base.hpp"
 #elif defined(camy_backend_opengl4)

@@ -89,7 +89,7 @@ namespace camy
 		{
 			if (!RegisterClassExA(&wc))
 			{
-				camy_error("Failed to Win32::RegisterClassEx");
+				cl_internal_err("Failed to Win32::RegisterClassEx");
 				return false;
 			}
 		}
@@ -105,7 +105,7 @@ namespace camy
 			CW_USEDEFAULT, CW_USEDEFAULT, info.window.width, info.window.height, NULL, NULL, cur_instance, NULL);
 		if (ret_handle == NULL)
 		{
-			camy_error("Failed to Win32::CreateWindow with error: ", GetLastError());
+			cl_internal_err("Failed to Win32::CreateWindow with error: ", GetLastError());
 			return nullptr;
 		}
 
@@ -128,7 +128,7 @@ namespace camy
 			g_render_context = tallocate<RenderContext>(camy_loc, 16);
 			if (g_render_context == nullptr)
 			{
-				camy_error("Failed to startup camy");
+				cl_internal_err("Failed to startup camy");
 				return false;
 			}
 
@@ -140,18 +140,7 @@ namespace camy
 
 			glDebugMessageCallback(gl_debug_callback, nullptr);
 
-			const char* camy = "\n"
-				"  ______     ___      .___  ___. ____    ____\n"
-				" /      |   /   \\     |   \\/   | \\   \\  /   /\n"
-				"|  ,----'  /  ^  \\    |  \\  /  |  \\   \\/   /\n"
-				"|  |      /  /_\\  \\   |  |\\/|  |   \\_    _/\n"
-				"|  `----./  _____  \\  |  |  |  |     |  |\n"
-				" \\______/__/     \\__\\ |__|  |__|     |__|\n";
-
-
-			camy_info("Successfully started up camy, enjoy");
-			camy_info_stripped(camy);
-			camy_info_stripped("---------------------------------------------");
+			cl_info("Successfully started up camy, enjoy");
 			return true;
 		}
 
@@ -175,9 +164,14 @@ namespace camy
 			return g_runtime_info;
 		}
 
-		camy_api rsize query(Query query)
+		rsize query(Query query)
 		{
 			return 0;
+		}
+
+		float4x4 to_shader_order(const float4x4& mat)
+		{
+			return mat;
 		}
 	}
 }

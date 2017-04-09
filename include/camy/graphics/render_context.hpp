@@ -64,7 +64,7 @@ namespace camy
 		/*
 			Flushing is **not** thread-safe, this is due to the limitations 
 			of D3D11/OGL4. There is no point in flushing from multiple threads,
-			as it doesn't speed up execution. 
+			as it doesn't speed up execution the driver queue is unique.
 		*/
 		void flush(CommandList& command_list);
 
@@ -78,7 +78,7 @@ namespace camy
 
 		HResource create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces = nullptr, rsize num_subsurfaces = 0, const char8* name = nullptr);
 		HResource create_buffer(const BufferDesc& desc, const void* data = nullptr, const char8* name = nullptr);
-		HResource create_vertex_buffer(const VertexBufferDesc&, const void* data = nullptr, const char8* name = nullptr);
+		HResource create_vertex_buffer(const VertexBufferDesc& desc, const void* data = nullptr, const char8* name = nullptr);
 		HResource create_index_buffer(const IndexBufferDesc& desc, const void* data = nullptr, const char8* name = nullptr);
 		HResource create_constant_buffer(const ConstantBufferDesc& desc, const char8* name = nullptr);
 		HResource create_blend_state(const BlendStateDesc& desc, const char8* name = nullptr);

@@ -131,15 +131,6 @@ namespace camy
 				return false;
 			}
 
-			const char* camy = "\n"
-				"  ______     ___      .___  ___. ____    ____\n"
-				" /      |   /   \\     |   \\/   | \\   \\  /   /\n"
-				"|  ,----'  /  ^  \\    |  \\  /  |  \\   \\/   /\n"
-				"|  |      /  /_\\  \\   |  |\\/|  |  \\_    _/\n"
-				"|  `----./  _____  \\  |  |  |  |     |  |\n"
-				" \\______/__/     \\__\\ |__|  |__|     |__|\n";
-
-
 			cl_info("Successfully started up camy, enjoy");
 			return true;
 		}

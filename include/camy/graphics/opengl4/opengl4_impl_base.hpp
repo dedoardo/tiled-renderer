@@ -14,6 +14,8 @@
 #include <GL/wglew.h>
 #undef near
 #undef far
+#undef min
+#undef max
 
 namespace camy
 {
@@ -47,7 +49,7 @@ namespace camy
 				case GL_INVALID_FRAMEBUFFER_OPERATION:  error_str = "INVALID_FRAMEBUFFER_OPERATION";  break;
 			}
 
-			camy_error("OpenGL4.5 error: ", error_str);
+			cl_system_err("OpenGL4.5", error_str, "");
 			error = glGetError();
 		}
 

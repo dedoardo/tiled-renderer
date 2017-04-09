@@ -20,6 +20,14 @@ Fixes:
 - !!! Improve the RenderItem/ParameterBlock/Parameter interface, could be made less verbose and slightly easier to use. 
 - SSAO kernel rotation noise can use R32G32 ? 
 - Issue warning if viewport is empty 
+- It'd be better if the user didn't have to specify the number of miplevels and either 0 or full. 
+- Add timings
+- Surface creation code is kind of redundant, especially the mipmap / etc.. filling
+if a good idea comes to mind i'll refactor it, otherwise it's not really worth the time,
+as it's probably going to be bugged at first due to the many possible cases. BUT
+reworking how subsurfaces are specified can be beneficial, just pass a void* and the
+pitch and byte sizes can be computed from the format. Same goes for the pixelformats
+maybe merge view and format somehow ?  
 
 Things that might look like they are implemented, but they haven't been tested / probably not working:
 - Cube map arrays

@@ -1,4 +1,4 @@
-**NOTE**   
++**NOTE**   
 This is the dev-branch for the 0.9 version, still heavily working on it.
 Mostly working on D3D11.1, working on OGL in the off-time
 

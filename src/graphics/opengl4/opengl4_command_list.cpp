@@ -42,6 +42,7 @@ namespace camy
 
 	void CommandList::set_geometry_shader(HResource handle)
 	{
+
 	}
 
 	void CommandList::set_pixel_shader(HResource handle)
@@ -49,24 +50,34 @@ namespace camy
 
 	}
 
-	void CommandList::set_targets(const HResource* render_targets, rsize num_render_targets, HResource depth_buffer)
+	void CommandList::set_targets(const HResource* render_targets, rsize num_render_targets, HResource depth_buffer, uint8* views)
 	{
+
 	}
 
 	void CommandList::set_primitive_topology()
 	{
+
 	}
 
 	void CommandList::set_rasterizer_state(HResource handle)
 	{
+
+	}
+
+	void CommandList::set_depth_stencil_state(HResource handle)
+	{
+
 	}
 
 	void CommandList::set_input_signature(HResource handle)
 	{
+
 	}
 
 	void CommandList::set_viewport(const Viewport & viewport)
 	{
+
 	}
 
 	void CommandList::set_vertex_buffer(rsize slot, HResource handle)
@@ -84,11 +95,16 @@ namespace camy
 
 	}
 
-	void CommandList::set_parameter(ShaderVariable var, const void* data, HResource handle, rsize offset)
+	void CommandList::set_cbuffer(ShaderVariable var, HResource handle)
+	{
+
+	}
+
+	void CommandList::set_cbuffer_off(ShaderVariable var, HResource handle, rsize offset)
 	{
 	}
 
-	void CommandList::set_parameter(ShaderVariable var, HResource handle)
+	void CommandList::set_parameter(ShaderVariable var, HResource handle, uint8 view)
 	{
 	}
 

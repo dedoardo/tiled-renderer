@@ -56,6 +56,7 @@ namespace camy
 		case ShaderDesc::Type::Pixel: return "Pixel";
 		case ShaderDesc::Type::Geometry: return "Geometry";
 		case ShaderDesc::Type::Compute: return "Compute";
+		default: return "Unknown";
 		}
 	}
 
