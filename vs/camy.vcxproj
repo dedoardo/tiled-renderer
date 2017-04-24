@@ -147,10 +147,12 @@
     <ClInclude Include="..\include\camy\core\memory\paged_pool.hpp" />
     <ClInclude Include="..\include\camy\core\memory\pages.hpp" />
     <ClInclude Include="..\include\camy\core\memory\pool.hpp" />
+    <ClInclude Include="..\include\camy\core\memory\ring_buffer.hpp" />
     <ClInclude Include="..\include\camy\core\memory\stack.hpp" />
     <ClInclude Include="..\include\camy\core\memory\static_array.hpp" />
     <ClInclude Include="..\include\camy\core\memory\static_string.hpp" />
     <ClInclude Include="..\include\camy\core\memory\vector.hpp" />
+    <ClInclude Include="..\include\camy\core\os\thread.hpp" />
     <ClInclude Include="..\include\camy\core\os\file.hpp" />
     <ClInclude Include="..\include\camy\core\os\log.hpp" />
     <ClInclude Include="..\include\camy\core\os\time.hpp" />
@@ -176,6 +178,7 @@
     <ClCompile Include="..\src\core\math\types.cpp" />
     <ClCompile Include="..\src\core\memory\alloc.cpp" />
     <ClCompile Include="..\src\core\memory\int2int_map.cpp" />
+    <ClCompile Include="..\src\core\os\thread.cpp" />
     <ClCompile Include="..\src\core\os\file.cpp" />
     <ClCompile Include="..\src\core\os\log.cpp" />
     <ClCompile Include="..\src\core\os\time.cpp" />

@@ -19,8 +19,6 @@
 
 namespace camy
 {
-	constexpr uint32 kMaxConcurrentContexts = 2u;
-
 	struct NativeSurface
 	{
 		GLuint texture;
@@ -73,7 +71,7 @@ namespace camy
 
 	struct NativeSampler
 	{
-
+		GLuint sampler;
 	};
 
 	struct NativeShader

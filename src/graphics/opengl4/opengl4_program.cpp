@@ -18,6 +18,7 @@ namespace camy
 {
 	bool Program::impl_compile_stage(ShaderDesc::Type type, const CompileOpts& opts, const Blob& text, Blob& data_out)
 	{
+		data_out = text;
 		return true;
 	}
 

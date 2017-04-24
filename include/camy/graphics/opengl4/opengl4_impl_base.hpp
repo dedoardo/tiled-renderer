@@ -17,12 +17,26 @@
 #undef min
 #undef max
 
+// C++ STL
+#include <atomic>
+#include <thread>
+
 namespace camy
 {
+	struct ConcurrentContextData
+	{
+		std::atomic_bool locked;
+		HGLRC off_ctx;
+		std::thread::id owner;
+	};
+
 	struct camy_api	RenderContextData
 	{
-		HGLRC hrc;
-		Surface      surface;
+		HDC     hdc;
+		HGLRC	render_ctx;
+		Surface surface;
+		ConcurrentContextData contexts[kMaxConcurrentContexts];
+		std::atomic_int avail_contexts;
 	};
 
 	struct camy_api CommandListData

@@ -129,15 +129,25 @@ namespace camy
 			0
 		};
 
-		m_data.hrc = wglCreateContextAttribsARB(hdc, nullptr, ctx_attribs);
-		if (!m_data.hrc)
+		m_data.render_ctx = wglCreateContextAttribsARB(hdc, nullptr, ctx_attribs);
+		m_data.hdc = hdc;
+
+		if (!m_data.render_ctx)
 		{
 			cl_system_err("WGLEW::CreateContextAttribsARB", GetLastError(), "");
 			ReleaseDC(hwnd, hdc);
 			destroy_window(hwnd);
 			return false;
 		}
-		wglMakeCurrent(hdc, m_data.hrc);
+
+		for (rsize i = 0; i < kMaxConcurrentContexts; ++i)
+		{
+			m_data.contexts[i].off_ctx = wglCreateContextAttribsARB(hdc, nullptr, ctx_attribs);
+			m_data.contexts[i].locked = false;
+			wglShareLists(m_data.render_ctx, m_data.contexts[i].off_ctx);
+		}
+
+		wglMakeCurrent(hdc, m_data.render_ctx);
 
 		RECT client_rect;
 		GetClientRect(hwnd, &client_rect);
@@ -154,16 +164,51 @@ namespace camy
 
 	void RenderContext::release(ContextID ctx_id)
 	{
+		if (ctx_id >= kMaxConcurrentContexts)
+		{
+			cl_invalid_arg(ctx_id);
+			return;
+		}
 
+		bool des = true;
+		if (m_data.contexts[ctx_id].locked.compare_exchange_strong(des, false))
+		{
+			wglMakeCurrent(nullptr, nullptr);
+			return;
+		}
+		cl_internal_err("Failed to acquire context: ", ctx_id, " on thread: ", std::this_thread::get_id());
 	}
 
 	bool RenderContext::aquire(ContextID ctx_id)
 	{
+		if (ctx_id >= kMaxConcurrentContexts)
+		{
+			cl_invalid_arg(ctx_id);
+			return false;
+		}
+
+		bool des = false;
+		if (m_data.contexts[ctx_id].locked.compare_exchange_strong(des, true))
+		{
+			wglMakeCurrent(m_data.hdc, m_data.contexts[ctx_id].off_ctx);
+			m_data.contexts[ctx_id].owner = std::this_thread::get_id();
+			return true;
+		}
+
+		cl_internal_err("Failed to acquire context: ", ctx_id, " on thread: ", std::this_thread::get_id());
 		return false;
 	}
 
 	ContextID RenderContext::get_id_for_current()
 	{
+		std::thread::id cur_id = std::this_thread::get_id();
+
+		for (uint32 i = 0; i < kMaxConcurrentContexts; ++i)
+		{
+			if (m_data.contexts[i].locked && m_data.contexts[i].owner == cur_id)
+				return i;
+		}
+
 		return kInvalidContextID;
 	}
 
@@ -194,7 +239,13 @@ namespace camy
 
 	void RenderContext::immediate_cbuffer_update(HResource handle, void* data)
 	{
+		ConstantBuffer& cbuffer = m_resource_manager.get<ConstantBuffer>(handle);
 
+		void* mapped_cbuffer = glMapNamedBuffer(cbuffer.native.buffer, GL_WRITE_ONLY);
+		std::memcpy(mapped_cbuffer, data, cbuffer.desc.size);
+		glUnmapNamedBuffer(cbuffer.native.buffer);
+
+		gl_err();
 	}
 
 	HResource RenderContext::get_backbuffer_handle() const
@@ -209,6 +260,7 @@ namespace camy
 
 	void  RenderContext::swap_buffers()
 	{
+
 	}
 
 	bool ogl_is_compressed(PixelFormat pformat)
@@ -460,6 +512,7 @@ namespace camy
 
 	HResource RenderContext::create_buffer(const BufferDesc& desc, const void* data, const char8* name)
 	{
+		// SSBO 
 		return HResource::make_invalid();
 	}
 
@@ -611,7 +664,49 @@ namespace camy
 
 	HResource RenderContext::create_sampler(const SamplerDesc& desc, const char8* name)
 	{
-		return HResource::make_invalid();
+		GLuint sampler;
+		glGenSamplers(1, &sampler);
+	
+		if (desc.filter == SamplerDesc::Filter::Point)
+		{
+			glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		}
+		else
+		{
+			glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		}
+		
+		if (desc.filter == SamplerDesc::Filter::Anisotropic)
+		{
+			GLfloat anisotropic_lvl = 0.f;
+			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropic_lvl);
+			glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropic_lvl);
+		}
+
+		if (desc.comparison != SamplerDesc::Comparison::Never)
+			glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		if (desc.comparison == SamplerDesc::Comparison::Less)
+			glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+		else if (desc.comparison == SamplerDesc::Comparison::LessEqual)
+			glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+		if (gl_err())
+		{
+			cl_internal_err("Failed to create sample, see above for more details");
+			return HResource::make_invalid();
+		}
+
+		HResource ret = m_resource_manager.allocate<Sampler>(camy_loc, name);
+		Sampler& res = m_resource_manager.get<Sampler>(ret);
+
+		res.desc = desc;
+		res.native.sampler = sampler;
+
+		cl_info("Created Sampler: ", name);
+
+		return ret;
 	}
 
 	HResource RenderContext::create_depth_stencil_state(const DepthStencilStateDesc& desc, const char8* name)

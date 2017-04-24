@@ -15,9 +15,6 @@ Sometimes these structures (e.g. DrawCall) have presets associated with them and
 #### Buffers and Constant Buffers 
 Buffers are currently separated from constant buffers as their dynamics are slighly different, and ConstantBuffers are not supposed to be touched outside `camy`. This is obviously a general rule for standard applications.
 
-#### Program and Shaders 
-Even though most of the API is very D3D-like. Programs are present because reflection in OpenGL works on a program level and thus they are currently grouped. RenderItems still take single shaders as parameters.
-
 #### Logging 
 This is the only real part where STL is used. There is no point in rewriting overloads for << operators. Logging uses std::ostream and a recursive specialized template implementation. When logging is disabled no code is generated and STL is
 not even included. There is no real benefit in rewriting this kind of operations.

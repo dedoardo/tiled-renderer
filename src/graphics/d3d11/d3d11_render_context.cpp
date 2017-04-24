@@ -274,29 +274,35 @@ namespace camy
 
 	void RenderContext::release(ContextID ctx_id)
 	{
+		camy_assert(m_data.is_valid());
 
+		if (ctx_id >= kMaxConcurrentContexts)
+		{
+			cl_invalid_arg(ctx_id);
+			return;
+		}
+
+		bool des = true;
+		if (m_data.contexts[ctx_id].locked.compare_exchange_strong(des, false))
+			return;
+		cl_internal_err("Failed to acquire context: ", ctx_id, " on thread: ", std::this_thread::get_id());
 	}
 
 	bool RenderContext::aquire(ContextID ctx_id)
 	{
 		camy_assert(m_data.is_valid());
-		
-		int avail = m_data.avail_contexts;
-		if (avail > 0 && m_data.avail_contexts.compare_exchange_strong(avail, avail - 1))
-		{
-			// Now we are absolutely sure there is a context that we can grab, just look for the one
-			for (uint32 i = 0; i < kMaxConcurrentContexts; ++i)
-			{
-				bool des = false;
-				if (m_data.contexts[i].locked.compare_exchange_strong(des, true))
-				{
-					m_data.contexts[i].owner = std::this_thread::get_id();
-					cl_info("Acquired concurrent RenderContext: ", ctx_id, " on thread: ", m_data.contexts[i].owner);
-					return true;
-				}
-			}
 
-			camy_assert(false);
+		if (ctx_id >= kMaxConcurrentContexts)
+		{
+			cl_invalid_arg(ctx_id);
+			return false;
+		}
+
+		bool des = false;
+		if (m_data.contexts[ctx_id].locked.compare_exchange_strong(des, true))
+		{
+			m_data.contexts[ctx_id].owner = std::this_thread::get_id();
+			return true;
 		}
 
 		cl_internal_err("Failed to acquire context: ", ctx_id, " on thread: ", std::this_thread::get_id());

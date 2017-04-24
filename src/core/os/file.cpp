@@ -199,4 +199,25 @@ namespace camy
 
 		return ret;
 	}
+
+	const char8* path_extract_extension(const char8 * path)
+	{
+		const char8* cur = path_extract_filename(path);
+		
+		const char8* ret = cur;
+		while (true)
+		{
+			char ch = *cur;
+
+			if (ch == '\0')
+				break;
+			
+			if (ch == '.')
+				ret = cur + 1;
+
+			++cur;
+		}
+
+		return ret;
+	}
 }

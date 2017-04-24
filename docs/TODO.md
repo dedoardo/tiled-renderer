@@ -19,6 +19,7 @@ Fixes:
 - rename ForwardPP::prepare in process?? or any other name
 - !!! Improve the RenderItem/ParameterBlock/Parameter interface, could be made less verbose and slightly easier to use. 
 - SSAO kernel rotation noise can use R32G32 ? 
+- opengl_impl_base d3d11_impl_base USE core/THREAD
 - Issue warning if viewport is empty 
 - It'd be better if the user didn't have to specify the number of miplevels and either 0 or full. 
 - Add timings
@@ -28,6 +29,7 @@ as it's probably going to be bugged at first due to the many possible cases. BUT
 reworking how subsurfaces are specified can be beneficial, just pass a void* and the
 pitch and byte sizes can be computed from the format. Same goes for the pixelformats
 maybe merge view and format somehow ?  
+- OpenGL to check before bindind do glIsObjectType() nice feature
 
 Things that might look like they are implemented, but they haven't been tested / probably not working:
 - Cube map arrays

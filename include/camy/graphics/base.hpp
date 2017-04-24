@@ -64,8 +64,8 @@ namespace camy
 	_camy_is_defined(NativeInputSignature);
 	_camy_is_defined(NativeSampler);
 	_camy_is_defined(NativeShader);
-	_camy_is_defined(kMaxConcurrentContexts);
 
+	constexpr rsize kMaxConcurrentContexts = 4;
 	using	  ContextID = decltype(kMaxConcurrentContexts);
 	constexpr ContextID kInvalidContextID = (ContextID)-1;
 
@@ -74,9 +74,9 @@ namespace camy
 		relies on assumptions **should** fail to compile via static_assert and a message. 
 		Having them allows for a good amount of compile time packing / optimizations.
 	!*/
-	constexpr rsize kMaxBindableVertexBuffers = 2u;
-	constexpr rsize kMaxBindableRenderTargets = 2u;
-	constexpr rsize kMaxParameterBlocks = 5u;
+	constexpr rsize kMaxBindableVertexBuffers = 2;
+	constexpr rsize kMaxBindableRenderTargets = 2;
+	constexpr rsize kMaxParameterBlocks = 5;
 	constexpr rsize kMaxConstantBufferSize = 2 << 16;
 	constexpr rsize kMaxBindableShaderResources = 2 << 7;
 	constexpr rsize kMaxBindableConstantBuffers = 6;

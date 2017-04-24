@@ -170,6 +170,12 @@
     <ClInclude Include="..\include\camy\graphics\effect_bucket.hpp">
       <Filter>include\camy\graphics</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\camy\core\os\thread.hpp">
+      <Filter>include\camy\core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\camy\core\memory\ring_buffer.hpp">
+      <Filter>include\camy\core\memory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\core\math\types.cpp">
@@ -234,6 +240,9 @@
     </ClCompile>
     <ClCompile Include="..\src\graphics\effect_bucket.cpp">
       <Filter>src\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\os\thread.cpp">
+      <Filter>src\core\os</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

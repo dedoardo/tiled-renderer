@@ -55,7 +55,7 @@ namespace camy
 	template <typename T, typename ...CtorArgs>
 	T* tallocate_array(const char8* file, uint16 line, rsize count, uint32 alignment, CtorArgs&& ...ctor_args);
 	template <typename T>
-	void tdeallocate_array(T* ptr);
+	void tdeallocate_array(T*& ptr);
 
 
 	// Implementation
@@ -74,6 +74,7 @@ namespace camy
 			return;
 		ptr->~T();
 		deallocate(ptr);
+		ptr = nullptr;
 	}
 
 	template<typename T, typename ...CtorArgs>
@@ -86,7 +87,7 @@ namespace camy
 	}
 
 	template<typename T>
-	void tdeallocate_array(T* ptr)
+	void tdeallocate_array(T*& ptr)
 	{
 		if (ptr == nullptr)
 			return;
@@ -98,5 +99,6 @@ namespace camy
 		for (rsize i = 0; i < count; ++i)
 			((T*)ptr + i)->~T();
 		deallocate(ptr);
+		ptr = nullptr;
 	}
 }

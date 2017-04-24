@@ -105,4 +105,6 @@ namespace camy
 	//! Example: C:\\Users\\test\\Documents\\file.obj.ext returns file.obj.ext
 	//! As the buffer returns is simply an incremented pointer
 	const char8* path_extract_filename(const char8* path);
+
+	const char8* path_extract_extension(const char8* path);
 }

@@ -31,3 +31,4 @@
 #include <camy/core/os/time.hpp>
 #include <camy/core/os/file.hpp>
 #include <camy/core/os/log.hpp>
+#include <camy/core/os/thread.hpp>

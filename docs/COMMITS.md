@@ -49,5 +49,8 @@ Starting from 1/4/2017
 ? Temporarly included DirectXMath for matrix inversion
 ! Fixed bug in PagedLinearVector destructor
 
-+ OpenGL4.5 now compiles
-+ OpenGL4.5 initial create_surface support
++ OGL now compiles
++ OGL initial create_surface support
+
++ OGL sampler
++ OGL immediate_cbuffer_update

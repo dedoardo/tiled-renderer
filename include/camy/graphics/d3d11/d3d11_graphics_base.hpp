@@ -46,8 +46,6 @@ struct IDXGISwapChain;
 
 namespace camy
 {
-	constexpr uint32 kMaxConcurrentContexts = 2u;
-
 	struct NativeSurface
 	{
 		ID3D11Texture2D*			texture2d = nullptr;
