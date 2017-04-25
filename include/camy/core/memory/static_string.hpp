@@ -35,6 +35,7 @@ namespace camy
 		// Initializes from src string ( clamped if bigger than size )
 		StaticString(const char8* src);
 		StaticString(const char8* src, rsize len);
+		StaticString(const char8* start, const char8* end);
 
 		// No deallocation happens
 		~StaticString() = default;
@@ -55,8 +56,9 @@ namespace camy
 		char8* str() { return m_buffer; }
 		const char8* str() const { return m_char_count == 0 ? nullptr : m_buffer; }
 
-		void append(char chr);
-		void append(const char* str);
+		void append(char8 chr);
+		void append(const char8* str);
+		void append(const char8* start, const char8* end);
 
 		// Resets the string with a new src
 		// if src == nullptr string will be empty
@@ -69,7 +71,8 @@ namespace camy
 
 		bool empty() const { return m_char_count == 0; }
 	private:
-		void _assign(const char8* src, rsize len = -1);
+		void _append(const char8* str);
+		void _append_range(const char8* start, const char8* end);
 
 		char8 m_buffer[kCharCount + 1];
 		rsize m_char_count;
@@ -86,28 +89,38 @@ namespace camy
 	}
 
 	template <rsize kCharCount>
-	inline StaticString<kCharCount>::StaticString()
+	inline StaticString<kCharCount>::StaticString() :
+		m_char_count(0)
 	{
 		m_buffer[0] = (char8)'\0';
-		m_char_count = 0;
 	}
 
 	template <rsize kCharCount>
 	inline StaticString<kCharCount>::StaticString(const char8* src)
 	{
-		_assign(src);
+		m_char_count = 0;
+		_append(src);
+	}
+
+	template <rsize kCharCount>
+	inline StaticString<kCharCount>::StaticString(const char8* start, const char8* end)
+	{
+		m_char_count = 0;
+		_append_range(start, end);
 	}
 
 	template <rsize kCharCount>
 	inline StaticString<kCharCount>::StaticString(const StaticString& other)
 	{
-		_assign(other.str());
+		m_char_count = 0;
+		_append(other.str());
 	}
 
 	template <rsize kCharCount>
 	inline StaticString<kCharCount>& StaticString<kCharCount>::operator=(const StaticString& other)
 	{
-		_assign(other.str());
+		m_char_count = 0;
+		_append(other.str());
 		return *this;
 	}
 
@@ -130,45 +143,55 @@ namespace camy
 	}
 
 	template <rsize kCharCount>
-	inline void StaticString<kCharCount>::append(char chr)
+	inline void StaticString<kCharCount>::append(char8 chr)
 	{
 		if (m_char_count < kCharCount - 1)
 		{
 			m_buffer[m_char_count] = chr;
-			m_buffer[m_char_count + 1] = '\0';
-			++m_char_count;
+			m_buffer[++m_char_count] = (char8)'\0';
 		}
 	}
 
 	template <rsize kCharCount>
-	inline void StaticString<kCharCount>::append(const char* str)
+	inline void StaticString<kCharCount>::append(const char8* str)
 	{
-		rsize len = (rsize)::camy::s_strlen(str);
-		strncpy(m_buffer + m_char_count, str, ::camy::min(kCharCount - m_char_count, len));
-		m_char_count += len;
+		_append(str);
+	}
+
+	template <rsize kCharCount>
+	inline void StaticString<kCharCount>::append(const char8* start, const char8* end)
+	{
+		_append_range(start, end);
 	}
 
 	template <rsize kCharCount>
 	inline void StaticString<kCharCount>::reset(const char8* src)
 	{
-		_assign(src);
+		m_char_count = 0;
+		_append(src);
 	}
 
 	template <rsize kCharCount>
-	inline void StaticString<kCharCount>::_assign(const char8* src, rsize len)
+	inline void StaticString<kCharCount>::_append(const char8* str)
 	{
-		if (src == nullptr || len == 0)
-		{
-			m_buffer[0] = (char8)'\0';
-			m_char_count = 0;
-		}
-		else
-		{
-			if (len == (rsize)-1) 
-				len = kCharCount;
-			::strncpy(m_buffer, src, ::camy::min(kCharCount, len));
-			m_buffer[kCharCount] = '\0';
-			m_char_count = ::camy::s_strlen(m_buffer);
-		}
+		if (str == nullptr)
+			return;
+		
+		rsize slen = ::camy::min(s_strlen(str), kCharCount);
+		memcpy(m_buffer + m_char_count, str, slen);
+		m_char_count += slen;
+		m_buffer[m_char_count] = 0;
+	}
+	
+	template <rsize kCharCount>
+	void StaticString<kCharCount>::_append_range(const char8* start, const char8* end)
+	{
+		if (start == nullptr || end == nullptr || start == end)
+			return;
+
+		rsize slen = ::camy::min((rsize)(end - start), kCharCount);
+		memcpy(m_buffer + m_char_count, start, slen);
+		m_char_count += slen;
+		m_buffer[m_char_count] = 0;
 	}
 }

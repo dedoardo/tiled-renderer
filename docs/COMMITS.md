@@ -54,3 +54,8 @@ Starting from 1/4/2017
 
 + OGL sampler
 + OGL immediate_cbuffer_update
+
+++Fixed D3D/OGL contexts/threading and various OGL improvementes
++ Added some more os stuff
+
+!StaticString rewritten implementation

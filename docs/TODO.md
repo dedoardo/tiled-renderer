@@ -20,6 +20,7 @@ Fixes:
 - !!! Improve the RenderItem/ParameterBlock/Parameter interface, could be made less verbose and slightly easier to use. 
 - SSAO kernel rotation noise can use R32G32 ? 
 - opengl_impl_base d3d11_impl_base USE core/THREAD
+- cleanup StaticString
 - Issue warning if viewport is empty 
 - It'd be better if the user didn't have to specify the number of miplevels and either 0 or full. 
 - Add timings
