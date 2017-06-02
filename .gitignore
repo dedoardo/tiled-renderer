@@ -1,14 +1,4 @@
-*.suo
-*.user
-*.userosscache
-*.sdf
-*.idb
-*.log
-*.pdf
-
-/vs/.out/
-/vs/.vs/
-/vs/Debug
-.*/
-.*
+CMakeSettings.json
+docs/*
+lib/*
 !/.gitignore
