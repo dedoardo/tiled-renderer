@@ -10,7 +10,8 @@
 #if defined(CAMY_BACKEND_D3D11)
 
 // Macro for those parameters
-#define camy_uuid_ptr(object) __uuidof(std::remove_pointer<decltype(object)>::type), reinterpret_cast<void**>(&object)
+#define camy_uuid_ptr(object)                                                                      \
+    __uuidof(std::remove_pointer<decltype(object)>::type), reinterpret_cast<void**>(&object)
 
 struct IUnknown;
 
@@ -45,81 +46,81 @@ struct IDXGISwapChain;
 
 namespace camy
 {
-	struct NativeSurface
-	{
-		ID3D11Texture2D*			texture2d = nullptr;
-		ID3D11ShaderResourceView**	srvs = nullptr;
-		ID3D11RenderTargetView**	rtvs = nullptr;
-		ID3D11DepthStencilView**	dsvs = nullptr;
-		ID3D11UnorderedAccessView**	uavs = nullptr;
-		rsize num_views = 0;
-	};
+    struct NativeSurface
+    {
+        ID3D11Texture2D* texture2d = nullptr;
+        ID3D11ShaderResourceView** srvs = nullptr;
+        ID3D11RenderTargetView** rtvs = nullptr;
+        ID3D11DepthStencilView** dsvs = nullptr;
+        ID3D11UnorderedAccessView** uavs = nullptr;
+        rsize num_views = 0;
+    };
 
-	struct NativeBuffer
-	{
-		ID3D11Buffer* buffer = nullptr;
-		ID3D11ShaderResourceView* srv = nullptr;
-		ID3D11UnorderedAccessView* uav = nullptr;
-	};
+    struct NativeBuffer
+    {
+        ID3D11Buffer* buffer = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
+        ID3D11UnorderedAccessView* uav = nullptr;
+    };
 
-	struct NativeVertexBuffer
-	{
-		ID3D11Buffer* buffer = nullptr;
-		uint32 stride = 0;
-	};
+    struct NativeVertexBuffer
+    {
+        ID3D11Buffer* buffer = nullptr;
+        uint32 stride = 0;
+    };
 
-	struct NativeIndexBuffer
-	{
-		ID3D11Buffer* buffer = nullptr;
-		uint32 dxgi_format = 0;
-	};
+    struct NativeIndexBuffer
+    {
+        ID3D11Buffer* buffer = nullptr;
+        uint32 dxgi_format = 0;
+    };
 
-	struct NativeInstanceBuffer
-	{
-		ID3D11Buffer* buffer = nullptr;
-	};
+    struct NativeInstanceBuffer
+    {
+        ID3D11Buffer* buffer = nullptr;
+    };
 
-	struct NativeConstantBuffer
-	{
-		ID3D11Buffer* buffer = nullptr;
-	};
+    struct NativeConstantBuffer
+    {
+        ID3D11Buffer* buffer = nullptr;
+    };
 
-	struct NativeBlendState
-	{
-		ID3D11BlendState* state = nullptr;
-	};
+    struct NativeBlendState
+    {
+        ID3D11BlendState* state = nullptr;
+    };
 
-	struct NativeRasterizerState
-	{
-		ID3D11RasterizerState* state = nullptr;
-	};
+    struct NativeRasterizerState
+    {
+        ID3D11RasterizerState* state = nullptr;
+    };
 
-	struct NativeDepthStencilState
-	{
-		ID3D11DepthStencilState* state = nullptr;
-	};
+    struct NativeDepthStencilState
+    {
+        ID3D11DepthStencilState* state = nullptr;
+    };
 
-	struct NativeInputSignature
-	{
-		ID3D11InputLayout* input_layout = nullptr;
-	};
+    struct NativeInputSignature
+    {
+        ID3D11InputLayout* input_layout = nullptr;
+    };
 
-	struct NativeSampler
-	{
-		ID3D11SamplerState* sampler = nullptr;
-	};
+    struct NativeSampler
+    {
+        ID3D11SamplerState* sampler = nullptr;
+    };
 
-	struct NativeShader
-	{
-		ID3D11DeviceChild* shader = nullptr;
-	};
+    struct NativeShader
+    {
+        ID3D11DeviceChild* shader = nullptr;
+    };
 
-	struct NativeProgram
-	{
-		NativeShader* vertex_shader = nullptr;
-		NativeShader* geometry_shader = nullptr;
-		NativeShader* pixel_shader = nullptr;
-	};
+    struct NativeProgram
+    {
+        NativeShader* vertex_shader = nullptr;
+        NativeShader* geometry_shader = nullptr;
+        NativeShader* pixel_shader = nullptr;
+    };
 }
 
 #endif

@@ -12,13 +12,13 @@
 
 namespace camy
 {
-	struct CAMY_API Blob final
-	{
-		bool contains_data()const;
-		void allocate(const byte* data, rsize size);
-		void free();
+    struct CAMY_API Blob final
+    {
+        bool contains_data() const;
+        void allocate(const byte* data, rsize size);
+        void free();
 
-		void* data = nullptr;
-		rsize size = 0;
-	};
+        void* data = nullptr;
+        rsize size = 0;
+    };
 }

@@ -8,28 +8,28 @@
 #pragma once
 
 // camy
-#include <camy/graphics.hpp>
 #include <camy/config.hpp>
 #include <camy/containers/vector.hpp>
+#include <camy/graphics.hpp>
 
 namespace camy
 {
-	class IBucket;
+    class IBucket;
 
-	/*
-		Groups and flushes compiled buckets
-	*/
-	class CAMY_API Frame final
-	{
-	public:
-		Frame();
-		~Frame();
+    /*
+            Groups and flushes compiled buckets
+    */
+    class CAMY_API Frame final
+    {
+      public:
+        Frame();
+        ~Frame();
 
-		void add_bucket(IBucket& bucket, rsize pass);
-		void remove_bucket(IBucket& bucket);
-		void render();
+        void add_bucket(IBucket& bucket, rsize pass);
+        void remove_bucket(IBucket& bucket);
+        void render();
 
-	private:
-		Vector<IBucket*> m_buckets[API::MAX_PASSES];
-	};
+      private:
+        Vector<IBucket*> m_buckets[API::MAX_PASSES];
+    };
 }

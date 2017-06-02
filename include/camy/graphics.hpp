@@ -9,10 +9,10 @@
 
 // camy
 #include <camy/config.hpp>
-#include <camy/core.hpp>
 #include <camy/containers/auto_ptr.hpp>
-#include <camy/containers/static_string.hpp>
 #include <camy/containers/blob.hpp>
+#include <camy/containers/static_string.hpp>
+#include <camy/core.hpp>
 #include <camy/system.hpp>
 
 // include backend_pre_base
@@ -76,8 +76,7 @@ namespace camy
     };
 
     // Ways in which a specific resource can be seen and thus bound to the GPU.
-    CAMY_ENUM_BITS(GPUView, uint32)
-    {
+    CAMY_ENUM_BITS(GPUView, uint32){
         None = 0,
         ShaderResource = 1,
         UnorderedAccess = 1 << 1,
@@ -439,7 +438,7 @@ namespace camy
     };
 
 #if CAMY_ENABLE_LOGGING > 0
-	std::ostream& operator<<(std::ostream& stream, const ShaderVariable& var);
+    std::ostream& operator<<(std::ostream& stream, const ShaderVariable& var);
 #endif
 
     // Description of a single input element for the first vertex-processing

@@ -91,17 +91,14 @@ namespace camy
 
     // File
     // -----------------------------------------------------------------------------------------------
-    CAMY_ENUM_BITS(FileOpen, uint32)
-    {
-        // Reading
-        Read = 1,
+    CAMY_ENUM_BITS(FileOpen, uint32){// Reading
+                                     Read = 1,
 
-        // Writing
-        Write = 1 << 1,
+                                     // Writing
+                                     Write = 1 << 1,
 
-        // Fails if file does not exist
-        Exists = 1 << 2
-    };
+                                     // Fails if file does not exist
+                                     Exists = 1 << 2};
 
     // Offset bytes are offset from when reading/writing
     enum class FileSeekOff
@@ -233,7 +230,7 @@ namespace camy
 #ifdef CAMY_ENABLE_ASSERTS
 #define CAMY_ASSERT(x)                                                                             \
     {                                                                                              \
-        if (!(x)) (::camy::API::debug_break());                                                   \
+        if (!(x)) (::camy::API::debug_break());                                                    \
     }
 #else
 #define camy_assert(x) camy_error("FAILED ASSERTION")
@@ -271,8 +268,8 @@ namespace camy
         CAMY_API void log_init();
         CAMY_API void log_set_ostream(std::ostream* output_stream);
         CAMY_API std::ostream* log_get_ostream();
-		template <typename ...Ts>
-		void log(const char8* tag, const char8* fun, int line, Ts&& ...args);
+        template <typename... Ts>
+        void log(const char8* tag, const char8* fun, int line, Ts&&... args);
 
 #if CAMY_ENABLE_LOGGING >= 1
 #define CL_ERR(...) ::camy::API::log("Err ", __FUNCTION__, __LINE__, __VA_ARGS__)

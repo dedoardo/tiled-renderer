@@ -10,71 +10,56 @@
 
 namespace camy
 {
-	ByteVector::ByteVector() : 
-		m_buffer(nullptr),
-		m_size(0),
-		m_capacity(0)
-	{
-		m_capacity = 256;
-		m_buffer = (byte*)API::allocate(CAMY_UALLOC(m_capacity));
-		m_size = 0;
-	}
+    ByteVector::ByteVector() : m_buffer(nullptr), m_size(0), m_capacity(0)
+    {
+        m_capacity = 256;
+        m_buffer = (byte*)API::allocate(CAMY_UALLOC(m_capacity));
+        m_size = 0;
+    }
 
-	ByteVector::~ByteVector()
-	{
-		API::deallocate(m_buffer);
-	}
+    ByteVector::~ByteVector() { API::deallocate(m_buffer); }
 
-	ByteVector::ByteVector(ByteVector && other)
-	{
-		m_buffer = other.m_buffer;
-		m_capacity = other.m_capacity;
-		m_size = other.m_size;
-		other.m_buffer = nullptr;
-		other.m_capacity = 0;
-		other.m_size = 0;
-	}
+    ByteVector::ByteVector(ByteVector&& other)
+    {
+        m_buffer = other.m_buffer;
+        m_capacity = other.m_capacity;
+        m_size = other.m_size;
+        other.m_buffer = nullptr;
+        other.m_capacity = 0;
+        other.m_size = 0;
+    }
 
-	ByteVector::ByteVector(const ByteVector& other)
-	{
-		m_buffer = (byte*)API::allocate(CAMY_UALLOC(other.m_capacity));
-		memcpy(m_buffer, other.m_buffer, other.m_capacity);
-		m_capacity = other.m_capacity;
-		m_buffer = other.m_buffer;
-	}
+    ByteVector::ByteVector(const ByteVector& other)
+    {
+        m_buffer = (byte*)API::allocate(CAMY_UALLOC(other.m_capacity));
+        memcpy(m_buffer, other.m_buffer, other.m_capacity);
+        m_capacity = other.m_capacity;
+        m_buffer = other.m_buffer;
+    }
 
-	ByteVector& ByteVector::operator=(ByteVector && other)
-	{
-		m_buffer = other.m_buffer;
-		m_capacity = other.m_capacity;
-		m_size = other.m_size;
-		other.m_buffer = nullptr;
-		other.m_capacity = 0;
-		other.m_size = 0;
-		return *this;
-	}
+    ByteVector& ByteVector::operator=(ByteVector&& other)
+    {
+        m_buffer = other.m_buffer;
+        m_capacity = other.m_capacity;
+        m_size = other.m_size;
+        other.m_buffer = nullptr;
+        other.m_capacity = 0;
+        other.m_size = 0;
+        return *this;
+    }
 
-	ByteVector& ByteVector::operator=(const ByteVector & other)
-	{
-		m_buffer = (byte*)API::allocate(CAMY_UALLOC(other.m_capacity));
-		memcpy(m_buffer, other.m_buffer, other.m_capacity);
-		m_capacity = other.m_capacity;
-		m_buffer = other.m_buffer;
-		return *this;
-	}
+    ByteVector& ByteVector::operator=(const ByteVector& other)
+    {
+        m_buffer = (byte*)API::allocate(CAMY_UALLOC(other.m_capacity));
+        memcpy(m_buffer, other.m_buffer, other.m_capacity);
+        m_capacity = other.m_capacity;
+        m_buffer = other.m_buffer;
+        return *this;
+    }
 
-	byte* ByteVector::data()
-	{
-		return m_buffer;
-	}
+    byte* ByteVector::data() { return m_buffer; }
 
-	void ByteVector::clear()
-	{
-		m_size = 0;
-	}
+    void ByteVector::clear() { m_size = 0; }
 
-	rsize ByteVector::count()
-	{
-		return m_size;
-	}
+    rsize ByteVector::count() { return m_size; }
 }

@@ -13,23 +13,19 @@
 
 namespace camy
 {
-	bool Blob::contains_data() const
-	{
-		return size > 0 && data != nullptr;
-	}
+    bool Blob::contains_data() const { return size > 0 && data != nullptr; }
 
-	void Blob::allocate(const byte* in_data, rsize in_size)
-	{
-		free();
-		data = API::allocate(CAMY_UALLOC(in_size));
-		if (in_data != nullptr)
-			memcpy(data, in_data, in_size);
-		size = in_size;
-	}
+    void Blob::allocate(const byte* in_data, rsize in_size)
+    {
+        free();
+        data = API::allocate(CAMY_UALLOC(in_size));
+        if (in_data != nullptr) memcpy(data, in_data, in_size);
+        size = in_size;
+    }
 
-	void Blob::free()
-	{
-		API::deallocate(data);
-		size = 0;
-	}
+    void Blob::free()
+    {
+        API::deallocate(data);
+        size = 0;
+    }
 }

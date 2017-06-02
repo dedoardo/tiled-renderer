@@ -18,57 +18,63 @@
 
 namespace camy
 {
-	struct NativeSurface
-	{
-		GLuint texture;
-		GLenum iformat;
-	};
+    struct NativeSurface
+    {
+        GLuint texture;
+        GLenum iformat;
+    };
 
-	struct NativeBuffer
-	{
-		GLuint buffer;
-	};
+    struct NativeBuffer
+    {
+        GLuint buffer;
+    };
 
-	struct NativeVertexBuffer
-	{
-		GLuint buffer;
-	};
+    struct NativeVertexBuffer
+    {
+        GLuint buffer;
+    };
 
-	struct NativeIndexBuffer
-	{
-		GLuint buffer;
-	};
+    struct NativeIndexBuffer
+    {
+        GLuint buffer;
+    };
 
-	struct NativeInstanceBuffer
-	{
-		GLuint buffer;
-	};
+    struct NativeInstanceBuffer
+    {
+        GLuint buffer;
+    };
 
-	struct NativeConstantBuffer
-	{
-		GLuint buffer;
-	};
+    struct NativeConstantBuffer
+    {
+        GLuint buffer;
+    };
 
-	struct NativeBlendState { };
+    struct NativeBlendState
+    {
+    };
 
-	struct NativeRasterizerState { };
+    struct NativeRasterizerState
+    {
+    };
 
-	struct NativeDepthStencilState { };
+    struct NativeDepthStencilState
+    {
+    };
 
-	struct NativeInputSignature
-	{
-		GLuint vao;
-	};
+    struct NativeInputSignature
+    {
+        GLuint vao;
+    };
 
-	struct NativeSampler
-	{
-		GLuint sampler;
-	};
+    struct NativeSampler
+    {
+        GLuint sampler;
+    };
 
-	struct NativeShader
-	{
-		GLuint shader;
-	};
+    struct NativeShader
+    {
+        GLuint shader;
+    };
 }
 
 #endif

@@ -33,8 +33,8 @@ namespace camy
 
     using ContextID = std::remove_cv_t<decltype(API::MAX_CONTEXTS)>; // just to be fancy
 
-	namespace API
-	{
-		constexpr ContextID INVALID_CONTEXT_ID = (ContextID)-1;
-	}
+    namespace API
+    {
+        constexpr ContextID INVALID_CONTEXT_ID = (ContextID)-1;
+    }
 }

@@ -12,47 +12,47 @@
 
 namespace camy
 {
-	class CAMY_API ByteVector final
-	{
-	public:
-		ByteVector();
-		~ByteVector();
+    class CAMY_API ByteVector final
+    {
+      public:
+        ByteVector();
+        ~ByteVector();
 
-		ByteVector(ByteVector&& other);
-		ByteVector(const ByteVector& other);
+        ByteVector(ByteVector&& other);
+        ByteVector(const ByteVector& other);
 
-		ByteVector& operator=(ByteVector&& other);
-		ByteVector& operator=(const ByteVector& other);
+        ByteVector& operator=(ByteVector&& other);
+        ByteVector& operator=(const ByteVector& other);
 
-		byte* data();
-		template <typename T>
-		void append(const T& val);
+        byte* data();
+        template <typename T>
+        void append(const T& val);
 
-		void clear();
+        void clear();
 
-		rsize count();
+        rsize count();
 
-	private:
-		byte* m_buffer;
-		rsize m_size;
-		rsize m_capacity;
-	};
+      private:
+        byte* m_buffer;
+        rsize m_size;
+        rsize m_capacity;
+    };
 
-	template<typename T>
-	inline void ByteVector::append(const T & val)
-	{
-		rsize bytes = sizeof(T);
-		if (m_size + bytes > m_capacity)
-		{
-			byte* old_buffer = m_buffer;
-			rsize new_capacity = API::max(m_capacity * 2, bytes);
-			m_buffer = (byte*)API::allocate(CAMY_UALLOC(new_capacity));
-			memcpy(m_buffer, old_buffer, m_capacity);
-			API::deallocate(old_buffer);
-			m_capacity = new_capacity;
-		}
+    template <typename T>
+    inline void ByteVector::append(const T& val)
+    {
+        rsize bytes = sizeof(T);
+        if (m_size + bytes > m_capacity)
+        {
+            byte* old_buffer = m_buffer;
+            rsize new_capacity = API::max(m_capacity * 2, bytes);
+            m_buffer = (byte*)API::allocate(CAMY_UALLOC(new_capacity));
+            memcpy(m_buffer, old_buffer, m_capacity);
+            API::deallocate(old_buffer);
+            m_capacity = new_capacity;
+        }
 
-		memcpy(m_buffer + m_size, &val, sizeof(T));
-		m_size += bytes;
-	}
+        memcpy(m_buffer + m_size, &val, sizeof(T));
+        m_size += bytes;
+    }
 }

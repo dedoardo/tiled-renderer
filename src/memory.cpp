@@ -15,162 +15,157 @@
 
 namespace camy
 {
-	namespace API
-	{
-		namespace
-		{
+    namespace API
+    {
+        namespace
+        {
 #if defined(CAMY_ENABLE_MEMORY_TRACKING)
 #pragma pack(push, 1)
-			struct AllocationHeader
-			{
-				AllocationHeader* prev;
-				AllocationHeader* next;
-				const char8* filename;
-				rsize bytes;
-				rsize padding;
-				uint16 line;
-				uint16 timestamp;
-			};
+            struct AllocationHeader
+            {
+                AllocationHeader* prev;
+                AllocationHeader* next;
+                const char8* filename;
+                rsize bytes;
+                rsize padding;
+                uint16 line;
+                uint16 timestamp;
+            };
 #pragma pack(pop)
 #else
-			// This is needed for tdeallocate_array that needs to query how many items there are
-			// in order to call a destructor on them all
-			struct AllocationHeader
-			{
-				rsize bytes; 
-			};
+            // This is needed for tdeallocate_array that needs to query how many items there are
+            // in order to call a destructor on them all
+            struct AllocationHeader
+            {
+                rsize bytes;
+            };
 #endif
 
-			constexpr rsize ALLOCATION_HEADER_SIZE = sizeof(AllocationHeader);
-			// Thanks to Github.com/c4stan
+            constexpr rsize ALLOCATION_HEADER_SIZE = sizeof(AllocationHeader);
+// Thanks to Github.com/c4stan
 #if defined(CAMY_OS_WINDOWS)
-			CRITICAL_SECTION g_lock;
+            CRITICAL_SECTION g_lock;
 #endif
-			TimeSlice g_start;
-			rsize	  g_total_bytes;
-			AllocationHeader* g_head;
-		}
+            TimeSlice g_start;
+            rsize g_total_bytes;
+            AllocationHeader* g_head;
+        }
 
-		void memory_init()
-		{
+        void memory_init()
+        {
 #if defined(CAMY_ENABLE_MEMORY_TRACKING)
-			g_start = API::timer_split();
-			g_total_bytes = 0;
+            g_start = API::timer_split();
+            g_total_bytes = 0;
 #if defined(CAMY_OS_WINDOWS)
-			InitializeCriticalSection(&g_lock);
+            InitializeCriticalSection(&g_lock);
 #else
-#error		Implement
+#error Implement
 #endif
 #endif
-		}
+        }
 
-		rsize memory_total_bytes()
-		{
+        rsize memory_total_bytes()
+        {
 #if defined(CAMY_ENABLE_MEMORY_TRACKING)
-			return g_total_bytes;
+            return g_total_bytes;
 #else
-			return (rsize)-1;
+            return (rsize)-1;
 #endif
-		}
+        }
 
-		rsize memory_block_size(const void* ptr)
-		{
-			if (ptr == nullptr)
-				return 0;
+        rsize memory_block_size(const void* ptr)
+        {
+            if (ptr == nullptr) return 0;
 
-			AllocationHeader* hdr = (AllocationHeader*)((byte*)ptr - ALLOCATION_HEADER_SIZE);
-			return hdr->bytes;
-		}
+            AllocationHeader* hdr = (AllocationHeader*)((byte*)ptr - ALLOCATION_HEADER_SIZE);
+            return hdr->bytes;
+        }
 
-		void memory_iterate_allocations(AllocationFoundCallback callback)
-		{
+        void memory_iterate_allocations(AllocationFoundCallback callback)
+        {
 #if defined(CAMY_ENABLE_MEMORY_TRACKING)
 
-			API::futex_lock(&g_lock);
+            API::futex_lock(&g_lock);
 
-			AllocationHeader* cur = g_head;
-			while (cur != nullptr)
-			{
-				callback(cur->filename, cur->line, cur->bytes, cur->timestamp);
-				cur = cur->next;
-			}
+            AllocationHeader* cur = g_head;
+            while (cur != nullptr)
+            {
+                callback(cur->filename, cur->line, cur->bytes, cur->timestamp);
+                cur = cur->next;
+            }
 
-			API::futex_unlock(&g_lock);
+            API::futex_unlock(&g_lock);
 #endif
-		}
+        }
 
-		void* allocate(_AllocationInfo& info)
-		{
-			if (info.alignment == DEFAULT_ALIGNMENT)
-				info.alignment = 16;
+        void* allocate(_AllocationInfo& info)
+        {
+            if (info.alignment == DEFAULT_ALIGNMENT) info.alignment = 16;
 
-			// pow2
-			CAMY_ASSERT(info.alignment > 0 && ((info.alignment & (info.alignment - 1)) == 0));
+            // pow2
+            CAMY_ASSERT(info.alignment > 0 && ((info.alignment & (info.alignment - 1)) == 0));
 
-			// Lazy header allocation
-			rsize bytes_to_allocate = info.count + ALLOCATION_HEADER_SIZE + info.alignment;
-			byte* udata = (byte*)malloc(bytes_to_allocate) + ALLOCATION_HEADER_SIZE;
-			byte* data_start = (byte*)((intptr_t)((byte*)udata + info.alignment) & ~(intptr_t)(info.alignment - 1));
-			rsize padding = (rsize)(data_start - udata);
+            // Lazy header allocation
+            rsize bytes_to_allocate = info.count + ALLOCATION_HEADER_SIZE + info.alignment;
+            byte* udata = (byte*)malloc(bytes_to_allocate) + ALLOCATION_HEADER_SIZE;
+            byte* data_start = (byte*)((intptr_t)((byte*)udata + info.alignment) &
+                                       ~(intptr_t)(info.alignment - 1));
+            rsize padding = (rsize)(data_start - udata);
 
-			//-----------------------
-			API::futex_lock(&g_lock);
-			AllocationHeader* hdr = (AllocationHeader*)(data_start - ALLOCATION_HEADER_SIZE);
+            //-----------------------
+            API::futex_lock(&g_lock);
+            AllocationHeader* hdr = (AllocationHeader*)(data_start - ALLOCATION_HEADER_SIZE);
 
 #if defined(CAMY_ENABLE_MEMORY_TRACKING)
-			hdr->prev = nullptr;
-			hdr->next = nullptr;
-			hdr->filename = info.file;
-			hdr->bytes = info.count;
-			hdr->padding = padding;
-			hdr->line = info.line;
-			hdr->timestamp = (uint16)API::timer_elapsed(API::timer_split() - g_start);
+            hdr->prev = nullptr;
+            hdr->next = nullptr;
+            hdr->filename = info.file;
+            hdr->bytes = info.count;
+            hdr->padding = padding;
+            hdr->line = info.line;
+            hdr->timestamp = (uint16)API::timer_elapsed(API::timer_split() - g_start);
 #else
-			hdr->bytes = info.count;
+            hdr->bytes = info.count;
 #endif
-			g_total_bytes += info.count;
+            g_total_bytes += info.count;
 
-			if (g_head == nullptr)
-				g_head = hdr;
-			else
-			{
-				((AllocationHeader*)g_head)->prev = hdr;
-				hdr->next = (AllocationHeader*)g_head;
-				g_head = hdr;
-			}
-			API::futex_unlock(&g_lock);
-			//-------------------------
+            if (g_head == nullptr)
+                g_head = hdr;
+            else
+            {
+                ((AllocationHeader*)g_head)->prev = hdr;
+                hdr->next = (AllocationHeader*)g_head;
+                g_head = hdr;
+            }
+            API::futex_unlock(&g_lock);
+            //-------------------------
 
-			return data_start;
-		}
+            return data_start;
+        }
 
-		void _deallocate(void*& ptr)
-		{
-			if (ptr == nullptr)
-				return;
+        void _deallocate(void*& ptr)
+        {
+            if (ptr == nullptr) return;
 
-			//----------------------
-			API::futex_lock(&g_lock);
+            //----------------------
+            API::futex_lock(&g_lock);
 
-			AllocationHeader* hdr = (AllocationHeader*)((byte*)ptr - ALLOCATION_HEADER_SIZE);
+            AllocationHeader* hdr = (AllocationHeader*)((byte*)ptr - ALLOCATION_HEADER_SIZE);
 
-			if (g_head == hdr)
-				g_head = hdr->next;
+            if (g_head == hdr) g_head = hdr->next;
 
-			if (hdr->next != nullptr)
-				hdr->next->prev = hdr->prev;
+            if (hdr->next != nullptr) hdr->next->prev = hdr->prev;
 
-			if (hdr->prev != nullptr)
-				hdr->prev->next = hdr->next;
+            if (hdr->prev != nullptr) hdr->prev->next = hdr->next;
 
-			byte* udata = (byte*)hdr - hdr->padding;
-			g_total_bytes -= hdr->bytes;
-			free(udata);
+            byte* udata = (byte*)hdr - hdr->padding;
+            g_total_bytes -= hdr->bytes;
+            free(udata);
 
-			CAMY_ASSERT(g_total_bytes >= 0);
+            CAMY_ASSERT(g_total_bytes >= 0);
 
-			API::futex_unlock(&g_lock);
-			//-------------------------
-		}
-	}
+            API::futex_unlock(&g_lock);
+            //-------------------------
+        }
+    }
 }

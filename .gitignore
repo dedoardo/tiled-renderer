@@ -1,4 +1,5 @@
 CMakeSettings.json
 docs/*.md
 lib/*
+
 !/.gitignore

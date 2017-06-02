@@ -12,24 +12,24 @@
 #include <Windows.h>
 namespace camy
 {
-	namespace API
-	{
-		TimeSlice timer_split()
-		{
-			LARGE_INTEGER ts;
-			QueryPerformanceCounter(&ts);
-			return (TimeSlice)ts.QuadPart;
-		}
+    namespace API
+    {
+        TimeSlice timer_split()
+        {
+            LARGE_INTEGER ts;
+            QueryPerformanceCounter(&ts);
+            return (TimeSlice)ts.QuadPart;
+        }
 
-		float timer_elapsed(TimeSlice slice)
-		{
-			// TODO: Cache ?
-			LARGE_INTEGER fq;
-			QueryPerformanceFrequency(&fq);
-			return (float)slice / ((float)fq.QuadPart / 1000.f);
-		}
-	}
+        float timer_elapsed(TimeSlice slice)
+        {
+            // TODO: Cache ?
+            LARGE_INTEGER fq;
+            QueryPerformanceFrequency(&fq);
+            return (float)slice / ((float)fq.QuadPart / 1000.f);
+        }
+    }
 }
 #else
-#	error No implementation available for this platform
+#error No implementation available for this platform
 #endif
