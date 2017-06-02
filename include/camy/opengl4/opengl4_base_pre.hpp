@@ -53,14 +53,11 @@ namespace camy
 
 	struct NativeRasterizerState { };
 
-	struct NativeDepthStencilState
-	{
-
-	};
+	struct NativeDepthStencilState { };
 
 	struct NativeInputSignature
 	{
-		GLint vao;
+		GLuint vao;
 	};
 
 	struct NativeSampler

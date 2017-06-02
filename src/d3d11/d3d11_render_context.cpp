@@ -1387,7 +1387,8 @@ namespace camy
 	void RenderContext::destroy_surface(HResource handle)
 	{
 		if (handle.is_invalid()) return;
-		Surface& surface = m_resource_manager.get<Surface>(handle);
+
+		Surface& surface = get_surface(handle);
 
 		if (surface.native.srvs != nullptr)
 		{

@@ -881,51 +881,99 @@ namespace camy
 
 	void RenderContext::destroy_surface(HResource handle)
 	{
+		if (handle.is_invalid()) return;
 
+		GLuint texture = get_surface(handle).native.texture;
+		if (glIsTexture(texture))
+			glDeleteTextures(1, &texture);
+		m_resource_manager.deallocate<Surface>(handle);
 	}
 
 	void RenderContext::destroy_buffer(HResource handle)
 	{
+		if (handle.is_invalid()) return;
 
+		GLuint buffer = get_buffer(handle).native.buffer;
+		if (glIsBuffer(buffer))
+			glDeleteBuffers(1, &buffer);
+		m_resource_manager.deallocate<Buffer>(handle);
 	}
 
 	void RenderContext::destroy_vertex_buffer(HResource handle)
 	{
+		if (handle.is_invalid()) return;
 
+		GLuint buffer = get_vertex_buffer(handle).native.buffer;
+		if (glIsBuffer(buffer))
+			glDeleteBuffers(1, &buffer);
+		m_resource_manager.deallocate<VertexBuffer>(handle);
 	}
 
 	void RenderContext::destroy_index_buffer(HResource handle)
 	{
+		if (handle.is_invalid()) return;
 
+		GLuint buffer = get_index_buffer(handle).native.buffer;
+		if (glIsBuffer(buffer))
+			glDeleteBuffers(1, &buffer);
+		m_resource_manager.deallocate<IndexBuffer>(handle);
 	}
 
 	void RenderContext::destroy_constant_buffer(HResource handle)
 	{
+		if (handle.is_invalid()) return;
 
+		GLuint buffer = get_constant_buffer(handle).native.buffer;
+		if (glIsBuffer(buffer))
+			glDeleteBuffers(1, &buffer);
+		m_resource_manager.deallocate<ConstantBuffer>(handle);
 	}
 
 	void RenderContext::destroy_blend_state(HResource handle)
 	{
+		if (handle.is_invalid()) return;
+		m_resource_manager.deallocate<BlendState>(handle);
 	}
 
 	void RenderContext::destroy_rasterizer_state(HResource handle)
 	{
+		if (handle.is_invalid()) return;
+		m_resource_manager.deallocate<RasterizerState>(handle);
 	}
 
 	void RenderContext::destroy_input_signature(HResource handle)
 	{
+		if (handle.is_invalid()) return;
+		
+		GLuint vao = get_input_signature(handle).native.vao;
+		if (glIsVertexArray(vao))
+			glDeleteVertexArrays(1, &vao);
+		m_resource_manager.deallocate<InputSignature>(handle);
 	}
 
 	void RenderContext::destroy_sampler(HResource handle)
 	{
+		if (handle.is_invalid()) return;
+
+		GLuint sampler = get_sampler(handle).native.sampler;
+		if (glIsSampler(sampler))
+			glDeleteSamplers(1, &sampler);
+		m_resource_manager.deallocate<Sampler>(handle);
 	}
 
 	void RenderContext::destroy_depth_stencil_state(HResource handle)
 	{
+		if (handle.is_invalid()) return;
+		m_resource_manager.deallocate<DepthStencilState>(handle);
 	}
 
 	void RenderContext::destroy_shader(HResource handle)
 	{
+		if (handle.is_invalid()) return;
+		GLuint shader = get_shader(handle).native.shader;
+		if (glIsProgram(shader))
+			glDeleteProgram(shader);
+		m_resource_manager.deallocate<Shader>(handle);
 	}
 
 	Surface& RenderContext::get_surface(HResource handle)

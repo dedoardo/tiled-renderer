@@ -45,7 +45,7 @@
 
 // CAMY_BACKEND
 #if !defined(CAMY_BACKEND_OPENGL4) && !defined(CAMY_BACKEND_D3D11)
-#define CAMY_BACKEND_D3D11
+#define CAMY_BACKEND_OPENGL4
 #endif
 
 namespace camy
