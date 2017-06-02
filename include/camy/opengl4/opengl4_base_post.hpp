@@ -95,30 +95,38 @@ namespace camy
 		uint16 cur_index_buffer;
 	};
 
-	CAMY_INLINE bool gl_err()
+	namespace OpenGL4
 	{
-		GLenum error = glGetError();
-
-		if (error == GL_NO_ERROR)
-			return false;
-
-		while (error != GL_NO_ERROR)
+		CAMY_INLINE void flush_errors()
 		{
-			char* error_str;
-			switch (error)
+			while (glGetError() != GL_NO_ERROR);
+		}
+
+		CAMY_INLINE bool has_errors()
+		{
+			GLenum error = glGetError();
+
+			if (error == GL_NO_ERROR)
+				return false;
+
+			while (error != GL_NO_ERROR)
 			{
+				char* error_str;
+				switch (error)
+				{
 				case GL_INVALID_OPERATION:      error_str = "INVALID_OPERATION";      break;
 				case GL_INVALID_ENUM:           error_str = "INVALID_ENUM";           break;
 				case GL_INVALID_VALUE:          error_str = "INVALID_VALUE";          break;
 				case GL_OUT_OF_MEMORY:          error_str = "OUT_OF_MEMORY";          break;
 				case GL_INVALID_FRAMEBUFFER_OPERATION:  error_str = "INVALID_FRAMEBUFFER_OPERATION";  break;
+				}
+
+				CL_ERR("Opengl4.5 Error: ", error_str);
+				error = glGetError();
 			}
 
-			CL_ERR("Opengl4.5 Error: ", error_str);
-			error = glGetError();
+			return true;
 		}
-
-		return true;
 	}
 }
 

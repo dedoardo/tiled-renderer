@@ -82,7 +82,7 @@ namespace camy
 			offset += camy_to_bytesize(element.type);
 		}
 
-		if (gl_err())
+		if (OpenGL4::has_errors())
 		{
 			CL_ERR("Error creating input signature, see above for more details");
 			return false;
@@ -379,6 +379,7 @@ namespace camy
 		const byte* cur = command_list.m_data.command_buffer.data();
 		const byte* end = cur + command_list.m_data.command_buffer.count();
 		
+		OpenGL4::flush_errors();
 		while (cur < end)
 		{
 			uint16 op = Cmd::read<uint16>(cur);
@@ -538,6 +539,8 @@ namespace camy
 
 	HResource RenderContext::create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces, rsize num_subsurfaces, const char8* name)
 	{
+		OpenGL4::flush_errors();
+
 		if (desc.type == SurfaceDesc::Type::Surface2DArray ||
 			desc.type == SurfaceDesc::Type::SurfaceCubeArray)
 		{
@@ -592,7 +595,7 @@ namespace camy
 						glTexImage2D(GL_TEXTURE_2D,
 							m, iformat, w, h, 0, format, type, cur_data);
 					}
-					failed = gl_err() ? true : failed;
+					failed = OpenGL4::has_errors() ? true : failed;
 
 					// TODO: Check for non-power of two
 					w /= 2;
@@ -623,7 +626,7 @@ namespace camy
 					glTexImage2D(GL_TEXTURE_2D,
 						m, iformat, w, h, 0, format, type, cur_data);
 				}
-				failed = gl_err() ? true : failed;
+				failed = OpenGL4::has_errors() ? true : failed;
 				
 				// TODO: Check for non-power of two
 				w /= 2;
@@ -660,13 +663,15 @@ namespace camy
 
 	HResource RenderContext::create_vertex_buffer(const VertexBufferDesc& desc, const void* data, const char8* name)
 	{
+		OpenGL4::flush_errors();
+
 		GLuint buffer;
 		glGenBuffers(1, &buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
 		glBufferData(GL_ARRAY_BUFFER, desc.num_elements * desc.element_size,
 			data, desc.usage == Usage::Dynamic? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
-		if (gl_err())
+		if (OpenGL4::has_errors())
 		{
 			glDeleteBuffers(1, &buffer);
 			CL_ERR ("Failed to create VertexBuffer, see above for more details");
@@ -687,13 +692,15 @@ namespace camy
 
 	HResource RenderContext::create_index_buffer(const IndexBufferDesc& desc, const void* data, const char8* name)
 	{
+		OpenGL4::flush_errors();
+
 		GLuint buffer;
 		glGenBuffers(1, &buffer);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, desc.num_elements * desc.extended32 ? sizeof(uint32) : sizeof(uint16),
 			data, desc.usage == Usage::Dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
-		if (gl_err())
+		if (OpenGL4::has_errors())
 		{
 			glDeleteBuffers(1, &buffer);
 			CL_ERR("Failed to create IndexBuffer, see above for more details");
@@ -714,12 +721,14 @@ namespace camy
 
 	HResource RenderContext::create_constant_buffer(const ConstantBufferDesc& desc, const char8* name)
 	{
+		OpenGL4::flush_errors();
+
 		GLuint buffer;
 		glGenBuffers(1, &buffer);
 		glBindBuffer(GL_UNIFORM_BUFFER, buffer);
 		glBufferData(GL_UNIFORM_BUFFER, desc.size, nullptr, GL_DYNAMIC_DRAW);
 
-		if (gl_err())
+		if (OpenGL4::has_errors())
 		{
 			glDeleteBuffers(1, &buffer);
 			CL_ERR("Failed to create ConstantBuffer, see above for more details");
@@ -768,6 +777,8 @@ namespace camy
 
 	HResource RenderContext::create_sampler(const SamplerDesc& desc, const char8* name)
 	{
+		OpenGL4::flush_errors();
+
 		GLuint sampler;
 		glGenSamplers(1, &sampler);
 	
@@ -796,7 +807,7 @@ namespace camy
 		else if (desc.comparison == SamplerDesc::Comparison::LessEqual)
 			glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
-		if (gl_err())
+		if (OpenGL4::has_errors())
 		{
 			CL_ERR("Failed to create sampler, see above for more details");
 			return HResource::make_invalid();
@@ -840,6 +851,8 @@ namespace camy
 
 	HResource RenderContext::create_shader(const ShaderDesc& desc, const char8* name)
 	{
+		OpenGL4::flush_errors();
+
 		GLuint shader = glCreateShader(camy_to_opengl(desc.type));
 		glShaderSource(shader, 1, (GLchar**)&desc.bytecode.data, (GLint*)&desc.bytecode.size);
 		glCompileShader(shader);
@@ -862,7 +875,7 @@ namespace camy
 		glDeleteShader(shader);
 		GLuint program = glCreateShaderProgramv(camy_to_opengl(desc.type), 1, (GLchar**)&desc.bytecode.data);
 		
-		if (gl_err())
+		if (OpenGL4::has_errors())
 		{
 			CL_ERR("Failed to create shader: ", name);
 			return HResource::make_invalid();

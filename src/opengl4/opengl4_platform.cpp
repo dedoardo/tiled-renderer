@@ -146,7 +146,7 @@ namespace camy
 			CL_INFO("Successfully started up camy, enjoy");
 			return true;
 		}
-
+	
 		RenderContext& render_context()
 		{
 			return *g_render_context;

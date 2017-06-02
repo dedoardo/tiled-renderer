@@ -77,29 +77,31 @@ struct name { static const ::camy::rsize ID = id; };
 			return ret;
 		}
 
-#define cmd_impl(name) CAMY_INLINE void cmd_##name(RenderContextData& rc_data, CommandListData& cl_data, const byte*& cur)
-#define cmd_read(name, type) type name = read<type>(cur);
+#define CAMY_CMD_IMPL(name) CAMY_INLINE void cmd_##name(RenderContextData& rc_data, CommandListData& cl_data, const byte*& cur)
+#define CAMY_CMD_READ(name, type) type name = read<type>(cur);
+#define CAMY_CMD_CHECK(name) if (OpenGL4::has_errors()) CL_ERR("Failed to " #name ", see above for more details");
 
-		cmd_impl(BindProgramPipeline)
+		CAMY_CMD_IMPL(BindProgramPipeline)
 		{
-			cmd_read(hash, uint64);
+			CAMY_CMD_READ(hash, uint64);
 			GLuint ppo = *cl_data.ppo_map[hash];
 			CAMY_ASSERT(ppo != 0);
 			glBindProgramPipeline(ppo);
+			CAMY_CMD_CHECK(glBindProgramPipeline);
 		}
 
-		cmd_impl(BindFramebuffer)
+		CAMY_CMD_IMPL(BindFramebuffer)
 		{
-			cmd_read(target, GLenum);
-			cmd_read(hash, uint64);
+			CAMY_CMD_READ(target, GLenum);
+			CAMY_CMD_READ(hash, uint64);
 			GLuint fbo = *cl_data.fbo_map[hash];
 			glBindFramebuffer(target, fbo);
-			gl_err();
+			CAMY_CMD_CHECK(glBindFramebuffer);
 		}
 
-		cmd_impl(BindInputSignature)
+		CAMY_CMD_IMPL(BindInputSignature)
 		{
-			cmd_read(handle, HResource);
+			CAMY_CMD_READ(handle, HResource);
 			InputSignature& is = API::rc().get_input_signature(handle);
 			if (is.native.vao == 0)
 			{
@@ -110,169 +112,190 @@ struct name { static const ::camy::rsize ID = id; };
 				}
 			}
 			glBindVertexArray(is.native.vao);
+			CAMY_CMD_CHECK(glBindVertexArray);
 		}
 
-		cmd_impl(Enable)
+		CAMY_CMD_IMPL(Enable)
 		{
-			cmd_read(cap, GLenum);
+			CAMY_CMD_READ(cap, GLenum);
 			glEnable(cap);
+			CAMY_CMD_CHECK(glEnable);
 		}
 
-		cmd_impl(Disable)
+		CAMY_CMD_IMPL(Disable)
 		{
-			cmd_read(cap, GLenum);
+			CAMY_CMD_READ(cap, GLenum);
 			glDisable(cap);
+			CAMY_CMD_CHECK(glDisable);
 		}
 
-		cmd_impl(PolygonMode)
+		CAMY_CMD_IMPL(PolygonMode)
 		{
-			cmd_read(face, GLenum);
-			cmd_read(mode, GLenum);
+			CAMY_CMD_READ(face, GLenum);
+			CAMY_CMD_READ(mode, GLenum);
 			glPolygonMode(face, mode);
+			CAMY_CMD_CHECK(glPolygonMode);
 		}
 
-		cmd_impl(CullFace)
+		CAMY_CMD_IMPL(CullFace)
 		{
-			cmd_read(mode, GLenum);
+			CAMY_CMD_READ(mode, GLenum);
 			glCullFace(mode);
+			CAMY_CMD_CHECK(glCullFace);
 		}
 
-		cmd_impl(PolygonOffsetClamp)
+		CAMY_CMD_IMPL(PolygonOffsetClamp)
 		{
-			cmd_read(factor, GLfloat);
-			cmd_read(units, GLfloat);
-			cmd_read(clamp, GLfloat);
+			CAMY_CMD_READ(factor, GLfloat);
+			CAMY_CMD_READ(units, GLfloat);
+			CAMY_CMD_READ(clamp, GLfloat);
 			glPolygonOffsetClampEXT(factor, units, clamp);
+			CAMY_CMD_CHECK(glPolygonOffsetClampEXT);
 		}
 
-		cmd_impl(DepthFunc)
+		CAMY_CMD_IMPL(DepthFunc)
 		{
-			cmd_read(func, GLenum);
+			CAMY_CMD_READ(func, GLenum);
 			glDepthFunc(func);
+			CAMY_CMD_CHECK(glDepthFunc);
 		}
 
-		cmd_impl(Viewport)
+		CAMY_CMD_IMPL(Viewport)
 		{
-			cmd_read(x, GLint);
-			cmd_read(y, GLint);
-			cmd_read(width, GLsizei);
-			cmd_read(height, GLsizei);
+			CAMY_CMD_READ(x, GLint);
+			CAMY_CMD_READ(y, GLint);
+			CAMY_CMD_READ(width, GLsizei);
+			CAMY_CMD_READ(height, GLsizei);
 			glViewport(x, y, width, height);
+			CAMY_CMD_CHECK(glViewport);
 		}
 
-		cmd_impl(DepthRange)
+		CAMY_CMD_IMPL(DepthRange)
 		{
-			cmd_read(n, GLfloat);
-			cmd_read(f, GLfloat);
+			CAMY_CMD_READ(n, GLfloat);
+			CAMY_CMD_READ(f, GLfloat);
 			glDepthRangef(n, f);
+			CAMY_CMD_CHECK(glDepthRange);
 		}
 
-		cmd_impl(BindBuffer)
+		CAMY_CMD_IMPL(BindBuffer)
 		{
-			cmd_read(target, GLenum);
-			cmd_read(buffer, GLuint);
+			CAMY_CMD_READ(target, GLenum);
+			CAMY_CMD_READ(buffer, GLuint);
 			glBindBuffer(target, buffer);
+			CAMY_CMD_CHECK(glBindBuffer);
 		}
 
-		cmd_impl(BindBufferBase)
+		CAMY_CMD_IMPL(BindBufferBase)
 		{
-			cmd_read(target, GLenum);
-			cmd_read(index, GLuint);
-			cmd_read(buffer, GLuint);
+			CAMY_CMD_READ(target, GLenum);
+			CAMY_CMD_READ(index, GLuint);
+			CAMY_CMD_READ(buffer, GLuint);
 			glBindBufferBase(target, index, buffer);
+			CAMY_CMD_CHECK(glBindBufferBase);
 		}
 
-		cmd_impl(BindBufferRange)
+		CAMY_CMD_IMPL(BindBufferRange)
 		{
-			cmd_read(target, GLenum);
-			cmd_read(index, GLuint);
-			cmd_read(buffer, GLuint);
-			cmd_read(offset, GLintptr);
-			cmd_read(size, GLsizeiptr);
+			CAMY_CMD_READ(target, GLenum);
+			CAMY_CMD_READ(index, GLuint);
+			CAMY_CMD_READ(buffer, GLuint);
+			CAMY_CMD_READ(offset, GLintptr);
+			CAMY_CMD_READ(size, GLsizeiptr);
 			glBindBufferRange(target, index, buffer, offset, size);
+			CAMY_CMD_CHECK(glBindBufferRange);
 		}
 
-		cmd_impl(ActiveTexture)
+		CAMY_CMD_IMPL(ActiveTexture)
 		{
-			cmd_read(texture, GLenum);
+			CAMY_CMD_READ(texture, GLenum);
 			glActiveTexture(texture);
+			CAMY_CMD_CHECK(glActiveTexture);
 		}
 
-		cmd_impl(BindTexture)
+		CAMY_CMD_IMPL(BindTexture)
 		{
-			cmd_read(target, GLenum);
-			cmd_read(texture, GLuint);
+			CAMY_CMD_READ(target, GLenum);
+			CAMY_CMD_READ(texture, GLuint);
 			glBindTexture(target, texture);
+			CAMY_CMD_CHECK(glBindTexture);
 		}
 
-		cmd_impl(BindSampler)
+		CAMY_CMD_IMPL(BindSampler)
 		{
-			cmd_read(unit, GLuint);
-			cmd_read(sampler, GLuint);
+			CAMY_CMD_READ(unit, GLuint);
+			CAMY_CMD_READ(sampler, GLuint);
 			glBindSampler(unit, sampler);
+			CAMY_CMD_CHECK(glBindSampler);
 		}
 
-		cmd_impl(BindVertexArray)
+		CAMY_CMD_IMPL(BindVertexArray)
 		{
-			cmd_read(array, GLuint);
+			CAMY_CMD_READ(array, GLuint);
 			glBindVertexArray(array);
+			CAMY_CMD_CHECK(glBindVertexArray);
 		}
 
-		cmd_impl(BindVertexBuffer)
+		CAMY_CMD_IMPL(BindVertexBuffer)
 		{
-			cmd_read(binding_index, GLuint);
-			cmd_read(buffer, GLuint);
-			cmd_read(offset, GLintptr);
-			cmd_read(stride, GLintptr);
+			CAMY_CMD_READ(binding_index, GLuint);
+			CAMY_CMD_READ(buffer, GLuint);
+			CAMY_CMD_READ(offset, GLintptr);
+			CAMY_CMD_READ(stride, GLintptr);
 			glBindVertexBuffer(binding_index, buffer, offset, stride);
+			CAMY_CMD_CHECK(glBindVertexBuffer);
 		}
 
-		cmd_impl(DrawArrays)
+		CAMY_CMD_IMPL(DrawArrays)
 		{
-			cmd_read(mode, GLenum);
-			cmd_read(first, GLint);
-			cmd_read(count, GLsizei);
+			CAMY_CMD_READ(mode, GLenum);
+			CAMY_CMD_READ(first, GLint);
+			CAMY_CMD_READ(count, GLsizei);
 			glDrawArrays(mode, first, count);
+			CAMY_CMD_CHECK(glDrawArrays);
 		}
 
-		cmd_impl(DrawElementsBaseVertex)
+		CAMY_CMD_IMPL(DrawElementsBaseVertex)
 		{
-			cmd_read(mode, GLenum);
-			cmd_read(count, GLsizei);
-			cmd_read(type, GLenum);
-			cmd_read(indices, GLvoid*);
-			cmd_read(base_vertex, GLint);
+			CAMY_CMD_READ(mode, GLenum);
+			CAMY_CMD_READ(count, GLsizei);
+			CAMY_CMD_READ(type, GLenum);
+			CAMY_CMD_READ(indices, GLvoid*);
+			CAMY_CMD_READ(base_vertex, GLint);
 			glDrawElementsBaseVertex(mode, count, type, indices, base_vertex);
+			CAMY_CMD_CHECK(glDrawElementsBaseVertex);
 		}
 
-		cmd_impl(DrawArraysInstancedBaseInstance)
+		CAMY_CMD_IMPL(DrawArraysInstancedBaseInstance)
 		{
-			cmd_read(mode, GLenum);
-			cmd_read(first, GLint);
-			cmd_read(count, GLsizei);
-			cmd_read(prim_count, GLsizei);
-			cmd_read(base_instance, GLuint);
+			CAMY_CMD_READ(mode, GLenum);
+			CAMY_CMD_READ(first, GLint);
+			CAMY_CMD_READ(count, GLsizei);
+			CAMY_CMD_READ(prim_count, GLsizei);
+			CAMY_CMD_READ(base_instance, GLuint);
 			glDrawArraysInstancedBaseInstance(mode, first, count, prim_count, base_instance);
+			CAMY_CMD_CHECK(glDrawArrraysInstancedBaseInstance);
 		}
 
-		cmd_impl(DrawElementsInstancedBaseVertex)
+		CAMY_CMD_IMPL(DrawElementsInstancedBaseVertex)
 		{
-			cmd_read(mode, GLenum);
-			cmd_read(count, GLsizei);
-			cmd_read(type, GLenum);
-			cmd_read(indices, GLvoid*);
-			cmd_read(prim_count, GLsizei);
-			cmd_read(base_vertex, GLint);
+			CAMY_CMD_READ(mode, GLenum);
+			CAMY_CMD_READ(count, GLsizei);
+			CAMY_CMD_READ(type, GLenum);
+			CAMY_CMD_READ(indices, GLvoid*);
+			CAMY_CMD_READ(prim_count, GLsizei);
+			CAMY_CMD_READ(base_vertex, GLint);
 			glDrawElementsInstancedBaseVertex(mode, count, type, indices, prim_count, base_vertex);
+			CAMY_CMD_CHECK(glDrawElementsInstancedBaseVertex);
 		}
 
-		cmd_impl(ClearTexImage)
+		CAMY_CMD_IMPL(ClearTexImage)
 		{
-			cmd_read(texture, GLuint);
-			cmd_read(level, GLint);
-			cmd_read(format, GLenum);
-			cmd_read(type, GLenum);
-			cmd_read(byte_size, uint8);
+			CAMY_CMD_READ(texture, GLuint);
+			CAMY_CMD_READ(level, GLint);
+			CAMY_CMD_READ(format, GLenum);
+			CAMY_CMD_READ(type, GLenum);
+			CAMY_CMD_READ(byte_size, uint8);
 			if (texture != 0)
 				glClearTexImage(texture, level, format, type, cur);
 			else
@@ -284,10 +307,9 @@ struct name { static const ::camy::rsize ID = id; };
 				glClearColor(val.x, val.y, val.z, val.w);
 				glClear(GL_COLOR_BUFFER_BIT);
 				glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
-				gl_err();
 			}
 			cur += byte_size;
-			gl_err();
+			CAMY_CMD_CHECK(glBindFrameBuffer);
 		}
 
 		void(*cmd_ftbl[])(RenderContextData&, CommandListData&, const byte*&);
