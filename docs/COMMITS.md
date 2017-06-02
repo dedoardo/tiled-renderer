@@ -58,3 +58,4 @@ Starting from 1/4/2017
 
 !StaticString rewritten implementation
 
++ D3D11 + OpenGL4
