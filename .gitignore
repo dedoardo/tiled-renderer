@@ -1,5 +1,4 @@
 CMakeSettings.json
-docs/TODO.md
-docs/REASONS.md
+docs/*.md
 lib/*
 !/.gitignore
