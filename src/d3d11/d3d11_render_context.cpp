@@ -18,6 +18,14 @@
 #include <d3d11_1.h>
 #include <d3dcommon.h>
 
+#define CAMY_CHECK_CONTEXT_FOR_THREAD\
+	ContextID ctx_id = id_for_current();\
+	if (ctx_id == ::camy::API::INVALID_CONTEXT_ID)\
+	{\
+		CL_ERR("Failed to use RenderContext as the current thread hasn't acquired one");\
+		return HResource::make_invalid();\
+	}
+
 template <typename ComType>
 void safe_release_com(ComType*& ptr)
 {
@@ -254,6 +262,8 @@ namespace camy
 
 		info_out.dedicated_memory = (uint32)adapter_desc.DedicatedVideoMemory / (1024*1024);
 
+		m_render_ctx = info_in.render_ctx;
+
 		CL_INFO("Created RenderContext: ");
 		CL_INFO("Backend: ", info_out.backend);
 		CL_INFO("Adapter: ", info_out.gpu_name);
@@ -308,6 +318,8 @@ namespace camy
 
 	ContextID RenderContext::id_for_current()
 	{
+		CAMY_ASSERT(m_data.is_valid());
+
 		ThreadID cur_id = API::thread_current();
 
 		for (uint32 i = 0; i < API::MAX_CONTEXTS; ++i)
@@ -327,6 +339,13 @@ namespace camy
 	void RenderContext::flush(CommandList& command_list)
 	{
 		CAMY_ASSERT(m_data.is_valid());
+
+		ContextID ctx_id = id_for_current();
+		if (ctx_id != m_render_ctx)
+		{
+			CL_ERR("Failed to flush command list, calling thread is not registered as render context (StartupInfo)");
+			return;
+		}
 
 		if (command_list.m_data.command_list == nullptr)
 			return;
@@ -440,6 +459,7 @@ namespace camy
 	HResource RenderContext::create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces, rsize num_subsurfaces, const char8* name)
 	{
 		CAMY_ASSERT(m_data.is_valid());
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		HResource ret;
 		ID3D11Texture2D* texture = nullptr;
@@ -778,6 +798,7 @@ namespace camy
 	HResource RenderContext::create_buffer(const BufferDesc& desc, const void* data, const char8* name)
 	{
 		CAMY_ASSERT(m_data.is_valid());
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		if (desc.is_uav == true && desc.usage == Usage::Dynamic)
 		{
@@ -869,6 +890,7 @@ namespace camy
 	HResource RenderContext::create_vertex_buffer(const VertexBufferDesc& desc, const void* data, const char8* name)
 	{
 		CAMY_ASSERT(m_data.is_valid());
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		HResource ret;
 		ID3D11Buffer* buffer = nullptr;
@@ -911,6 +933,7 @@ namespace camy
 	HResource RenderContext::create_index_buffer(const IndexBufferDesc& desc, const void* data, const char8* name)
 	{
 		CAMY_ASSERT(m_data.is_valid());
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		HResource ret;
 		ID3D11Buffer* buffer = nullptr;
@@ -959,6 +982,7 @@ namespace camy
 	HResource RenderContext::create_constant_buffer(const ConstantBufferDesc& desc, const char8* name)
 	{
 		CAMY_ASSERT(m_data.is_valid());
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		HResource ret;
 		ID3D11Buffer* buffer = nullptr;
@@ -1065,6 +1089,7 @@ namespace camy
 	HResource RenderContext::create_blend_state(const BlendStateDesc& desc, const char8* name)
 	{
 		CAMY_ASSERT(m_data.is_valid());
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		D3D11_BLEND_DESC bs_desc;
 		compile_from_camy(desc.type, bs_desc);
@@ -1096,6 +1121,7 @@ namespace camy
 	HResource RenderContext::create_rasterizer_state(const RasterizerStateDesc& desc, const char8* name)
 	{
 		CAMY_ASSERT(m_data.device != nullptr);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		D3D11_RASTERIZER_DESC rs_desc;
 		rs_desc.CullMode = camy_to_d3d11(desc.cull);
@@ -1153,6 +1179,7 @@ namespace camy
 	HResource RenderContext::create_input_signature(InputSignatureDesc& desc, const char8* name)
 	{
 		CAMY_ASSERT(m_data.device != nullptr);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		// Perfectly fine, just hardware generated values
 		if (desc.num_elements == 0)
@@ -1252,6 +1279,7 @@ namespace camy
 	HResource RenderContext::create_sampler(const SamplerDesc& desc, const char8* name)
 	{
 		CAMY_ASSERT(m_data.device != nullptr);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		D3D11_SAMPLER_DESC s_desc;
 		s_desc.Filter = camy_to_d3d11(desc.filter, desc.comparison != SamplerDesc::Comparison::Never);
@@ -1307,6 +1335,7 @@ namespace camy
 	HResource RenderContext::create_depth_stencil_state(const DepthStencilStateDesc& desc, const char8* name)
 	{
 		CAMY_ASSERT(m_data.device != nullptr);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		D3D11_DEPTH_STENCIL_DESC dss_desc;
 		dss_desc.DepthEnable = true;
@@ -1341,6 +1370,7 @@ namespace camy
 	HResource RenderContext::create_shader(const ShaderDesc& desc, const char8* name)
 	{
 		CAMY_ASSERT(m_data.device != nullptr);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 
 		HResource ret;
 		ID3D11DeviceChild* shader = nullptr;

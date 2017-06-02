@@ -34,8 +34,13 @@ namespace camy
 
 	struct CAMY_API RenderContextData
 	{
-		HDC     hdc;
-		HGLRC	render_ctx;
+		bool is_valid()const
+		{
+			return hdc != nullptr && render_ctx != nullptr;
+		}
+
+		HDC     hdc = nullptr;
+		HGLRC	render_ctx = nullptr;
 		Surface surface;
 		ConcurrentContextData contexts[API::MAX_CONTEXTS];
 		Atomic<uint32> avail_contexts;

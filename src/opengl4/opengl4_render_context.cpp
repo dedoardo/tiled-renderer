@@ -8,15 +8,20 @@
 // Header
 #include <camy/render_context.hpp>
 
-#if defined(CAMY_BACKEND_OPENGL4)
+#if defined(CAMY_OS_WINDOWS) && defined(CAMY_BACKEND_OPENGL4)
 
 // camy
 #include <camy/system.hpp>
 #include <camy/command_list.hpp>
 #include <camy/opengl4/opengl4_command_list.hpp>
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#define CAMY_CHECK_CONTEXT_FOR_THREAD\
+	ContextID ctx_id = id_for_current();\
+	if (ctx_id == ::camy::API::INVALID_CONTEXT_ID)\
+	{\
+		CL_ERR("Failed to use RenderContext as the current thread hasn't acquired one");\
+		return HResource::make_invalid();\
+	}
 
 namespace camy
 {
@@ -254,6 +259,8 @@ namespace camy
 
 	bool RenderContext::acquire(ContextID ctx_id)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+
 		if (ctx_id >= API::MAX_CONTEXTS)
 		{
 			CL_ERR("Invalid argument: ctx_id allowed range is [0, ", API::MAX_CONTEXTS, "(API::MAX_CONTEXTS)]");
@@ -275,6 +282,8 @@ namespace camy
 
 	void RenderContext::release(ContextID ctx_id)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+
 		if (ctx_id >= API::MAX_CONTEXTS)
 		{
 			CL_ERR("Invalid argument: ctx_id allowed range is [0, ", API::MAX_CONTEXTS, "(API::MAX_CONTEXTS)]");
@@ -290,6 +299,7 @@ namespace camy
 
 	ContextID RenderContext::id_for_current()
 	{
+		CAMY_ASSERT(m_data.is_valid());
 		ThreadID cur_id = API::thread_current();
 
 		for (uint32 i = 0; i < API::MAX_CONTEXTS; ++i)
@@ -308,6 +318,15 @@ namespace camy
 
 	void RenderContext::flush(CommandList& command_list)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+
+		ContextID ctx_id = id_for_current();
+		if (ctx_id != m_render_ctx)
+		{
+			CL_ERR("Failed to flush command list, calling thread is not registered as render context (StartupInfo)");
+			return;
+		}
+
 		// Uploading ConstantBuffer data
 		for (rsize i = 0; i < command_list.m_updates.count(); ++i)
 		{
@@ -539,6 +558,9 @@ namespace camy
 
 	HResource RenderContext::create_surface(const SurfaceDesc& desc, const SubSurface* subsurfaces, rsize num_subsurfaces, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 		OpenGL4::flush_errors();
 
 		if (desc.type == SurfaceDesc::Type::Surface2DArray ||
@@ -663,6 +685,9 @@ namespace camy
 
 	HResource RenderContext::create_vertex_buffer(const VertexBufferDesc& desc, const void* data, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 		OpenGL4::flush_errors();
 
 		GLuint buffer;
@@ -692,6 +717,9 @@ namespace camy
 
 	HResource RenderContext::create_index_buffer(const IndexBufferDesc& desc, const void* data, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 		OpenGL4::flush_errors();
 
 		GLuint buffer;
@@ -721,6 +749,9 @@ namespace camy
 
 	HResource RenderContext::create_constant_buffer(const ConstantBufferDesc& desc, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 		OpenGL4::flush_errors();
 
 		GLuint buffer;
@@ -749,11 +780,18 @@ namespace camy
 
 	HResource RenderContext::create_blend_state(const BlendStateDesc& desc, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 		return HResource::make_invalid();
 	}
 
 	HResource RenderContext::create_rasterizer_state(const RasterizerStateDesc& desc, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
+
 		HResource ret = m_resource_manager.allocate<RasterizerState>();
 		RasterizerState& rs = m_resource_manager.get<RasterizerState>(ret);
 		rs.desc = desc;
@@ -765,6 +803,10 @@ namespace camy
 
 	HResource RenderContext::create_input_signature(InputSignatureDesc& desc, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
+
 		// Actual initialization is delayed
 		HResource ret = m_resource_manager.allocate<InputSignature>();
 		InputSignature& is = m_resource_manager.get<InputSignature>(ret);
@@ -777,6 +819,9 @@ namespace camy
 
 	HResource RenderContext::create_sampler(const SamplerDesc& desc, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 		OpenGL4::flush_errors();
 
 		GLuint sampler;
@@ -827,6 +872,10 @@ namespace camy
 
 	HResource RenderContext::create_depth_stencil_state(const DepthStencilStateDesc& desc, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
+
 		HResource ret = m_resource_manager.allocate<DepthStencilState>();
 		DepthStencilState& dss = m_resource_manager.get<DepthStencilState>(ret);
 		dss.desc = desc;
@@ -851,6 +900,9 @@ namespace camy
 
 	HResource RenderContext::create_shader(const ShaderDesc& desc, const char8* name)
 	{
+		CAMY_ASSERT(m_data.is_valid());
+		CAMY_ASSERT(id_for_current() != API::INVALID_CONTEXT_ID);
+		CAMY_CHECK_CONTEXT_FOR_THREAD;
 		OpenGL4::flush_errors();
 
 		GLuint shader = glCreateShader(camy_to_opengl(desc.type));
