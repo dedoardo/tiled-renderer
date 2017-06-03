@@ -28,8 +28,9 @@ namespace camy
                 const char8* filename;
                 rsize bytes;
                 rsize padding;
-                uint16 line;
-                uint16 timestamp;
+				rsize alignment;
+				float timestamp;
+				uint32 line;
             };
 #pragma pack(pop)
 #else
@@ -37,7 +38,8 @@ namespace camy
             // in order to call a destructor on them all
             struct AllocationHeader
             {
-                rsize bytes;
+                rsize  bytes;
+				rsize  alignment;
             };
 #endif
 
@@ -81,6 +83,14 @@ namespace camy
             return hdr->bytes;
         }
 
+		rsize memory_block_alignment(const void* ptr)
+		{
+			if (ptr == nullptr) return 0;
+
+			AllocationHeader* hdr = (AllocationHeader*)((byte*)ptr - ALLOCATION_HEADER_SIZE);
+			return hdr->alignment;
+		}
+
         void memory_iterate_allocations(AllocationFoundCallback callback)
         {
 #if defined(CAMY_ENABLE_MEMORY_TRACKING)
@@ -122,10 +132,12 @@ namespace camy
             hdr->filename = info.file;
             hdr->bytes = info.count;
             hdr->padding = padding;
-            hdr->line = info.line;
-            hdr->timestamp = (uint16)API::timer_elapsed(API::timer_split() - g_start);
+			hdr->alignment = info.alignment;
+            hdr->timestamp = API::timer_elapsed(API::timer_split() - g_start);
+			hdr->line = info.line;
 #else
             hdr->bytes = info.count;
+			hdr->alignment = info.alignment;
 #endif
             g_total_bytes += info.count;
 

@@ -1,10 +1,10 @@
 /* vector.hpp
-*
-* Copyright (C) 2017 Edoardo Dominici
-*
-* This software may be modified and distributed under the terms
-* of the MIT license.  See the LICENSE file for details.
-*/
+ *
+ * Copyright (C) 2017 Edoardo Dominici
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
 #pragma once
 
 // camy
@@ -12,296 +12,318 @@
 
 namespace camy
 {
-    template <typename ElementType, uint16 kAlignment = DEFAULT_ALIGNMENT>
+    template <typename T>
     class CAMY_API Vector final
     {
-      public:
-        static const rsize kElementSize = sizeof(ElementType);
+    public:
+        static const rsize ELEMENT_SIZE = sizeof(T);
+		static const rsize DEFAULT_CAPACITY = 128;
+		
+		using TVector = Vector<T>;
+		using TValue = T;
+		using TPtr = T*;
+		using TConstPtr = const T*;
+		using TRef = T&;
+		using TConstRef = const T&;
 
-      public:
-        Vector(rsize initial_capacity = 1);
+    public:
+		explicit Vector(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT);
         ~Vector();
 
-        Vector(Vector&& other);
-        Vector(const Vector& other);
+		Vector(const TVector& other);
+        Vector(TVector&& other);
 
-        Vector<ElementType, kAlignment>& operator=(Vector&& other);
-        Vector<ElementType, kAlignment>& operator=(const Vector& other);
+		TVector& operator=(const TVector& other);
+        TVector& operator=(TVector&& other);
+        
+		TRef operator[](rsize idx);
+        TConstRef operator[](rsize idx) const;
 
-        // Access
-        const ElementType& operator[](rsize idx) const;
-        ElementType& operator[](rsize idx);
-        const ElementType& first() const;
-        ElementType& first();
-        const ElementType& last() const;
-        ElementType& last();
-        ElementType* data();
-        const ElementType* data() const;
+		TRef first();
+		TConstRef first()const;
 
-        // Add ops
-        void append(const ElementType& el);
-        void append(ElementType&& el);
-        template <typename... CtorArgs>
-        void emplace(CtorArgs&&... ctor_args);
-        // not copy ctor. **default** constructor
-        void resize(rsize size);
+		TRef last();
+		TConstRef last()const;
 
-        // Remove ops
-        void pop();
+		TPtr data();
+		TConstPtr data()const;
+
+		void append(TConstRef val);
+		void append(T&& val);
+
+		template <typename ...Ts>
+		void emplace_last(Ts&& ...args);
+
+		void resize(rsize);
+
+        void pop_last();
         void remove(rsize idx);
         void clear();
 
-        // Query
         rsize count() const;
         rsize capacity() const;
-        bool empty() const;
+        bool  empty() const;
 
-      private:
-        void _realloc();
+    private:
+		TPtr _allocate_align_explicit(rsize n, rsize alignment);
+		TPtr _allocate_align_same(rsize n, TPtr src_alignment);
+		void _destruct(TPtr beg, rsize n);
+		void _deallocate(TPtr ptr);
+		void _copy_all(TPtr dest_beg, TConstPtr src_beg, rsize n);
+		void _move_all(TPtr dest_beg, TPtr src_beg, rsize n);
+		void _make_space(rsize n);
 
-        ElementType* m_buffer;
-        rsize m_size;
-        rsize m_capacity;
+		TPtr m_beg;
+		TPtr m_cur;
+		TPtr m_end;
     };
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Vector<ElementType, kAlignment>::Vector(rsize initial_capacity)
-        : m_buffer(nullptr), m_size(0), m_capacity(0)
-    {
-        CAMY_ASSERT(initial_capacity > 0);
-        m_capacity = initial_capacity;
+	template <typename T>
+	CAMY_INLINE Vector<T>::Vector(rsize capacity, rsize alignment)
+	{
+		m_beg = _allocate_align_explicit(capacity, alignment);
+		m_cur = m_beg;
+		m_end = m_beg + capacity;
+	}
 
-        m_buffer = (ElementType*)allocate(CAMY_ALLOC(kElementSize, kAlignment));
-    }
+	template <typename T>
+	CAMY_INLINE Vector<T>::~Vector()
+	{
+		_destruct(m_beg, count());
+		_deallocate(m_beg);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Vector<ElementType, kAlignment>::~Vector()
-    {
-        for (rsize i = 0; i < m_size; ++i)
-            m_buffer[i].~ElementType();
-        API::deallocate(m_buffer);
-    }
+	template <typename T>
+	CAMY_INLINE Vector<T>::Vector(const TVector& other)
+	{
+		m_beg = _allocate_align_same(other.capacity(), other.m_beg);
+		_copy_all(m_beg, other.m_beg, other.count());
+		m_cur = m_beg + other.count();
+		m_end = m_beg + other.capacity();
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Vector<ElementType, kAlignment>::Vector(Vector&& other)
-    {
-        m_buffer = other.m_buffer;
-        m_capacity = other.m_capacity;
-        m_size = other.m_size;
-        other.m_buffer = nullptr;
-        other.m_capacity = 0;
-        other.m_size = 0;
-    }
+	template <typename T>
+	CAMY_INLINE Vector<T>::Vector(TVector&& other) :
+		Vector()
+	{
+		API::swap(m_beg, other.m_beg);
+		API::swap(m_cur, other.m_cur);
+		API::swap(m_end, other.m_end);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Vector<ElementType, kAlignment>::Vector(const Vector& other)
-    {
-        m_buffer =
-            (ElementType*)API::allocate(CAMY_ALLOC(kElementSize * other.m_capacity, kAlignment));
-        m_capacity = other.m_capacity;
-        m_size = other.m_size;
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TVector& Vector<T>::operator=(const TVector& other) 
+	{
+		m_beg = _allocate_align_same(other.m_capacity, other.m_beg);
+		_copy_all(m_beg, other.m_beg, other.count());
+		m_cur = m_beg + other.count();
+		m_end = m_beg + other.m_capacity;
+		return *this;
+	}
 
-        for (rsize i = 0; i < m_size; ++i)
-            new (&m_buffer[i]) ElementType(other.m_buffer[i]);
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TVector& Vector<T>::operator=(TVector&& other)
+	{
+		API::swap(m_beg, other.m_beg);
+		API::swap(m_cur, other.m_cur);
+		API::swap(m_end, other.m_end);
+		return *this;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Vector<ElementType, kAlignment>& Vector<ElementType, kAlignment>::
-    operator=(Vector&& other)
-    {
-        m_buffer = other.m_buffer;
-        m_capacity = other.m_capacity;
-        m_size = other.m_size;
-        other.m_buffer = nullptr;
-        other.m_capacity = 0;
-        other.m_size = 0;
-        return *this;
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TRef Vector<T>::operator[](rsize idx)
+	{
+		CAMY_ASSERT(idx < count());
+		return *(m_beg + idx);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Vector<ElementType, kAlignment>& Vector<ElementType, kAlignment>::
-    operator=(const Vector& other)
-    {
-        m_buffer =
-            (ElementType*)API::allocate(CAMY_ALLOC(kElementSize * other.m_capacity, kAlignment));
-        m_capacity = other.m_capacity;
-        m_size = other.m_size;
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TConstRef Vector<T>::operator[](rsize idx)const
+	{
+		CAMY_ASSERT(idx < count());
+		return *(m_beg + idx);
+	}
 
-        for (rsize i = 0; i < m_size; ++i)
-            new (&m_buffer[i]) ElementType(other.m_buffer[i]);
-        return *this;
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TRef Vector<T>::first()
+	{
+		return *m_beg;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline const ElementType& Vector<ElementType, kAlignment>::operator[](rsize idx) const
-    {
-        CAMY_ASSERT(m_buffer != nullptr);
-        CAMY_ASSERT(idx < m_size);
-        return m_buffer[idx];
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TConstRef Vector<T>::first()const
+	{
+		return *m_beg;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType& Vector<ElementType, kAlignment>::operator[](rsize idx)
-    {
-        CAMY_ASSERT(m_buffer != nullptr);
-        CAMY_ASSERT(idx < m_size);
-        return m_buffer[idx];
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TRef Vector<T>::last()
+	{
+		return *(m_cur - 1);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline const ElementType& Vector<ElementType, kAlignment>::first() const
-    {
-        CAMY_ASSERT(!empty());
-        return m_buffer[0];
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TConstRef Vector<T>::last()const
+	{
+		return *(m_cur - 1);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType& Vector<ElementType, kAlignment>::first()
-    {
-        CAMY_ASSERT(!empty());
-        return m_buffer[0];
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TPtr Vector<T>::data()
+	{
+		return m_beg;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline const ElementType& Vector<ElementType, kAlignment>::last() const
-    {
-        CAMY_ASSERT(!empty());
-        return m_buffer[m_size - 1];
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TConstPtr Vector<T>::data()const
+	{
+		return m_beg;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType& Vector<ElementType, kAlignment>::last()
-    {
-        CAMY_ASSERT(!empty());
-        return m_buffer[m_size - 1];
-    }
+	template <typename T>
+	CAMY_INLINE void Vector<T>::append(TConstRef value)
+	{
+		_make_space(count() + 1);
+		new (m_cur++) T(value);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType* Vector<ElementType, kAlignment>::data()
-    {
-        return m_buffer;
-    }
+	template <typename T>
+	CAMY_INLINE void Vector<T>::append(T&& value)
+	{
+		_make_space(count() + 1);
+		new (m_cur++) T(value);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline const ElementType* Vector<ElementType, kAlignment>::data() const
-    {
-        return m_buffer;
-    }
+	template <typename T>
+	template <typename ...Ts>
+	CAMY_INLINE void Vector<T>::emplace_last(Ts&& ...args)
+	{
+		_make_space(count() + 1);
+		new (m_cur++) T(std::forward<Ts>(args)...);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Vector<ElementType, kAlignment>::append(const ElementType& el)
-    {
-        if (m_size >= m_capacity) _realloc();
+	template <typename T>
+	CAMY_INLINE void Vector<T>::resize(rsize new_count)
+	{
+		rsize cur_count = count();
+		
+		// Same
+		if (cur_count == new_count) return;
+		
+		// We have space, destructing last (cur_count - new_count) elements
+		if (new_count < cur_count)
+		{
+			for (rsize i = new_count; i < cur_count; ++i)
+				(--m_cur)->~T();
+		}
+		// Otherwise making space and constructing (new_count - cur_count) elements
+		else
+		{
+			_make_space(new_count);
+			for (rsize i = cur_count; i < new_count; ++i)
+				new (m_cur++) T();
+		}
+	}
 
-        m_buffer[m_size++] = el;
-    }
+	template <typename T>
+	CAMY_INLINE void Vector<T>::pop_last()
+	{
+		CAMY_ASSERT(m_cur > m_beg);
+		--m_cur;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Vector<ElementType, kAlignment>::append(ElementType&& el)
-    {
-        if (m_size >= m_capacity) _realloc();
+	template <typename T>
+	CAMY_INLINE void Vector<T>::remove(rsize idx)
+	{
+		CAMY_ASSERT(idx < count());
 
-        // TODO: Move assignment or construction ? maybe construction makes more sense.
-        new (&m_buffer[m_size++]) ElementType(std::forward<ElementType>(el));
-    }
+		TPtr to_remove = m_beg + idx;
 
-    template <typename ElementType, uint16 kAlignment>
-    template <typename... CtorArgs>
-    inline void Vector<ElementType, kAlignment>::emplace(CtorArgs&&... ctor_args)
-    {
-        if (m_size >= m_capacity) _realloc();
+		// Destructing old element
+		to_remove->~T();
+		
+		// Moving last into to_remove position
+		new (to_remove) T(std::move(*(--m_cur)));
+	}
 
-        new (&m_buffer[m_size++]) ElementType(std::forward<CtorArgs>(ctor_args)...);
-    }
+	template <typename T>
+	CAMY_INLINE void Vector<T>::clear()
+	{
+		_destruct(m_beg, count());
+		m_cur = m_beg;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Vector<ElementType, kAlignment>::resize(rsize size)
-    {
-        if (size == m_size) return;
-        if (size < m_size)
-        {
-            for (rsize i = size; i < m_size; ++i)
-                m_buffer[i].~ElementType();
-            m_size = size;
-        }
-        else if (size <= m_capacity)
-        {
-            for (rsize i = m_size; i < size; ++i)
-                new (&m_buffer[i]) ElementType();
-            m_size = size;
-        }
-        // Need to reallocate
-        else
-        {
-            ElementType* old_buffer = m_buffer;
-            rsize new_capacity = size;
-            m_buffer = (ElementType*)allocate(CAMY_ALLOC(kElementSize * new_capacity, kAlignment));
+	template <typename T>
+	CAMY_INLINE rsize Vector<T>::count()const
+	{
+		return (rsize)(m_cur - m_beg);
+	}
 
-            for (rsize i = 0; i < m_capacity; ++i)
-                new (&m_buffer[i]) ElementType(std::move(old_buffer[i]));
-            for (rsize i = m_capacity; i < new_capacity; ++i)
-                new (&m_buffer[i]) ElementType();
+	template <typename T>
+	CAMY_INLINE rsize Vector<T>::capacity()const
+	{
+		return (rsize)(m_end - m_beg);
+	}
 
-            API::deallocate(old_buffer);
-            m_capacity = new_capacity;
-            m_size = size;
-        }
-    }
+	template <typename T>
+	CAMY_INLINE bool Vector<T>::empty()const
+	{
+		return m_beg == m_cur;
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Vector<ElementType, kAlignment>::pop()
-    {
-        CAMY_ASSERT(!empty());
-        m_buffer[--m_size].~ElementType();
-    }
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TPtr Vector<T>::_allocate_align_explicit(rsize n, rsize alignment)
+	{
+		return (TPtr)API::allocate(CAMY_ALLOC(n * sizeof(T), alignment));
+	}
+	
+	template <typename T>
+	CAMY_INLINE typename Vector<T>::TPtr Vector<T>::_allocate_align_same(rsize n, TPtr src_alignment)
+	{
+		return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * sizeof(T), src_alignment));
+	}
+	
+	template <typename T>
+	CAMY_INLINE void Vector<T>::_destruct(TPtr beg, rsize n)
+	{
+		for (rsize i = 0; i < n; ++i)
+			(beg + i)->~T();
+	}
+	
+	template <typename T>
+	CAMY_INLINE void Vector<T>::_deallocate(TPtr ptr)
+	{
+		API::deallocate(ptr);
+	}
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Vector<ElementType, kAlignment>::remove(rsize idx)
-    {
-        CAMY_ASSERT(idx < m_size);
-        m_buffer[idx].~ElementType();
+	template <typename T>
+	CAMY_INLINE void Vector<T>::_copy_all(TPtr dest_beg, TConstPtr src_beg, rsize n)
+	{
+		for (rsize i = 0; i < n; ++i)
+			new (dest_beg + i) T(*(src_beg + i));
+	}
 
-        new (&m_buffer[idx]) ElementType(std::move(m_buffer[--m_size]));
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline void Vector<ElementType, kAlignment>::clear()
-    {
-        for (rsize i = 0; i < m_size; ++i)
-            m_buffer[i].~ElementType();
-
-        m_size = 0;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline rsize Vector<ElementType, kAlignment>::count() const
-    {
-        return m_size;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline rsize Vector<ElementType, kAlignment>::capacity() const
-    {
-        return m_capacity;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline bool Vector<ElementType, kAlignment>::empty() const
-    {
-        return m_size == 0;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline void Vector<ElementType, kAlignment>::_realloc()
-    {
-        ElementType* old_buffer = m_buffer;
-        rsize new_capacity = m_capacity * 2;
-        m_buffer = (ElementType*)allocate(CAMY_ALLOC(kElementSize * new_capacity, kAlignment));
-
-        for (rsize i = 0; i < m_capacity; ++i)
-            new (&m_buffer[i]) ElementType(std::move(old_buffer[i]));
-
-        API::deallocate(old_buffer);
-        m_capacity = new_capacity;
-    }
+	template <typename T>
+	CAMY_INLINE void Vector<T>::_move_all(TPtr dest_beg, TPtr src_beg, rsize n)
+	{
+		for (rsize i = 0; i < n; ++i)
+			new (dest_beg + i) T(std::move(*(src_beg + i)));
+	}
+	
+	template <typename T>
+	CAMY_INLINE void Vector<T>::_make_space(rsize n)
+	{
+		if (n > capacity())
+		{
+			TPtr old_beg = m_beg;
+			rsize old_capacity = capacity();
+			rsize new_capacity = API::min(DEFAULT_CAPACITY, old_capacity * 2);
+			m_beg = _allocate_align_same(new_capacity, old_beg);
+			
+			_move_all(m_beg, old_beg, old_capacity);
+			_deallocate(old_beg);
+			m_cur = m_beg + old_capacity;
+			m_end = m_beg + new_capacity;
+		}
+	}
 }

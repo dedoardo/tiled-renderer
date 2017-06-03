@@ -424,7 +424,7 @@ namespace camy
             if (m_uploads.empty() ||
                 required > (m_uploads[m_current_upload].count - m_uploads[m_current_upload].cur))
             {
-                m_uploads.emplace();
+                m_uploads.emplace_last();
                 ConstantBufferUpload& upload = m_uploads.last();
 
                 ConstantBufferDesc cbd;

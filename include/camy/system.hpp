@@ -20,9 +20,9 @@ namespace camy
     // -----------------------------------------------------------------------------------------------
     constexpr uint16 DEFAULT_ALIGNMENT = (uint16)-1;
     using AllocationFoundCallback = void (*)(const char8* file,
-                                             uint16 line,
+                                             uint32 line,
                                              rsize bytes,
-                                             uint16 timestamp);
+                                             float timestamp);
 
     namespace API
     {
@@ -38,6 +38,8 @@ namespace camy
         // this is the number passed to allocate()
         CAMY_API rsize memory_block_size(const void* ptr);
 
+		CAMY_API rsize memory_block_alignment(const void* ptr);
+
         // Iterates over the active allocations. This is useful to dump leaks at the end of an
         // application Timestamp contains the duration in milliseconds since start_tracking() was
         // called.
@@ -49,9 +51,9 @@ namespace camy
         struct _AllocationInfo
         {
             const char8* file;
-            rsize count;
-            uint16 alignment;
-            uint16 line;
+            rsize  count;
+			rsize  alignment;
+            uint32 line;
         };
 
         // Untyped routines
@@ -82,11 +84,12 @@ namespace camy
  * tallocate_array expected count to be the number of elements -> allocate(count * sizeof(T))
  */
 #define CAMY_ALLOC(count, alignment)                                                               \
-    ::camy::API::_AllocationInfo { __FILE__, (count), (alignment), (uint16)__LINE__ }
+    ::camy::API::_AllocationInfo { __FILE__, (count), (alignment), (uint32)__LINE__ }
 #define CAMY_UALLOC(count) CAMY_ALLOC(count, ::camy::DEFAULT_ALIGNMENT)
 #define CAMY_ALLOC1(alignment)                                                                     \
-    ::camy::API::_AllocationInfo { __FILE__, 1, (alignment), (uint16)__LINE__ }
+    ::camy::API::_AllocationInfo { __FILE__, 1, (alignment), (uint32)__LINE__ }
 #define CAMY_UALLOC1 CAMY_ALLOC1(::camy::DEFAULT_ALIGNMENT)
+#define CAMY_ALLOC_SRC(count, ptr) CAMY_ALLOC(count, ::camy::API::memory_block_alignment(ptr))
     }
 
     // File

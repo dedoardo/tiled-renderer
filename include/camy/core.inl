@@ -4,6 +4,12 @@ namespace camy
 {
     namespace API
     {
+		template <typename T>
+		CAMY_INLINE void swap(T& a, T& b)
+		{
+			T c(a); a = b; b = c;
+		}
+
         CAMY_INLINE rsize strlen(const char8* str)
         {
             return (rsize)(str == nullptr ? 0 : ::strlen(str));
