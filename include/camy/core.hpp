@@ -45,7 +45,7 @@
 
 // CAMY_BACKEND
 #if !defined(CAMY_BACKEND_OPENGL4) && !defined(CAMY_BACKEND_D3D11)
-#define CAMY_BACKEND_OPENGL4
+#define CAMY_BACKEND_D3D11
 #endif
 
 namespace camy
@@ -69,6 +69,8 @@ namespace camy
 
     namespace API
     {
+		template <typename T>
+		CAMY_INLINE void swap(T& a, T& b);
         CAMY_INLINE rsize strlen(const char8* str);
         CAMY_INLINE bool strcmp(const char8* lhs, const char8* rhs);
         template <typename T>
