@@ -8,7 +8,7 @@
 #pragma once
 
 // camy
-#include <camy/containers/vector.hpp>
+#include <camy/containers/dyn_array.hpp>
 #include <camy/graphics.hpp>
 #include <camy/render_context.hpp>
 
@@ -86,6 +86,6 @@ namespace camy
             rsize bytes;
             HResource handle;
         };
-        Vector<ConstantBufferUpdate> m_updates;
+        DynArray<ConstantBufferUpdate> m_updates;
     };
 }

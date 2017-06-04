@@ -38,7 +38,7 @@ namespace camy
         else
             target = "error";
 
-        Vector<D3D_SHADER_MACRO> macros;
+        DynArray<D3D_SHADER_MACRO> macros;
         for (rsize i = 0; i < opts.num_defs; ++i)
             macros.append({opts.defs[i].name, opts.defs[i].val});
         macros.append({nullptr, nullptr});
@@ -154,7 +154,7 @@ namespace camy
         if (shader_type ==
             ShaderDesc::Type::Vertex) // TODO: First vertex processing stage, could be geometry
         {
-            Vector<InputElement> elements;
+            DynArray<InputElement> elements;
             for (UINT i = 0; i < shader_desc.InputParameters; ++i)
             {
                 D3D11_SIGNATURE_PARAMETER_DESC param_desc;

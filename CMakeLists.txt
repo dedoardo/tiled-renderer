@@ -20,10 +20,10 @@ set(CAMY_HEADERS
 
 		include/camy/containers/auto_ptr.hpp
 		include/camy/containers/blob.hpp
-		include/camy/containers/byte_vector.hpp
-		include/camy/containers/int2int_map.hpp
-		include/camy/containers/linear_array.hpp
-		include/camy/containers/linear_vector.hpp
+		include/camy/containers/dyn_array.hpp
+		include/camy/containers/dyn_linear_buffer.hpp
+		include/camy/containers/dyn_linear_array.hpp
+		include/camy/containers/hash_map.hpp
 		include/camy/containers/paged_linear_vector.hpp
 		include/camy/containers/paged_pool.hpp
 		include/camy/containers/pages.hpp
@@ -32,7 +32,6 @@ set(CAMY_HEADERS
 		include/camy/containers/stack.hpp
 		include/camy/containers/static_array.hpp
 		include/camy/containers/static_string.hpp
-		include/camy/containers/vector.hpp
 
 		include/camy/d3d11/d3d11_base_post.hpp
 		include/camy/d3d11/d3d11_base_pre.hpp
@@ -57,7 +56,7 @@ set (CAMY_SOURCES
 	src/time.cpp
 
 	src/containers/blob.cpp
-	src/containers/byte_vector.cpp
+	src/containers/dyn_linear_buffer.cpp
 	src/containers/int2int_map.cpp
 	
 	src/d3d11/d3d11_command_list.cpp

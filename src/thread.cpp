@@ -27,14 +27,14 @@ namespace camy
             void** args = (void**)API::allocate(CAMY_UALLOC(sizeof(void*) * 2));
             args[0] = proc;
             args[1] = pdata;
-            HANDLE thread_id;
-            if (FAILED(CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)thread_launcher, args, 0x0,
-                                    (DWORD*)&thread_id)))
-            {
+			DWORD id;
+            HANDLE handle = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)thread_launcher, args, 0x0, (DWORD*)&id);
+			if (handle == nullptr)
+			{
                 CL_ERR("Win32::CreateThread failed with error: ", GetLastError());
                 return (ThreadID)INVALID_HANDLE_VALUE;
             }
-            return (ThreadID)thread_id;
+            return (ThreadID)handle;
         }
 
         void thread_join(ThreadID thread)

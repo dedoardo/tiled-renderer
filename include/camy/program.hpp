@@ -9,9 +9,9 @@
 
 // camy
 #include <camy/containers/blob.hpp>
-#include <camy/containers/int2int_map.hpp>
+#include <camy/containers/hash_map.hpp>
 #include <camy/containers/static_string.hpp>
-#include <camy/containers/vector.hpp>
+#include <camy/containers/dyn_array.hpp>
 #include <camy/graphics.hpp>
 #include <camy/render_context.hpp>
 
@@ -91,7 +91,7 @@ namespace camy
         HResource m_input_signature;
         HResource m_shaders[(rsize)ShaderDesc::Type::Count];
 
-        Int2IntMap m_variables[(rsize)ShaderDesc::Type::Count];
-        Vector<Binding> m_bindings[(rsize)ShaderDesc::Type::Count];
+        HashMap<uint64> m_variables[(rsize)ShaderDesc::Type::Count];
+        DynArray<Binding> m_bindings[(rsize)ShaderDesc::Type::Count];
     };
 }

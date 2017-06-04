@@ -94,9 +94,9 @@ namespace camy
     {
         m_sort = sort;
         m_pipeline_state = pipeline_state;
-        m_items.reset();
+        m_items.clear();
         m_parameters.reset();
-        m_parameter_blocks.reset();
+        m_parameter_blocks.clear();
 
         if (shared_parameters != nullptr && num_shared_parameters == 0 ||
             shared_parameters == nullptr && num_shared_parameters > 0)

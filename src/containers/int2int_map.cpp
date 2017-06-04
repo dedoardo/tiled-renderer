@@ -5,6 +5,7 @@
 * This software may be modified and distributed under the terms
 * of the MIT license.  See the LICENSE file for details.
 */
+#if 0
 // Header
 #include <camy/containers/int2int_map.hpp>
 
@@ -185,3 +186,4 @@ namespace camy
         return key & (m_capacity - 1);
     }
 }
+#endif

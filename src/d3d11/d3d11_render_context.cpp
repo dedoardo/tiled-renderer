@@ -12,7 +12,7 @@
 
 // camy
 #include <camy/command_list.hpp>
-#include <camy/containers/linear_vector.hpp>
+#include <camy/containers/dyn_linear_array.hpp>
 
 // d3d11
 #include <d3d11_1.h>
@@ -547,7 +547,7 @@ namespace camy
             num_subresources *= desc.array_count;
 
         bool upload_data = false;
-        LinearVector<D3D11_SUBRESOURCE_DATA> sub_resources(num_subresources);
+        DynLinearArray<D3D11_SUBRESOURCE_DATA> sub_resources(num_subresources);
         if (subsurfaces != nullptr)
         {
             if (num_subsurfaces != num_subresources)
@@ -1203,7 +1203,7 @@ namespace camy
         // Perfectly fine, just hardware generated values
         if (desc.num_elements == 0) return HResource::make_invalid();
 
-        LinearVector<D3D11_INPUT_ELEMENT_DESC> input_elements(desc.num_elements);
+        DynLinearArray<D3D11_INPUT_ELEMENT_DESC> input_elements(desc.num_elements);
         for (unsigned int i = 0; i < desc.num_elements; ++i)
         {
             D3D11_INPUT_ELEMENT_DESC& next = input_elements.next();

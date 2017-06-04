@@ -21,7 +21,7 @@ namespace camy
                                      const Blob& text,
                                      Blob& data_out)
     {
-        Vector<char8> buffer;
+        DynArray<char8> buffer;
         rsize cur_off = 0;
         const char8* version_tag = "#version 450\n";
         const rsize version_tag_len = API::strlen(version_tag);
@@ -131,7 +131,7 @@ namespace camy
         // Input layout
         if (shader_type == ShaderDesc::Type::Vertex)
         {
-            Vector<InputElement> elements;
+            DynArray<InputElement> elements;
             GLint num_inputs;
             glGetProgramInterfaceiv(program, GL_PROGRAM_INPUT, GL_ACTIVE_RESOURCES, &num_inputs);
 

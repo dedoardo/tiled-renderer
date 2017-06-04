@@ -9,7 +9,7 @@
 
 // camy
 #include <camy/config.hpp>
-#include <camy/containers/vector.hpp>
+#include <camy/containers/dyn_array.hpp>
 #include <camy/graphics.hpp>
 
 namespace camy
@@ -30,6 +30,6 @@ namespace camy
         void render();
 
       private:
-        Vector<IBucket*> m_buckets[API::MAX_PASSES];
+        DynArray<IBucket*> m_buckets[API::MAX_PASSES];
     };
 }

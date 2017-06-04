@@ -377,7 +377,7 @@ namespace camy
                                          surface.native.texture, 0);
                 }
 
-                *command_list.m_data.fbo_map[req.hash] = (uint64&)fbo;
+                *command_list.m_data.fbo_map.find(req.hash) = (uint64&)fbo;
             }
             else if (req.type == InitResRequest::Type::ProgramPipeline)
             {
@@ -398,7 +398,7 @@ namespace camy
                     glUseProgramStages(ppo, GL_FRAGMENT_SHADER_BIT, shader.native.shader);
                 }
 
-                *command_list.m_data.fbo_map[req.hash] = (uint64&)ppo;
+				*command_list.m_data.fbo_map.find(req.hash) = (uint64&)ppo;
             }
             else
                 CAMY_ASSERT(false);

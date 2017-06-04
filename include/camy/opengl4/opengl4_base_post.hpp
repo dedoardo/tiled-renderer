@@ -18,9 +18,9 @@
 #undef max
 
 // camy
-#include <camy/containers/byte_vector.hpp>
-#include <camy/containers/int2int_map.hpp>
-#include <camy/containers/vector.hpp>
+#include <camy/containers/dyn_linear_buffer.hpp>
+#include <camy/containers/hash_map.hpp>
+#include <camy/containers/dyn_array.hpp>
 #include <camy/system.hpp>
 
 namespace camy
@@ -81,11 +81,11 @@ namespace camy
 
     struct CAMY_API CommandListData
     {
-        ByteVector command_buffer;
-        Vector<InitResRequest> init_requests;
+        DynLinearBuffer command_buffer;
+        DynArray<InitResRequest> init_requests;
 
-        Int2IntMap fbo_map;
-        Int2IntMap ppo_map;
+        HashMap<GLuint> fbo_map;
+        HashMap<GLuint> ppo_map;
 
         // Group in state
         uint16 cur_vertex_shader;

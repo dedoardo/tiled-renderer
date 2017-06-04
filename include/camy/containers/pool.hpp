@@ -100,9 +100,11 @@ namespace camy
     template <typename... CtorArgs>
     inline rsize Pool<ElementType, kAlignment>::allocate(CtorArgs&&... ctor_args)
     {
-        rsize idx = reserve();
-        new (m_base + idx) ElementType(std::forward<CtorArgs>(ctor_args)...);
-        return idx;
+		if (m_freelist.empty()) _realloc();
+
+		rsize ret = m_freelist.pop();
+        new (m_base + ret) ElementType(std::forward<CtorArgs>(ctor_args)...);
+        return ret;
     }
 
     template <typename ElementType, uint16 kAlignment>

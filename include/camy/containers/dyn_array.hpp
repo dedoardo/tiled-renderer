@@ -1,4 +1,4 @@
-/* vector.hpp
+/* dyn_array.hpp
  *
  * Copyright (C) 2017 Edoardo Dominici
  *
@@ -11,15 +11,18 @@
 #include <camy/system.hpp>
 
 namespace camy
-{
+{ 
+	// Notes:
+	// - Typed, thus calls constructors and destructors
+	// - remove() swaps removed element with last one, does not shift the whole array
     template <typename T>
-    class CAMY_API Vector final
+    class CAMY_API DynArray final
     {
     public:
         static const rsize ELEMENT_SIZE = sizeof(T);
         static const rsize DEFAULT_CAPACITY = 128;
 
-        using TVector = Vector<T>;
+        using TDynArray = DynArray<T>;
         using TValue = T;
         using TPtr = T*;
         using TConstPtr = const T*;
@@ -27,14 +30,14 @@ namespace camy
         using TConstRef = const T&;
 
     public:
-        explicit Vector(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT);
-        ~Vector();
+        explicit DynArray(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT);
+        virtual ~DynArray();
 
-        Vector(const TVector& other);
-        Vector(TVector&& other);
+        DynArray(const TDynArray& other);
+        DynArray(TDynArray&& other);
 
-        TVector& operator=(const TVector& other);
-        TVector& operator=(TVector&& other);
+        TDynArray& operator=(const TDynArray& other);
+        TDynArray& operator=(TDynArray&& other);
 
         TRef operator[](rsize idx);
         TConstRef operator[](rsize idx) const;
@@ -64,7 +67,7 @@ namespace camy
         rsize capacity() const;
         bool empty() const;
 
-    private:
+	protected:
         TPtr _allocate_align_explicit(rsize n, rsize alignment);
         TPtr _allocate_align_same(rsize n, TPtr src_alignment);
         void _destruct(TPtr beg, rsize n);
@@ -79,7 +82,7 @@ namespace camy
     };
 
     template <typename T>
-    CAMY_INLINE Vector<T>::Vector(rsize capacity, rsize alignment)
+    CAMY_INLINE DynArray<T>::DynArray(rsize capacity, rsize alignment)
     {
         m_beg = _allocate_align_explicit(capacity, alignment);
         m_cur = m_beg;
@@ -87,14 +90,14 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE Vector<T>::~Vector()
+    CAMY_INLINE DynArray<T>::~DynArray()
     {
         _destruct(m_beg, count());
         _deallocate(m_beg);
     }
 
     template <typename T>
-    CAMY_INLINE Vector<T>::Vector(const TVector& other)
+    CAMY_INLINE DynArray<T>::DynArray(const TDynArray& other)
     {
         m_beg = _allocate_align_same(other.capacity(), other.m_beg);
         _copy_all(m_beg, other.m_beg, other.count());
@@ -103,7 +106,10 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE Vector<T>::Vector(TVector&& other) : Vector()
+	CAMY_INLINE DynArray<T>::DynArray(TDynArray&& other) :
+		m_beg(nullptr),
+		m_cur(nullptr),
+		m_end(nullptr)
     {
         API::swap(m_beg, other.m_beg);
         API::swap(m_cur, other.m_cur);
@@ -111,8 +117,10 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TVector& Vector<T>::operator=(const TVector& other)
+    CAMY_INLINE typename DynArray<T>::TDynArray& DynArray<T>::operator=(const TDynArray& other)
     {
+		_deallocate(m_beg);
+		m_beg = m_cur = m_end = nullptr;
         m_beg = _allocate_align_same(other.m_capacity, other.m_beg);
         _copy_all(m_beg, other.m_beg, other.count());
         m_cur = m_beg + other.count();
@@ -121,8 +129,10 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TVector& Vector<T>::operator=(TVector&& other)
+    CAMY_INLINE typename DynArray<T>::TDynArray& DynArray<T>::operator=(TDynArray&& other)
     {
+		_deallocate(m_beg);
+		m_beg = m_cur = m_end = nullptr;
         API::swap(m_beg, other.m_beg);
         API::swap(m_cur, other.m_cur);
         API::swap(m_end, other.m_end);
@@ -130,64 +140,64 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TRef Vector<T>::operator[](rsize idx)
+    CAMY_INLINE typename DynArray<T>::TRef DynArray<T>::operator[](rsize idx)
     {
         CAMY_ASSERT(idx < count());
         return *(m_beg + idx);
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TConstRef Vector<T>::operator[](rsize idx) const
+    CAMY_INLINE typename DynArray<T>::TConstRef DynArray<T>::operator[](rsize idx) const
     {
         CAMY_ASSERT(idx < count());
         return *(m_beg + idx);
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TRef Vector<T>::first()
+    CAMY_INLINE typename DynArray<T>::TRef DynArray<T>::first()
     {
         return *m_beg;
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TConstRef Vector<T>::first() const
+    CAMY_INLINE typename DynArray<T>::TConstRef DynArray<T>::first() const
     {
         return *m_beg;
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TRef Vector<T>::last()
+    CAMY_INLINE typename DynArray<T>::TRef DynArray<T>::last()
     {
         return *(m_cur - 1);
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TConstRef Vector<T>::last() const
+    CAMY_INLINE typename DynArray<T>::TConstRef DynArray<T>::last() const
     {
         return *(m_cur - 1);
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TPtr Vector<T>::data()
+    CAMY_INLINE typename DynArray<T>::TPtr DynArray<T>::data()
     {
         return m_beg;
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TConstPtr Vector<T>::data() const
+    CAMY_INLINE typename DynArray<T>::TConstPtr DynArray<T>::data() const
     {
         return m_beg;
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::append(TConstRef value)
+    CAMY_INLINE void DynArray<T>::append(TConstRef value)
     {
         _make_space(count() + 1);
         new (m_cur++) T(value);
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::append(T&& value)
+    CAMY_INLINE void DynArray<T>::append(T&& value)
     {
         _make_space(count() + 1);
         new (m_cur++) T(value);
@@ -195,14 +205,14 @@ namespace camy
 
     template <typename T>
     template <typename... Ts>
-    CAMY_INLINE void Vector<T>::emplace_last(Ts&&... args)
+    CAMY_INLINE void DynArray<T>::emplace_last(Ts&&... args)
     {
         _make_space(count() + 1);
         new (m_cur++) T(std::forward<Ts>(args)...);
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::resize(rsize new_count)
+    CAMY_INLINE void DynArray<T>::resize(rsize new_count)
     {
         rsize cur_count = count();
 
@@ -225,14 +235,14 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::pop_last()
+    CAMY_INLINE void DynArray<T>::pop_last()
     {
         CAMY_ASSERT(m_cur > m_beg);
         --m_cur;
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::remove(rsize idx)
+    CAMY_INLINE void DynArray<T>::remove(rsize idx)
     {
         CAMY_ASSERT(idx < count());
 
@@ -246,73 +256,73 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::clear()
+    CAMY_INLINE void DynArray<T>::clear()
     {
         _destruct(m_beg, count());
         m_cur = m_beg;
     }
 
     template <typename T>
-    CAMY_INLINE rsize Vector<T>::count() const
+    CAMY_INLINE rsize DynArray<T>::count() const
     {
         return (rsize)(m_cur - m_beg);
     }
 
     template <typename T>
-    CAMY_INLINE rsize Vector<T>::capacity() const
+    CAMY_INLINE rsize DynArray<T>::capacity() const
     {
         return (rsize)(m_end - m_beg);
     }
 
     template <typename T>
-    CAMY_INLINE bool Vector<T>::empty() const
+    CAMY_INLINE bool DynArray<T>::empty() const
     {
         return m_beg == m_cur;
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TPtr Vector<T>::_allocate_align_explicit(rsize n,
+    CAMY_INLINE typename DynArray<T>::TPtr DynArray<T>::_allocate_align_explicit(rsize n,
                                                                              rsize alignment)
     {
-        return (TPtr)API::allocate(CAMY_ALLOC(n * sizeof(T), alignment));
+        return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
     }
 
     template <typename T>
-    CAMY_INLINE typename Vector<T>::TPtr Vector<T>::_allocate_align_same(rsize n,
+    CAMY_INLINE typename DynArray<T>::TPtr DynArray<T>::_allocate_align_same(rsize n,
                                                                          TPtr src_alignment)
     {
-        return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * sizeof(T), src_alignment));
+        return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::_destruct(TPtr beg, rsize n)
+    CAMY_INLINE void DynArray<T>::_destruct(TPtr beg, rsize n)
     {
         for (rsize i = 0; i < n; ++i)
             (beg + i)->~T();
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::_deallocate(TPtr ptr)
+    CAMY_INLINE void DynArray<T>::_deallocate(TPtr ptr)
     {
         API::deallocate(ptr);
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::_copy_all(TPtr dest_beg, TConstPtr src_beg, rsize n)
+    CAMY_INLINE void DynArray<T>::_copy_all(TPtr dest_beg, TConstPtr src_beg, rsize n)
     {
         for (rsize i = 0; i < n; ++i)
             new (dest_beg + i) T(*(src_beg + i));
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::_move_all(TPtr dest_beg, TPtr src_beg, rsize n)
+    CAMY_INLINE void DynArray<T>::_move_all(TPtr dest_beg, TPtr src_beg, rsize n)
     {
         for (rsize i = 0; i < n; ++i)
             new (dest_beg + i) T(std::move(*(src_beg + i)));
     }
 
     template <typename T>
-    CAMY_INLINE void Vector<T>::_make_space(rsize n)
+    CAMY_INLINE void DynArray<T>::_make_space(rsize n)
     {
         if (n > capacity())
         {
@@ -320,7 +330,6 @@ namespace camy
             rsize old_capacity = capacity();
             rsize new_capacity = API::min(DEFAULT_CAPACITY, old_capacity * 2);
             m_beg = _allocate_align_same(new_capacity, old_beg);
-
             _move_all(m_beg, old_beg, old_capacity);
             _deallocate(old_beg);
             m_cur = m_beg + old_capacity;

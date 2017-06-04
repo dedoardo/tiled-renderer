@@ -135,7 +135,7 @@ namespace camy
         }
 
         uint64 hash = hash_targets(render_targets, num_render_targets, depth_buffer);
-        if (m_data.fbo_map[hash] == nullptr)
+        if (m_data.fbo_map.find(hash) == nullptr)
         {
             InitResRequest req;
             req.type = InitResRequest::Type::Framebuffer;
@@ -297,7 +297,7 @@ namespace camy
         uint64 hash = data.cur_vertex_shader;
         hash |= (uint64)data.cur_pixel_shader << 16;
 
-        if (data.ppo_map[hash] == nullptr)
+        if (data.ppo_map.find(hash) == nullptr)
         {
             InitResRequest req;
             req.type = InitResRequest::Type::ProgramPipeline;

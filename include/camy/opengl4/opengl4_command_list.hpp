@@ -58,20 +58,20 @@ struct name                                                                     
             template <typename T>
             CAMY_INLINE void append_rec(CommandListData& data, T&& arg)
             {
-                data.command_buffer.append<T>(arg);
+				data.command_buffer.write((byte*)&arg, sizeof(T));
             }
 
             template <typename T1, typename T2, typename... Ts>
             CAMY_INLINE void append_rec(CommandListData& data, T1&& arg1, T2&& arg2, Ts&&... args)
             {
-                data.command_buffer.append<T1>(arg1);
+				data.command_buffer.write((byte*)&arg1, sizeof(T1));
                 append_rec(data, std::forward<T2>(arg2), std::forward<Ts>(args)...);
             }
 
             template <typename T, typename... Args>
             CAMY_INLINE void append(CommandListData& data, Args&&... args)
             {
-                data.command_buffer.append<uint16>(T::ID);
+				data.command_buffer.write((byte*)&T::ID, sizeof(uint16));
                 append_rec(data, std::forward<Args>(args)...);
             }
 
@@ -93,7 +93,7 @@ struct name                                                                     
             CAMY_CMD_IMPL(BindProgramPipeline)
             {
                 CAMY_CMD_READ(hash, uint64);
-                GLuint ppo = *cl_data.ppo_map[hash];
+				GLuint ppo = *cl_data.ppo_map.find(hash);
                 CAMY_ASSERT(ppo != 0);
                 glBindProgramPipeline(ppo);
                 CAMY_CMD_CHECK(glBindProgramPipeline);
@@ -103,7 +103,7 @@ struct name                                                                     
             {
                 CAMY_CMD_READ(target, GLenum);
                 CAMY_CMD_READ(hash, uint64);
-                GLuint fbo = *cl_data.fbo_map[hash];
+				GLuint fbo = *cl_data.fbo_map.find(hash);
                 glBindFramebuffer(target, fbo);
                 CAMY_CMD_CHECK(glBindFramebuffer);
             }

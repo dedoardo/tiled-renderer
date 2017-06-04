@@ -9,9 +9,9 @@
 
 // camy
 #include <camy/command_list.hpp>
-#include <camy/containers/linear_vector.hpp>
+#include <camy/containers/dyn_linear_array.hpp>
 #include <camy/containers/paged_linear_vector.hpp>
-#include <camy/containers/vector.hpp>
+#include <camy/containers/dyn_array.hpp>
 #include <camy/core.hpp>
 #include <camy/graphics.hpp>
 #include <camy/render_context.hpp>
@@ -256,14 +256,14 @@ namespace camy
         void _incr_alloc(const Parameter& parameter, HResource& handle, rsize& offset);
 
         CommandList m_command_list;
-        LinearVector<RenderItem> m_items;
-        LinearVector<ParameterBlock> m_parameter_blocks;
+        DynLinearArray<RenderItem> m_items;
+        DynLinearArray<ParameterBlock> m_parameter_blocks;
         PagedLinearVector<Parameter> m_parameters;
-        Vector<uint32> m_sorted_indices;
+        DynArray<uint32> m_sorted_indices;
 
         SortMode m_sort;
         PipelineState m_pipeline_state;
-        Vector<Parameter> m_shared_parameters;
+        DynArray<Parameter> m_shared_parameters;
 
         struct ConstantBufferUpload
         {
@@ -272,7 +272,7 @@ namespace camy
             rsize count = 0;
             rsize cur = 0;
         };
-        Vector<ConstantBufferUpload> m_uploads;
+        DynArray<ConstantBufferUpload> m_uploads;
         int m_current_upload;
     };
 }
