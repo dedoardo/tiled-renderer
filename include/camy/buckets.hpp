@@ -10,7 +10,7 @@
 // camy
 #include <camy/command_list.hpp>
 #include <camy/containers/dyn_linear_array.hpp>
-#include <camy/containers/paged_linear_vector.hpp>
+#include <camy/containers/paged_dyn_linear_array.hpp>
 #include <camy/containers/dyn_array.hpp>
 #include <camy/core.hpp>
 #include <camy/graphics.hpp>
@@ -258,7 +258,7 @@ namespace camy
         CommandList m_command_list;
         DynLinearArray<RenderItem> m_items;
         DynLinearArray<ParameterBlock> m_parameter_blocks;
-        PagedLinearVector<Parameter> m_parameters;
+        PagedDynLinearArray<Parameter> m_parameters;
         DynArray<uint32> m_sorted_indices;
 
         SortMode m_sort;

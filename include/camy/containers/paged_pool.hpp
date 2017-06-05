@@ -1,10 +1,10 @@
 /* paged_pool.hpp
-*
-* Copyright (C) 2017 Edoardo Dominici
-*
-* This software may be modified and distributed under the terms
-* of the MIT license.  See the LICENSE file for details.
-*/
+ *
+ * Copyright (C) 2017 Edoardo Dominici
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
 #pragma once
 
 // camy
@@ -14,67 +14,77 @@
 namespace camy
 {
     /*
-            Class: PagedPool
-                    Paged pool allocators that does not invalidate pointers, iterating
-                    all the elements might be inefficient depending on fragmentation.
-                    Especially useful for resource managers that want to return pointer
-                    to resources.
+    Class: PagedPool
+        Paged pool allocators that does not invalidate pointers, iterating
+        all the elements might be inefficient depending on fragmentation.
+        Especially useful for resource managers that want to return pointer
+        to resources.
 
-                    Note: Does call destructors as it relies on FreelistPage
+        Note: Does call destructors as it relies on FreelistPage
 
-                    Note: Actual memory is released only on destruction
+        Note: Actual memory is released only on destruction
     */
-    template <typename ElementType, uint16 kAlignment = DEFAULT_ALIGNMENT>
+    template <typename T>
     class CAMY_API PagedPool final
     {
-      public:
-        using PageType = FreelistPage<ElementType>;
+    public:
+        static const rsize ELEMENT_SIZE = sizeof(T);
+        static const rsize DEFAULT_PP_CAPACITY = 128;
 
-      public:
-        PagedPool(rsize elements_per_page = 100);
+        using TPage = FreelistPage<T>;
+        using TPagedPool = PagedPool<T>;
+        using TValue = T;
+        using TPtr = T*;
+        using TConstPtr = const T*;
+        using TRef = T&;
+        using TConstRef = const T&;
+
+    public:
+        PagedPool(rsize elements_per_page = DEFAULT_PP_CAPACITY,
+                  rsize alignment = DEFAULT_ALIGNMENT);
         ~PagedPool();
 
-        PagedPool(PagedPool&& other);
-        PagedPool(PagedPool& other) = delete;
+        PagedPool(TPagedPool& other) = delete;
+        PagedPool(TPagedPool&& other);
 
-        PagedPool& operator=(PagedPool&& other);
-        PagedPool& operator=(PagedPool& other) = delete;
+        TPagedPool& operator=(TPagedPool& other) = delete;
+		TPagedPool& operator=(TPagedPool&& other) = delete;
 
-        template <typename... CtorArgs>
-        ElementType* allocate(CtorArgs&&... ctor_args);
+        template <typename... Ts>
+        TPtr allocate(Ts&&... args);
 
-        void deallocate(ElementType*& ptr);
+        void deallocate(TPtr& ptr);
         void clear();
 
-      private:
-        void _append_page();
+    private:
+        void _append_page(rsize alignment = DEFAULT_ALIGNMENT);
 
-        PageType* m_first;
-        PageType* m_cur;
+        TPage* m_first;
+        TPage* m_cur;
         rsize m_elements_per_page;
     };
 
-    template <typename ElementType, uint16 kAlignment>
-    inline PagedPool<ElementType, kAlignment>::PagedPool(rsize elements_per_page)
+    template <typename T>
+    CAMY_INLINE PagedPool<T>::PagedPool(rsize elements_per_page, rsize alignment)
         : m_first(nullptr), m_cur(nullptr), m_elements_per_page(elements_per_page)
     {
-        _append_page();
+        _append_page(alignment);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline PagedPool<ElementType, kAlignment>::~PagedPool()
+    template <typename T>
+    CAMY_INLINE PagedPool<T>::~PagedPool()
     {
-        PageType* cur = m_first;
+        TPage* cur = m_first;
         while (cur != nullptr)
         {
             cur->clear();
-            cur = (FreelistPage<ElementType>*)cur->next;
+            cur = (TPage*)cur->next;
             tdeallocate(cur);
         }
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline PagedPool<ElementType, kAlignment>::PagedPool(PagedPool&& other)
+    template <typename T>
+    CAMY_INLINE PagedPool<T>::PagedPool(TPagedPool&& other)
     {
         m_first = other.m_first;
         m_cur = other.m_cur;
@@ -84,35 +94,22 @@ namespace camy
         other.m_elements_per_page = 0;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline PagedPool<ElementType, kAlignment>& PagedPool<ElementType, kAlignment>::
-    operator=(PagedPool&& other)
-    {
-        m_first = other.m_first;
-        m_cur = other.m_cur;
-        m_elements_per_page = other.m_elements_per_page;
-        other.m_first = nullptr;
-        other.m_cur = nullptr;
-        other.m_elements_per_page = 0;
-        return *this;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    template <typename... CtorArgs>
-    inline ElementType* PagedPool<ElementType, kAlignment>::allocate(CtorArgs&&... ctor_args)
+    template <typename T>
+    template <typename... Ts>
+    CAMY_INLINE typename PagedPool<T>::TPtr PagedPool<T>::allocate(Ts&&... args)
     {
         CAMY_ASSERT(m_cur != nullptr);
         // Trying to allocate on current page
         // Very likely it is here
-        ElementType* ret = m_cur->allocate(std::forward<CtorArgs>(ctor_args)...);
+        TPtr ret = m_cur->allocate(std::forward<Ts>(args)...);
         if (ret != nullptr) return ret;
 
         // We scan from the first page on to see if there is a free slot
         // this might not be the best idea, but drastically reduces fragmentation
-        PageType* cur = m_first;
+        TPage* cur = m_first;
         while (cur != nullptr)
         {
-            ret = cur->allocate(std::forward<CtorArgs>(ctor_args)...);
+            ret = cur->allocate(std::forward<Ts>(args)...);
 
             // Found a free slot, we also update m_cur this way the next allocate()
             // We might be able to have another free slot on this page
@@ -122,18 +119,18 @@ namespace camy
                 return ret;
             }
 
-            cur = (FreelistPage<ElementType>*)cur->next;
+            cur = (TPage*)cur->next;
         }
 
         // If we are here it means that we are completely full, we thus need a new page
         _append_page();
-        return m_cur->allocate(std::forward<CtorArgs>(ctor_args)...);
+        return m_cur->allocate(std::forward<Ts>(args)...);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void PagedPool<ElementType, kAlignment>::deallocate(ElementType*& ptr)
+    template <typename T>
+    CAMY_INLINE void PagedPool<T>::deallocate(TPtr& ptr)
     {
-        PageType* cur = m_first;
+        TPage* cur = m_first;
         while (cur != nullptr)
         {
             // Checking if pointer is in this page
@@ -148,30 +145,30 @@ namespace camy
         CAMY_ASSERT(false); // Should have found pointer
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void PagedPool<ElementType, kAlignment>::clear()
+    template <typename T>
+    CAMY_INLINE void PagedPool<T>::clear()
     {
-        PageType* cur = m_first;
+        TPage* cur = m_first;
         while (cur != nullptr)
         {
             cur->clear();
-            cur = (PageType*)cur->next;
+            cur = (TPage*)cur->next;
         }
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void PagedPool<ElementType, kAlignment>::_append_page()
+    template <typename T>
+    CAMY_INLINE void PagedPool<T>::_append_page(rsize alignment)
     {
         if (m_cur == nullptr)
         {
             CAMY_ASSERT(m_first == nullptr);
-            m_first = tallocate<PageType>(camy_loc, kAlignment, m_elements_per_page);
+			m_first = API::tallocate<TPage>(CAMY_ALLOC1(alignment), m_elements_per_page);
             m_cur = m_first;
         }
         else
         {
-            PageType* old = m_cur;
-            m_cur = tallocate<PageType>(camy_loc, kAlignment, m_elements_per_page);
+            TPage* old = m_cur;
+            m_cur = API::tallocate<TPage>(CAMY_ALLOC1_SRC(old);
             old->next = m_cur;
             m_cur->previous = old;
         }

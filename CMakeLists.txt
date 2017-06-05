@@ -24,11 +24,10 @@ set(CAMY_HEADERS
 		include/camy/containers/dyn_linear_buffer.hpp
 		include/camy/containers/dyn_linear_array.hpp
 		include/camy/containers/hash_map.hpp
-		include/camy/containers/paged_linear_vector.hpp
+		include/camy/containers/paged_dyn_linear_array.hpp
 		include/camy/containers/paged_pool.hpp
 		include/camy/containers/pages.hpp
 		include/camy/containers/pool.hpp
-		include/camy/containers/ring_buffer.hpp
 		include/camy/containers/stack.hpp
 		include/camy/containers/static_array.hpp
 		include/camy/containers/static_string.hpp

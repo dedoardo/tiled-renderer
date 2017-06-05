@@ -1,10 +1,10 @@
 /* pool.hpp
-*
-* Copyright (C) 2017 Edoardo Dominici
-*
-* This software may be modified and distributed under the terms
-* of the MIT license.  See the LICENSE file for details.
-*/
+ *
+ * Copyright (C) 2017 Edoardo Dominici
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
 #pragma once
 
 // camy
@@ -13,60 +13,72 @@
 
 namespace camy
 {
-    // TODO: Assigning pool doesnt call constructor, simple bitwise copy
-    // that's why it is currently disabled
-    template <typename ElementType, uint16 kAlignment = DEFAULT_ALIGNMENT>
+    template <typename T>
     class CAMY_API Pool final
     {
-      public:
-        static const rsize kElementSize = sizeof(ElementType);
+    public:
+        static const rsize ELEMENT_SIZE = sizeof(T);
+        static const rsize DEFAULT_CAPACITY = 128;
 
-      public:
-        Pool(rsize initial_capacity = 2);
+        using TPool = Pool<T>;
+        using TValue = T;
+        using TPtr = T*;
+        using TConstPtr = const T*;
+        using TRef = T&;
+        using TConstRef = const T&;
+
+    public:
+        Pool(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT);
         ~Pool();
 
-        Pool(Pool&& other);
-        Pool(Pool& other) = delete;
+        Pool(const TPool&) = delete;
+        Pool(TPool&& other);
 
-        Pool& operator=(Pool&& other);
-        Pool& operator=(const Pool& other) = delete;
+        TPool& operator=(const TPool&) = delete;
+        TPool& operator=(TPool&& other) = delete;
 
         rsize reserve();
-        template <typename... CtorArgs>
-        rsize allocate(CtorArgs&&... ctor_args);
-        ElementType& get(rsize idx);
-        const ElementType& get(rsize idx) const;
+
+        template <typename... Ts>
+        rsize allocate(Ts&&... args);
+
+        TRef get(rsize idx);
+        TConstRef& get(rsize idx) const;
 
         void deallocate(rsize idx);
         void clear();
         rsize capacity() const;
 
-      private:
-        void _realloc();
+    private:
+		TPtr _allocate_align_explicit(rsize n, rsize alignment);
+		TPtr _allocate_align_same(rsize n, void* src_alignment);
+		void _deallocate(TPtr ptr);
+        void _grow();
 
-        ElementType* m_base;
-        ElementType* m_top;
+        TPtr m_base;
+        TPtr m_top;
         Stack<rsize> m_freelist;
     };
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Pool<ElementType, kAlignment>::Pool(rsize initial_capacity) : m_base(nullptr)
+    template <typename T>
+    CAMY_INLINE Pool<T>::Pool(rsize capacity, rsize alignment)
+        : m_base(nullptr)
+        , m_top(nullptr)
     {
-        m_base =
-            (ElementType*)API::allocate(CAMY_ALLOC(kElementSize * initial_capacity, kAlignment));
-        m_top = m_base + initial_capacity;
-        for (rsize i = 0; i < initial_capacity; ++i)
-            m_freelist.push(initial_capacity - i - 1);
+		m_base = _allocate_align_explicit(capacity, alignment);
+        m_top = m_base + capacity;
+        for (rsize i = 0; i < capacity; ++i)
+            m_freelist.push(capacity - i - 1);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Pool<ElementType, kAlignment>::~Pool()
+    template <typename T>
+    CAMY_INLINE Pool<T>::~Pool()
     {
-        API::deallocate(m_base);
+		_deallocate(m_base);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Pool<ElementType, kAlignment>::Pool(Pool&& other)
+    template <typename T>
+    CAMY_INLINE Pool<T>::Pool(TPool&& other)
     {
         m_base = other.m_base;
         m_top = other.m_top;
@@ -75,86 +87,94 @@ namespace camy
         other.m_top = nullptr;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Pool<ElementType, kAlignment>& Pool<ElementType, kAlignment>::operator=(Pool&& other)
+    template <typename T>
+    CAMY_INLINE rsize Pool<T>::reserve()
     {
-        m_base = other.m_base;
-        m_top = other.m_top;
-        m_freelist = std::move(other.m_freelist);
-        other.m_base = nullptr;
-        other.m_top = nullptr;
-        return *this;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline rsize Pool<ElementType, kAlignment>::reserve()
-    {
-        if (m_freelist.empty()) _realloc();
+        if (m_freelist.empty()) 
+			_grow();
 
         rsize ret = m_freelist.pop();
-        new (m_base + ret) ElementType();
+        new (m_base + ret) T();
         return ret;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    template <typename... CtorArgs>
-    inline rsize Pool<ElementType, kAlignment>::allocate(CtorArgs&&... ctor_args)
+    template <typename T>
+    template <typename... Ts>
+    CAMY_INLINE rsize Pool<T>::allocate(Ts&&... args)
     {
-		if (m_freelist.empty()) _realloc();
+        if (m_freelist.empty())
+			_grow();
 
-		rsize ret = m_freelist.pop();
-        new (m_base + ret) ElementType(std::forward<CtorArgs>(ctor_args)...);
+        rsize ret = m_freelist.pop();
+        new (m_base + ret) T(std::forward<Ts>(args)...);
         return ret;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType& Pool<ElementType, kAlignment>::get(rsize idx)
+    template <typename T>
+    CAMY_INLINE typename Pool<T>::TRef Pool<T>::get(rsize idx)
     {
         CAMY_ASSERT(idx < capacity());
-        return m_base[idx];
+        return *(m_base + idx);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline const ElementType& Pool<ElementType, kAlignment>::get(rsize idx) const
+    template <typename T>
+    CAMY_INLINE typename Pool<T>::TConstRef Pool<T>::get(rsize idx) const
     {
         CAMY_ASSERT(idx < capacity());
-        return m_base[idx];
+        return *(m_base + idx);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Pool<ElementType, kAlignment>::deallocate(rsize idx)
+    template <typename T>
+    CAMY_INLINE void Pool<T>::deallocate(rsize idx)
     {
         m_freelist.push(idx);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Pool<ElementType, kAlignment>::clear()
+    template <typename T>
+    CAMY_INLINE void Pool<T>::clear()
     {
         m_freelist.clear();
         for (rsize i = 0; i < capacity(); ++i)
             m_freelist.push(capacity() - i - 1);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline rsize Pool<ElementType, kAlignment>::capacity() const
+    template <typename T>
+    CAMY_INLINE rsize Pool<T>::capacity() const
     {
         return (rsize)(m_top - m_base);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Pool<ElementType, kAlignment>::_realloc()
-    {
-        CAMY_ASSERT(m_freelist.empty());
-        ElementType* old_buffer = m_base;
-        rsize old_capacity = capacity();
-        rsize new_capacity = old_capacity * 2;
-        m_base = (ElementType*)API::allocate(CAMY_ALLOC(kElementSize * new_capacity, kAlignment));
-        m_top = m_base + new_capacity;
-        for (rsize i = 0; i < old_capacity; ++i)
-        {
-            new (m_base + i) ElementType(std::move(old_buffer[i]));
-            m_freelist.push(new_capacity - i - 1);
-        }
-        API::deallocate(old_buffer);
-    }
+	template <typename T>
+	CAMY_INLINE typename Pool<T>::TPtr Pool<T>::_allocate_align_explicit(rsize n, rsize alignment)
+	{
+		return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
+	}
+
+	template <typename T>
+	CAMY_INLINE typename Pool<T>::TPtr Pool<T>::_allocate_align_same(rsize n, void* src_alignment)
+	{
+		return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
+	}
+
+	template <typename T>
+	CAMY_INLINE void Pool<T>::_deallocate(TPtr ptr)
+	{
+		API::deallocate(ptr);
+	}
+
+	template <typename T>
+	CAMY_INLINE void Pool<T>::_grow()
+	{
+		TPtr old_buffer = m_base;
+		rsize old_capacity = capacity();
+		rsize new_capacity = old_capacity * 2;
+		m_base = _allocate_align_same(new_capacity, old_buffer);
+		m_top = m_base + new_capacity;
+		for (rsize i = 0; i < old_capacity; ++i)
+		{
+			new (m_base + i) T(std::move(old_buffer[i]));
+			m_freelist.push(new_capacity - i - 1);
+		}
+		_deallocate(old_buffer);
+	}
 }

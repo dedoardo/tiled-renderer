@@ -27,16 +27,6 @@ namespace camy
 
 #define CAMY_HM_STR(str) ::camy::API::hash_str_ct((str))
 
-	// Gotta be honest, wanted to enable_if based on sizeof(T) <= sizeof(uint64) but didnt manage to do it
-	// as overloading the constructor kept giving me internal compiler error when passing a default parameter to the constructor. 
-	// The explicitly_convertible is more type-friendly though.
-	// https://stackoverflow.com/questions/16893992/check-if-type-can-be-explicitly-converted
-	template <typename T, typename U>
-	struct is_explicitly_convertible
-	{
-		enum { value = std::is_constructible_v<T, U> && !std::is_convertible_v<U, T>};
-	};
-
 	template <typename T>
 	using HMEnableExtTrue = typename std::enable_if<!std::is_convertible<T, uint64>::value>::type;
 
@@ -78,11 +68,7 @@ namespace camy
 		using TConstRef = const T&;
 
 	public:
-		template <typename U = T>
-		explicit HashMap(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT, HMEnableExtTrue<U>* = nullptr);
-
-		template <typename U = T>
-		explicit HashMap(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT, HMEnableExtFalse<U>* = nullptr);
+		explicit HashMap(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT);
 
 		~HashMap();
 
@@ -111,6 +97,18 @@ namespace camy
 		bool empty()const;
 
 	private:
+		struct Entry
+		{
+			TKey key;
+			uint64 val;
+		};
+		static const rsize ENTRY_SIZE = sizeof(Entry);
+
+		Entry* _allocate_align_explicit(rsize n, rsize alignment);
+		Entry* _allocate_align_same(rsize n, void* src_alignment);
+		void _deallocate(Entry* ptr);
+		void   _reset_entries(Entry* beg, rsize n);
+
 		uint64 _hash(TKey key)const;
 		void _make_space(rsize slots);
 
@@ -138,70 +136,62 @@ namespace camy
 		template <typename U = T>
 		void _clear(HMEnableExtFalse<U>* = nullptr);
 
-		struct Entry
-		{
-			TKey key;
-			uint64 val;
-		};
-		static const rsize ENTRY_SIZE = sizeof(Entry);
-
 		Entry*  m_entries;
 		rsize	m_capacity;
 		rsize	m_slots_occupied;
 	};
 
 	template <typename T>
-	template <typename U>
-	CAMY_INLINE HashMap<T>::HashMap(rsize capacity, rsize alignment, HMEnableExtTrue<U>*) :
+	CAMY_INLINE HashMap<T>::HashMap(rsize capacity, rsize alignment) :
 		TBaseHashMap(capacity, alignment),
 		m_entries(nullptr),
 		m_capacity(0),
 		m_slots_occupied(0)
 	{
-		m_entries = (Entry*)API::allocate(CAMY_ALLOC(ENTRY_SIZE * capacity, alignment));
-		for (rsize i = 0; i < capacity; ++i)
-			m_entries[i].key = INVALID_KEY;
-		m_capacity = capacity;
-	}
-
-	template <typename T>
-	template <typename U>
-	CAMY_INLINE HashMap<T>::HashMap(rsize capacity, rsize alignment, HMEnableExtFalse<U>*) :
-		TBaseHashMap(capacity, alignment),
-		m_entries(nullptr),
-		m_capacity(0),
-		m_slots_occupied(0)
-	{
-		m_entries = (Entry*)API::allocate(CAMY_ALLOC(ENTRY_SIZE * capacity, alignment));
-		for (rsize i = 0; i < capacity; ++i)
-			m_entries[i].key = INVALID_KEY;
+		m_entries = _allocate_align_explicit(capacity, alignment);
+		_reset_entries(m_entries, capacity);
 		m_capacity = capacity;
 	}
 
 	template <typename T>
 	CAMY_INLINE HashMap<T>::~HashMap()
 	{
-
+		_deallocate(m_entries);
 	}
 
 	template <typename T>
 	CAMY_INLINE HashMap<T>::HashMap(const THashMap& other) :
 		TBaseHashMap(other)
 	{
-
+		m_entries = _allocate_align_same(other.m_capacity, other.m_entries);
+		memcpy(m_entries, other.m_entries, ENTRY_SIZE * other.m_capacity);
+		m_capacity = other.m_capacity;
+		m_slots_occupied = other.m_slots_occupied;
 	}
 
 	template <typename T>
 	CAMY_INLINE HashMap<T>::HashMap(THashMap&& other) :
-		TBaseHashMap(other)
+		TBaseHashMap(other),
+		m_entries(nullptr),
+		m_capacity(0),
+		m_slots_occupied(0)
 	{
-
+		API::swap(m_entries, other.m_entries);
+		API::swap(m_capacity, other.m_capacity);
+		API::swap(m_slots_occupied, other.m_slots_occupied);
 	}
 
 	template <typename T>
 	CAMY_INLINE typename HashMap<T>::THashMap& HashMap<T>::operator=(const THashMap& other)
 	{
 		TBaseHashMap::operator=(other);
+		_deallocate(m_entries);
+		m_capacity = m_slots_occupied = 0;
+
+		m_entries = _allocate_align_same(other.m_capacity, other.m_entries);
+		memcpy(m_entries, other.m_entries, ENTRY_SIZE * other.m_capacity);
+		m_capacity = other.m_capacity;
+		m_slots_occupied = other.m_slots_occupied;
 		return *this;
 	}
 
@@ -209,6 +199,12 @@ namespace camy
 	CAMY_INLINE typename HashMap<T>::THashMap& HashMap<T>::operator=(THashMap&& other)
 	{
 		TBaseHashMap::operator=(other);
+		_deallocate(m_entries);
+		m_capacity = m_slots_occupied = 0;
+		
+		API::swap(m_entries, other.m_entries);
+		API::swap(m_capacity, other.m_capacity);
+		API::swap(m_slots_occupied, other.m_slots_occupied);
 		return *this;
 	}
 
@@ -285,6 +281,31 @@ namespace camy
 	}
 
 	template <typename T>
+	CAMY_INLINE typename HashMap<T>::Entry* HashMap<T>::_allocate_align_explicit(rsize n, rsize alignment)
+	{
+		return (Entry*)API::allocate(CAMY_ALLOC(ENTRY_SIZE * n, alignment));
+	}
+	
+	template <typename T>
+	CAMY_INLINE typename HashMap<T>::Entry* HashMap<T>::_allocate_align_same(rsize n, void* src_alignment)
+	{
+		return (Entry*)API::allocate(CAMY_ALLOC_SRC(ENTRY_SIZE * n, src_alignment));
+	}
+
+	template <typename T>
+	CAMY_INLINE void HashMap<T>::_deallocate(Entry* ptr)
+	{
+		API::deallocate(ptr);
+	}
+
+	template <typename T>
+	CAMY_INLINE void HashMap<T>::_reset_entries(Entry* beg, rsize n)
+	{
+		for (rsize i = 0; i < n; ++i)
+			beg[i].key = INVALID_KEY;
+	}
+
+	template <typename T>
 	CAMY_INLINE uint64 HashMap<T>::_hash(TKey key) const
 	{
 		return key % m_capacity;
@@ -297,9 +318,12 @@ namespace camy
 		{
 			Entry* old_buffer = m_entries;
 			rsize  new_capacity = API::min(m_capacity * 2, DEFAULT_CAPACITY);
-			m_entries = (Entry*)API::allocate(CAMY_ALLOC_SRC(ENTRY_SIZE * new_capacity, old_buffer));
+			m_entries = _allocate_align_same(new_capacity, old_buffer);
+
 			memcpy(m_entries, old_buffer, ENTRY_SIZE * m_capacity); // TODO: Copy constructor ?
-			API::deallocate(old_buffer);
+			_reset_entries(m_entries + m_capacity, new_capacity - m_capacity);
+
+			_deallocate(old_buffer);
 			m_capacity = new_capacity;
 		}
 	}

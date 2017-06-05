@@ -90,6 +90,7 @@ namespace camy
     ::camy::API::_AllocationInfo { __FILE__, 1, (alignment), (uint32)__LINE__ }
 #define CAMY_UALLOC1 CAMY_ALLOC1(::camy::DEFAULT_ALIGNMENT)
 #define CAMY_ALLOC_SRC(count, ptr) CAMY_ALLOC(count, ::camy::API::memory_block_alignment(ptr))
+#define CAMY_ALLOC1_SRC(ptr) CAMY_ALLOC1(::camy::API::memory_block_alignment(ptr))
     }
 
     // File

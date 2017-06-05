@@ -12,51 +12,42 @@
 
 namespace camy
 {
-    /*
-            Struct: Page
-                    General purpose untyped CPU memory page that allow for chaining
-                    in double linked list.
-    */
-    template <uint16 kAlignment = DEFAULT_ALIGNMENT>
-    struct CAMY_API Page
-    {
-      public:
-        Page(rsize size);
-        virtual ~Page();
+	struct CAMY_API Page
+	{
+		Page(rsize size, rsize alignment);
+		virtual ~Page();
 
-        Page(Page&& other);
-        Page(Page& other) = delete; // Paged non-move copyctor / assignment operators
-                                    // are explicitly deleted.
+		Page(const Page& other) = delete; 
+		Page(Page&&);
 
-        Page& operator=(Page&& other);
-        Page& operator=(Page& other) = delete;
+		Page& operator=(const Page& other) = delete;
+		Page& operator=(Page&&) = delete;
+		
+		Page* previous;
+		Page* next;
+		byte* buffer;
+		rsize byte_size;
+	};
 
-        rsize byte_size;
-        byte* buffer;
-        Page* previous;
-        Page* next;
-    };
+	CAMY_INLINE Page::Page(rsize size, rsize alignment) :
+		previous(nullptr),
+		next(nullptr),
+		buffer(nullptr),
+		byte_size(0)
+	{
+		buffer = (byte*)API::allocate(CAMY_ALLOC(size, alignment));
+		byte_size = size;
+	}
 
-    template <uint16 kAlignment>
-    inline Page<kAlignment>::Page(rsize size)
-        : byte_size(size), buffer(nullptr), previous(nullptr), next(nullptr)
-    {
-        buffer = (byte*)API::allocate(CAMY_ALLOC(size, kAlignment));
-        byte_size = size;
-        CAMY_ASSERT(buffer != nullptr);
-    }
+	CAMY_INLINE Page::~Page()
+	{
+		API::deallocate(buffer);
+		previous = nullptr;
+		next = nullptr;
+		byte_size = 0;
+	}
 
-    template <uint16 kAlignment>
-    inline Page<kAlignment>::~Page()
-    {
-        API::deallocate(buffer);
-        previous = nullptr;
-        next = nullptr;
-        byte_size = 0;
-    }
-
-    template <uint16 kAlignment>
-    inline Page<kAlignment>::Page(Page&& other)
+    CAMY_INLINE Page::Page(Page&& other)
     {
         byte_size = other.byte_size;
         buffer = other.buffer;
@@ -68,127 +59,104 @@ namespace camy
         other.next = nullptr;
     }
 
-    template <uint16 kAlignment>
-    inline Page<kAlignment>& Page<kAlignment>::operator=(Page&& other)
-    {
-        byte_size = other.byte_size;
-        buffer = other.buffer;
-        previous = other.previous;
-        next = other.next;
-        other.byte_size = 0;
-        other.buffer = nullptr;
-        other.previous = nullptr;
-        other.next = nullptr;
-        return *this;
-    }
+	template <typename T>
+	struct CAMY_API FreelistPage final : public Page
+	{
+	public:
+		static const rsize ELEMENT_SIZE = sizeof(T);
 
-    /*
-            Struct: FreelistPage
-                    Typed page that acts as a pool. Used as base for pool containers.
-                    It calls destructor upon release
-    */
-    template <typename ElementType, uint16 kAlignment = DEFAULT_ALIGNMENT>
-    struct CAMY_API FreelistPage final : public Page<kAlignment>
-    {
-      public:
-        static const rsize kElementSize = sizeof(ElementType);
+		using TFreelistPage = FreelistPage<T>;
+		using TValue = T;
+		using TPtr = T*;
+		using TConstPtr = const T*;
+		using TRef = T&;
+		using TConstRef = const T&;
 
-      public:
-        FreelistPage(rsize element_count);
-        ~FreelistPage();
+	public:
+		FreelistPage(rsize size, rsize alignment);
+		~FreelistPage();
 
-        FreelistPage(FreelistPage&& other);
-        FreelistPage(FreelistPage& other) = delete;
+		FreelistPage(const TFreelistPage&) = delete;
+		FreelistPage(TFreelistPage&& other);
 
-        FreelistPage& operator=(FreelistPage&& other);
-        FreelistPage& operator=(FreelistPage& other) = delete;
+		TFreelistPage& operator=(const TFreelistPage&) = delete;
+		TFreelistPage& operator=(TFreelistPage&& other) = delete;
 
-        template <typename... CtorArgs>
-        ElementType* allocate(CtorArgs&&... ctor_args);
+		template <typename ...Ts>
+		TPtr allocate(Ts&& ...args);
 
-        void deallocate(ElementType*& ptr);
-        void clear();
+		void deallocate(TPtr& ptr);
+		void clear();
 
-        bool is_in_range(const ElementType* ptr) const;
+		bool is_in_range(TConstPtr ptr)const;
 
-      private:
-        void _reset();
+	private:
+		void _reset();
 
-        struct _StoredType
-        {
-            ElementType data;
-            _StoredType* next;
-            uint8 flags; // TODO: Might switch to indices
-        };
+		struct StoredType
+		{
+			T data;
+			StoredType* next;
+			uint8 flags;
+		};
+		static const rsize STORED_ELEMENT_SIZE = sizeof(StoredType);
 
-        rsize element_count;
-        _StoredType* next_free;
-    };
+		StoredType* next_free;
+		rsize size;
+	};
 
-    template <typename ElementType, uint16 kAlignment>
-    inline FreelistPage<ElementType, kAlignment>::FreelistPage(rsize element_count)
-        : Page(element_count * sizeof(_StoredType)), next_free(nullptr),
-          element_count(element_count)
+    template <typename T>
+    CAMY_INLINE FreelistPage<T>::FreelistPage(rsize size, rsize alignment) :
+        Page(size * STORED_ELEMENT_SIZE, alignment),
+		next_free(nullptr),
+		size(size)
     {
         CAMY_ASSERT(element_count > 0);
-        next_free = (_StoredType*)buffer;
-
+        next_free = (StoredType*)buffer;
         _reset();
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline FreelistPage<ElementType, kAlignment>::~FreelistPage()
+    template <typename T>
+    CAMY_INLINE FreelistPage<T>::~FreelistPage()
     {
-        next_free = (_StoredType*)buffer;
+        next_free = (StoredType*)buffer;
         clear();
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline FreelistPage<ElementType, kAlignment>::FreelistPage(FreelistPage&& other) : Page(other)
+    template <typename T>
+    CAMY_INLINE FreelistPage<T>::FreelistPage(TFreelistPage&& other) : Page(other)
     {
-        element_count = other.element_count;
+        size = other.size;
         next_free = other.next_free;
-        other.element_count = 0;
+        other.size = 0;
         other.next_free = nullptr;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline FreelistPage<ElementType, kAlignment>& FreelistPage<ElementType, kAlignment>::
-    operator=(FreelistPage&& other)
-    {
-        Page::operator=(other);
-        element_count = other.element_count;
-        next_free = other.next_free;
-        other.element_count = 0;
-        other.next_free = nullptr;
-        return *this;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    template <typename... CtorArgs>
-    inline ElementType* FreelistPage<ElementType, kAlignment>::allocate(CtorArgs&&... ctor_args)
+    template <typename T>
+    template <typename... Ts>
+    CAMY_INLINE typename FreelistPage<T>::TPtr FreelistPage<T>::allocate(Ts&&... args)
     {
         // Page is full
         if (next_free == nullptr) return nullptr;
 
         // Removing element from head of list
-        _StoredType* next = next_free;
+        StoredType* next = next_free;
         next_free = next->next;
 
         // Initializing new element
-        new (&next->data) ElementType(std::forward<CtorArgs>(ctor_args)...);
+        new (&next->data) T(std::forward<Ts>(args)...);
         next->next = nullptr;
         next->flags = 1;
 
         return &next->data;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void FreelistPage<ElementType, kAlignment>::deallocate(ElementType*& ptr)
+    template <typename T>
+    CAMY_INLINE void FreelistPage<T>::deallocate(TPtr& ptr)
     {
         // Calling destructor
-        _StoredType* old = (_StoredType*)ptr;
-        old->data.~ElementType();
+        StoredType* old = (StoredType*)ptr;
+        old->data.~T();
         old->flags = 0;
         ptr = nullptr;
 
@@ -197,33 +165,33 @@ namespace camy
         next_free = old;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline bool FreelistPage<ElementType, kAlignment>::is_in_range(const ElementType* ptr) const
+	template <typename T>
+	CAMY_INLINE void FreelistPage<T>::clear()
+	{
+		// Destructing only allocated elements
+		for (rsize i = 0; i < size; ++i)
+		{
+			StoredType* cur = ((StoredType*)buffer) + i;
+			if (cur->flags == 1) cur->data.~T();
+		}
+
+		_reset();
+	}
+
+    template <typename T>
+    CAMY_INLINE bool FreelistPage<T>::is_in_range(TConstPtr ptr) const
     {
-        _StoredType* cur_ptr = (_StoredType*)ptr;
-        _StoredType* end = ((_StoredType*)buffer) + element_count;
-        if (cur_ptr >= (_StoredType*)buffer && cur_ptr < end) return true;
+        StoredType* cur_ptr = (StoredType*)ptr;
+        StoredType* end = ((StoredType*)buffer) + size;
+        if (cur_ptr >= (StoredType*)buffer && cur_ptr < end) return true;
         return false;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void FreelistPage<ElementType, kAlignment>::clear()
+    template <typename T>
+    CAMY_INLINE void FreelistPage<T>::_reset()
     {
-        // Destructing only allocated elements
-        for (rsize i = 0; i < element_count; ++i)
-        {
-            _StoredType* cur = ((_StoredType*)buffer) + i;
-            if (cur->flags == 1) cur->data.~ElementType();
-        }
-
-        _reset();
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline void FreelistPage<ElementType, kAlignment>::_reset()
-    {
-        _StoredType* cur = (_StoredType*)buffer;
-        for (rsize i = 0; i < element_count - 1; ++i)
+        StoredType* cur = (StoredType*)buffer;
+        for (rsize i = 0; i < size - 1; ++i)
         {
             cur->next = cur + 1;
             cur->flags = 0;
@@ -233,93 +201,88 @@ namespace camy
         cur->flags = 0;
     }
 
-    /*
-            Struct: LinearPage
-                    Typed paged that simply bumps the pointer until full, then can
-                    be reset. Used as base for arena containers. Does not call
-                    constructors / destructors!!
-    */
-    template <typename ElementType, uint16 kAlignment = DEFAULT_ALIGNMENT>
-    struct CAMY_API LinearPage final : public Page<kAlignment>
+	// Untyped, bumps the pointer until full
+    template <typename T>
+    struct CAMY_API LinearPage final : public Page
     {
       public:
-        static const rsize kElementSize = sizeof(ElementType);
+		static const rsize ELEMENT_SIZE = sizeof(T);
+
+		using TLinearPage = LinearPage<T>;
+		using TValue = T;
+		using TPtr = T*;
+		using TConstPtr = const T*;
+		using TRef = T&;
+		using TConstRef = const T&;
 
       public:
-        LinearPage(rsize element_count);
+        LinearPage(rsize size, rsize alignment);
         ~LinearPage();
 
-        LinearPage(LinearPage&& other);
-        LinearPage(LinearPage& other) = delete;
+		LinearPage(TLinearPage& other) = delete;
+		LinearPage(TLinearPage&& other);
 
-        LinearPage& operator=(LinearPage&& other);
-        LinearPage& operator=(LinearPage& other) = delete;
+		TLinearPage& operator=(TLinearPage& other) = delete;
+		TLinearPage& operator=(TLinearPage&& other) = delete;
 
-        ElementType* _next(); // TODO: Fix this name conflict
-        ElementType* next_array(rsize count);
+        TPtr _next(); // TODO: Fix this name conflict
+        TPtr next_array(rsize count);
         void reset();
 
       private:
-        const rsize element_count;
+        const rsize size;
         rsize counter;
     };
 
-    template <typename ElementType, uint16 kAlignment>
-    inline LinearPage<ElementType, kAlignment>::LinearPage(rsize element_count)
-        : Page(element_count * sizeof(ElementType)), element_count(element_count), counter(0)
+    template <typename T>
+    CAMY_INLINE LinearPage<T>::LinearPage(rsize size, rsize alignment)
+        : Page(size * ELEMENT_SIZE, alignment), 
+		size(size), 
+		counter(0)
     {
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline LinearPage<ElementType, kAlignment>::~LinearPage()
+    template <typename T>
+    CAMY_INLINE LinearPage<T>::~LinearPage()
     {
         counter = 0;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline LinearPage<ElementType, kAlignment>::LinearPage(LinearPage&& other) : Page(other)
+    template <typename T>
+    CAMY_INLINE LinearPage<T>::LinearPage(TLinearPage&& other) : 
+		Page(other)
     {
         counter = other.counter;
         other.counter = 0;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline LinearPage<ElementType, kAlignment>& LinearPage<ElementType, kAlignment>::
-    operator=(LinearPage&& other)
+    template <typename T>
+    CAMY_INLINE typename LinearPage<T>::TPtr LinearPage<T>::_next()
     {
-        Page::operator=(other);
-        count = other.counter;
-        other.counter = 0;
-        return *this;
-    }
+        if (counter == size) return nullptr;
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType* LinearPage<ElementType, kAlignment>::_next()
-    {
-        if (counter == element_count) return nullptr;
-
-        ElementType* ret = &((ElementType*)buffer)[counter++];
-        new (ret) ElementType();
+        T* ret = &((T*)buffer)[counter++];
+        new (ret) T();
         return ret;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType* LinearPage<ElementType, kAlignment>::next_array(rsize count)
+    template <typename T>
+    CAMY_INLINE typename LinearPage<T>::TPtr LinearPage<T>::next_array(rsize count)
     {
-        CAMY_ASSERT(count * kElementSize <= byte_size);
+        CAMY_ASSERT(count * ELEMENT_SIZE <= byte_size);
 
-        if (counter + count >= element_count) return nullptr;
+        if (counter + count >= size) return nullptr;
 
-        ElementType* ret = &((ElementType*)buffer)[counter];
+        TPtr ret = &((TPtr)buffer)[counter];
         rsize i = 0;
         while (i < count)
-            new (&ret[i++]) ElementType();
+            new (&ret[i++]) T();
         counter += count;
         return ret;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void LinearPage<ElementType, kAlignment>::reset()
+    template <typename T>
+    CAMY_INLINE void LinearPage<T>::reset()
     {
         counter = 0;
     }
