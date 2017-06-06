@@ -27,6 +27,7 @@ namespace camy
 		DynLinearBuffer& operator=(const DynLinearBuffer& other);
 		DynLinearBuffer& operator=(DynLinearBuffer&& other);
 
+		// Top
 		byte* cur();
 		const byte* cur()const;
 

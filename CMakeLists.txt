@@ -29,7 +29,6 @@ set(CAMY_HEADERS
 		include/camy/containers/pages.hpp
 		include/camy/containers/pool.hpp
 		include/camy/containers/stack.hpp
-		include/camy/containers/static_array.hpp
 		include/camy/containers/static_string.hpp
 
 		include/camy/d3d11/d3d11_base_post.hpp

@@ -105,7 +105,7 @@ namespace camy
 
     ShaderVariable Program::var(ShaderDesc::Type type, const char8* name)
     {
-		uint64* idx = m_variables[(rsize)type].find(name);
+		uint64* idx = m_variables[(rsize)type].find(API::hash_str(name));
         if (idx == nullptr || *idx >= m_bindings[(rsize)type].count())
         {
             CL_ERR("Failed to find var: ", name);

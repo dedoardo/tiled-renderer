@@ -100,7 +100,7 @@ namespace camy
             binding.var.shader(shader_type);
             binding.var.uav(0);
 
-            m_variables[stype].insert((char8*)cbuffer_desc.Name, m_bindings[stype].count());
+            m_variables[stype].insert(API::hash_str((char8*)cbuffer_desc.Name), m_bindings[stype].count());
             m_bindings[stype].append(binding);
         }
 
@@ -147,7 +147,7 @@ namespace camy
             binding.var.uav(is_uav);
 
             // Reference by "real" name
-            m_variables[stype].insert((char8*)bind_desc.Name, m_bindings[stype].count());
+            m_variables[stype].insert(API::hash_str((char8*)bind_desc.Name), m_bindings[stype].count());
             m_bindings[stype].append(binding);
         }
 

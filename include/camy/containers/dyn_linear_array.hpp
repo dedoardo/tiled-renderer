@@ -15,7 +15,7 @@ namespace camy
 {
 	// Typed wrapper around DynLinearBuffer, calls ctor/dtor
 	template <typename T>
-	class DynLinearArray final : protected DynLinearBuffer
+	class DynLinearArray final : private DynLinearBuffer
 	{
 	public:
 		static const rsize ELEMENT_SIZE = sizeof(T);
@@ -40,6 +40,12 @@ namespace camy
 
 		TRef operator[](rsize idx);
 		TConstRef operator[](rsize idx)const;
+
+		TRef first();
+		TConstRef first()const;
+
+		TRef last();
+		TConstRef last()const;
 
 		TRef next();
 
@@ -80,6 +86,30 @@ namespace camy
 		TPtr tbeg = (TPtr)m_beg;
 		return *(tbeg + idx);
 	}
+	
+	template <typename T>
+	CAMY_INLINE typename DynLinearArray<T>::TRef DynLinearArray<T>::first()
+	{
+		return *((TPtr)data());
+	}
+
+	template <typename T>
+	CAMY_INLINE typename DynLinearArray<T>::TConstRef DynLinearArray<T>::first()const
+	{
+		return *((TPtr)data());
+	}
+
+	template <typename T>
+	CAMY_INLINE typename DynLinearArray<T>::TRef DynLinearArray<T>::last()
+	{
+		return *(((TPtr)cur()) - 1);
+	}
+
+	template <typename T>
+	CAMY_INLINE typename DynLinearArray<T>::TConstRef DynLinearArray<T>::last()const
+	{
+		return *(((TPtr)cur()) - 1);
+	}
 
 	template <typename T>
 	CAMY_INLINE typename DynLinearArray<T>::TRef DynLinearArray<T>::next()
@@ -117,10 +147,10 @@ namespace camy
 
 	template <typename T>
 	template <typename ...Ts>
-	CAMY_INLINE void DynLinearArray<T>::emplace_last(Ts&& ...arg)
+	CAMY_INLINE void DynLinearArray<T>::emplace_last(Ts&& ...args)
 	{
 		TPtr addr = (TPtr)incr(sizeof(T));
-		new (addr) T(std::forward<Ts>(val)...);
+		new (addr) T(std::forward<Ts>(args)...);
 	}
 
 	template <typename T>

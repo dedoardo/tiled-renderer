@@ -1,10 +1,10 @@
 /* static_array.hpp
-*
-* Copyright (C) 2017 Edoardo Dominici
-*
-* This software may be modified and distributed under the terms
-* of the MIT license.  See the LICENSE file for details.
-*/
+ *
+ * Copyright (C) 2017 Edoardo Dominici
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
 #pragma once
 
 // camy
@@ -15,22 +15,20 @@
 #endif
 
 /*
-                Very simple small string implementation to be used mostly for naming and
-                to avoid allocating from heap. Wrapped in bare-bone class that takes the space
-                for the string itself + 4 bytes to cache the length. Can be reset.
-                It's a useful alternative for when names are not hardcoded but generated
-                and using std::string is overkill ( std::string should *not* be used )
-                anywhere in the code. Except for parsing or loading operations ( possibly
-                offline code ).
-
-                Strictly ASCII for now
+    Very simple small string implementation to be used mostly for naming and
+    to avoid allocating from heap. Wrapped in bare-bone class that takes the space
+    for the string itself + 4 bytes to cache the length. Can be reset.
+    It's a useful alternative for when names are not hardcoded but generated
+    and using std::string is overkill ( std::string should *not* be used )
+    anywhere in the code. Except for parsing or loading operations ( possibly
+    offline code ).
 */
 namespace camy
 {
     template <rsize kCharCount = 11>
     class CAMY_API StaticString final
     {
-      public:
+    public:
         // Empty name
         StaticString();
 
@@ -73,7 +71,7 @@ namespace camy
 
         bool empty() const { return m_char_count == 0; }
 
-      private:
+    private:
         void _append(const char8* str);
         void _append_range(const char8* start, const char8* end);
 
@@ -87,13 +85,15 @@ namespace camy
     std::ostream& operator<<(std::ostream& os, const StaticString<kCharCount>& ss)
     {
         const char8* str = ss.str();
-        if (str != nullptr) os << ss.str();
+        if (str != nullptr)
+            os << ss.str();
         return os;
     }
 #endif
 
     template <rsize kCharCount>
-    inline StaticString<kCharCount>::StaticString() : m_char_count(0)
+    inline StaticString<kCharCount>::StaticString()
+        : m_char_count(0)
     {
         m_buffer[0] = (char8)'\0';
     }
@@ -177,7 +177,8 @@ namespace camy
     template <rsize kCharCount>
     inline void StaticString<kCharCount>::_append(const char8* str)
     {
-        if (str == nullptr) return;
+        if (str == nullptr)
+            return;
 
         rsize slen = API::min(API::strlen(str), kCharCount);
         memcpy(m_buffer + m_char_count, str, slen);
@@ -188,7 +189,8 @@ namespace camy
     template <rsize kCharCount>
     void StaticString<kCharCount>::_append_range(const char8* start, const char8* end)
     {
-        if (start == nullptr || end == nullptr || start == end) return;
+        if (start == nullptr || end == nullptr || start == end)
+            return;
 
         rsize slen = API::min((rsize)(end - start), kCharCount);
         memcpy(m_buffer + m_char_count, start, slen);

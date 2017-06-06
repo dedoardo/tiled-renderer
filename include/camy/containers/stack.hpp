@@ -1,10 +1,10 @@
 /* stack.hpp
-*
-* Copyright (C) 2017 Edoardo Dominici
-*
-* This software may be modified and distributed under the terms
-* of the MIT license.  See the LICENSE file for details.
-*/
+ *
+ * Copyright (C) 2017 Edoardo Dominici
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
 #pragma once
 
 // camy
@@ -12,159 +12,191 @@
 
 namespace camy
 {
-    template <typename ElementType, uint16 kAlignment = DEFAULT_ALIGNMENT>
+    template <typename T>
     class CAMY_API Stack final
     {
-      public:
-        static const rsize kElementSize = sizeof(ElementType);
+    public:
+        static const rsize ELEMENT_SIZE = sizeof(T);
+        static const rsize DEFAULT_CAPACITY = 64;
 
-      public:
-        Stack(rsize initial_capacity = 2);
+        using TStack = Stack<T>;
+        using TValue = T;
+        using TPtr = T*;
+        using TConstPtr = const T*;
+        using TRef = T&;
+        using TConstRef = const T&;
+
+    public:
+        Stack(rsize capacity = DEFAULT_CAPACITY, rsize alignment = DEFAULT_ALIGNMENT);
         ~Stack();
 
-        Stack(Stack&& other);
-        Stack(Stack& other);
+        Stack(const TStack& other);
+        Stack(TStack&& other);
 
-        Stack& operator=(Stack&& other);
-        Stack& operator=(const Stack& other);
+        TStack& operator=(const TStack& other);
+        TStack& operator=(TStack&& other);
 
-        void push(const ElementType& el);
-        void push(ElementType&& el);
-        ElementType& pop();
+        void push(TConstRef el);
+        void push(T&& el);
+        TRef pop();
         void clear();
         rsize count() const;
         rsize capacity() const;
         bool empty() const;
 
-      private:
-        void _realloc();
+    private:
+        TPtr _allocate_align_explicit(rsize n, rsize alignment);
+        TPtr _allocate_align_same(rsize n, void* src_alignment);
+        void _deallocate(TPtr ptr);
+		void _make_space(rsize n);
 
-        ElementType* m_base;
-        ElementType* m_cur;
-        ElementType* m_top;
+        TPtr m_base;
+        TPtr m_cur;
+        TPtr m_top;
     };
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::Stack(rsize initial_capacity)
-        : m_base(nullptr), m_cur(nullptr)
+    template <typename T>
+    CAMY_INLINE Stack<T>::Stack(rsize capacity, rsize alignment)
+        : m_base(nullptr)
+        , m_cur(nullptr)
+        , m_top(nullptr)
     {
-        m_base =
-            (ElementType*)API::allocate(CAMY_ALLOC(kElementSize * initial_capacity, kAlignment));
+        m_base = _allocate_align_explicit(capacity, alignment);
         m_cur = m_base;
-        m_top = m_base + initial_capacity;
+        m_top = m_base + capacity;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::~Stack()
+    template <typename T>
+    CAMY_INLINE Stack<T>::~Stack()
     {
-        API::deallocate(m_base);
+        _deallocate(m_base);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::Stack(Stack&& other)
+    template <typename T>
+    CAMY_INLINE Stack<T>::Stack(const TStack& other)
     {
-        m_base = other.m_base;
-        m_cur = other.m_cur;
-        m_top = other.m_top;
-        other.m_base = other.m_cur = other.m_top = nullptr;
-    }
-
-    template <typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>::Stack(Stack& other)
-    {
-        m_base =
-            (ElementType*)API::allocate(CAMY_ALLOC(kElementSize * other.capacity(), kAlignment));
+        m_base = _allocate_align_same(other.capacity(), other.m_base);
         m_top = m_base + other.capacity();
 
         m_cur = m_base;
         for (rsize i = 0; i < other.count(); ++i)
-            new (m_cur++) ElementType(other.m_base + [i]);
+            new (m_cur++) T(other.m_base + [i]);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>& Stack<ElementType, kAlignment>::operator=(Stack&& other)
+    template <typename T>
+    CAMY_INLINE Stack<T>::Stack(TStack&& other) :
+		m_base(nullptr),
+		m_cur(nullptr),
+		m_top(nullptr)
     {
-        m_base = other.m_base;
-        m_cur = other.m_cur;
-        m_top = other.m_top;
-        other.m_base = other.m_cur = other.m_top = nullptr;
-        return *this;
+		API::swap(m_base, other.m_base);
+		API::swap(m_cur, other.m_cur);
+		API::swap(m_top, other.m_top);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline Stack<ElementType, kAlignment>& Stack<ElementType, kAlignment>::
-    operator=(const Stack& other)
+    template <typename T>
+    CAMY_INLINE typename Stack<T>::TStack& Stack<T>::operator=(const TStack& other)
     {
-        m_base = (ElementType*)allocate(camy_loc, kElementSize * other.capacity(), kAlignment);
+		_deallocate(m_base);
+		m_base = _allocate_align_explicit(other.capacity, other.m_base);
         m_top = m_base + other.capacity();
         m_cur = m_base;
         for (rsize i = 0; i < other.count(); ++i)
-            new (m_cur++) ElementType(other.m_base + [i]);
+            new (m_cur++) T(other.m_base + [i]);
         return *this;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::push(const ElementType& el)
+    template <typename T>
+    CAMY_INLINE typename Stack<T>::TStack& Stack<T>::operator=(TStack&& other)
     {
-        if (m_cur == m_top) _realloc();
-
-        new (m_cur++) ElementType(el);
+		_deallocate(m_base);
+		m_base = m_cur = m_top = nullptr;
+		API::swap(m_base, other.m_base);
+		API::swap(m_cur, other.m_cur);
+		API::swap(m_top, other.m_top);
+        return *this;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::push(ElementType&& el)
+    template <typename T>
+    CAMY_INLINE void Stack<T>::push(TConstRef el)
     {
-        if (m_cur == m_top) _realloc();
-
-        new (m_cur++) ElementType(el);
+		_make_space(count() + 1);
+        new (m_cur++) T(el);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline ElementType& Stack<ElementType, kAlignment>::pop()
+    template <typename T>
+    CAMY_INLINE void Stack<T>::push(T&& el)
+    {
+		_make_space(count() + 1);
+        new (m_cur++) T(el);
+    }
+
+    template <typename T>
+    CAMY_INLINE typename Stack<T>::TRef Stack<T>::pop()
     {
         CAMY_ASSERT(m_cur != m_base);
         return *(--m_cur);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::clear()
+    template <typename T>
+    CAMY_INLINE void Stack<T>::clear()
     {
-        ElementType* cur = m_cur;
+        TPtr cur = m_cur;
         while (cur != m_base)
-            (cur++)->~ElementType();
+            (cur++)->~T();
         m_cur = m_base;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline rsize Stack<ElementType, kAlignment>::count() const
+    template <typename T>
+    CAMY_INLINE rsize Stack<T>::count() const
     {
         return (rsize)(m_cur - m_base);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline rsize Stack<ElementType, kAlignment>::capacity() const
+    template <typename T>
+	CAMY_INLINE rsize Stack<T>::capacity() const
     {
         return (rsize)(m_top - m_base);
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline bool Stack<ElementType, kAlignment>::empty() const
+    template <typename T>
+    CAMY_INLINE bool Stack<T>::empty() const
     {
         return count() == 0;
     }
 
-    template <typename ElementType, uint16 kAlignment>
-    inline void Stack<ElementType, kAlignment>::_realloc()
-    {
-        ElementType* old_buffer = m_base;
-        rsize old_capacity = capacity();
-        rsize new_capacity = old_capacity * 2;
-        m_base = (ElementType*)API::allocate(CAMY_ALLOC(kElementSize * new_capacity, kAlignment));
-        m_top = m_base + new_capacity;
-        m_cur = m_base;
-        for (rsize i = 0; i < old_capacity; ++i)
-            new (m_cur++) ElementType(std::move(old_buffer[i]));
+	template <typename T>
+	CAMY_INLINE typename Stack<T>::TPtr Stack<T>::_allocate_align_explicit(rsize n, rsize alignment)
+	{
+		return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
+	}
+	
+	template <typename T>
+	CAMY_INLINE typename Stack<T>::TPtr Stack<T>::_allocate_align_same(rsize n, void* src_alignment)
+	{
+		return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
+	}
+	
+	template <typename T>
+	CAMY_INLINE void Stack<T>::_deallocate(TPtr ptr)
+	{
+		API::deallocate(ptr);
+	}
 
-        API::deallocate(old_buffer);
-    }
+	template <typename T>
+	CAMY_INLINE void Stack<T>::_make_space(rsize n)
+	{
+		if (count() >= capacity())
+		{
+			TPtr old_buffer = m_base;
+			rsize old_capacity = capacity();
+			rsize new_capacity = old_capacity * 2;
+			m_base = _allocate_align_same(new_capacity, old_buffer);
+			m_top = m_base + new_capacity;
+			m_cur = m_base;
+			for (rsize i = 0; i < old_capacity; ++i)
+				new (m_cur++) T(std::move(old_buffer[i]));
+			_deallocate(old_buffer);
+		}
+	}
 }

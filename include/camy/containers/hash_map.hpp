@@ -16,17 +16,6 @@
 
 namespace camy
 {
-	namespace API
-	{
-		// Thanks: http://stackoverflow.com/questions/2111667/compile-time-string-hashing
-		uint64 constexpr hash_str_ct(const char8* input)
-		{
-			return *input ? (uint64)(*input) + 33 * hash_str_ct(input + 1) : 5381;
-		}
-	}
-
-#define CAMY_HM_STR(str) ::camy::API::hash_str_ct((str))
-
 	template <typename T>
 	using HMEnableExtTrue = typename std::enable_if<!std::is_convertible<T, uint64>::value>::type;
 
@@ -80,15 +69,13 @@ namespace camy
 
 		TPtr find(TKey key);
 		TConstPtr find(TKey key)const;
-		
-		TPtr find(const char8* str);
-		TConstPtr find(const char8* str)const;
+
+		template <typename ...Ts>
+		TPtr emplace(TKey key, Ts&& ...args);
 
 		TPtr insert(TKey key, TConstRef val);
-		TPtr insert(const char8* str, TConstRef val);
 
 		void remove(TKey key);
-		void remove(const char8* str);
 
 		void clear();
 
@@ -118,11 +105,11 @@ namespace camy
 		template <typename U = T>
 		TPtr _find(TKey key, HMEnableExtFalse<U>* = nullptr);
 
-		template <typename U = T>
-		TPtr _insert(TKey key, TConstRef val, HMEnableExtTrue<U>* = nullptr);
+		template <typename U = T, typename ...Ts>
+		TPtr _insert(TKey key, HMEnableExtTrue<U>* = nullptr, Ts&& ...args);
 
-		template <typename U = T>
-		TPtr _insert(TKey key, TConstRef val, HMEnableExtFalse<U>* = nullptr);
+		template <typename U = T, typename ...Ts>
+		TPtr _insert(TKey key, HMEnableExtFalse<U>* = nullptr, Ts&& ...args);
 
 		template <typename U = T>
 		void _remove(TKey key, HMEnableExtTrue<U>* = nullptr);
@@ -219,41 +206,24 @@ namespace camy
 	{
 		return (TConstPtr)_find(key);
 	}
-
+	
 	template <typename T>
-	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::find(const char8* str)
+	template <typename ...Ts>
+	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::emplace(TKey key, Ts&& ...args)
 	{
-		return _find(API::hash_str_ct(str));
-	}
-
-	template <typename T>
-	CAMY_INLINE typename HashMap<T>::TConstPtr HashMap<T>::find(const char8* str)const
-	{
-		return (TConstPtr)_find(API::hash_str_ct(str));
+		return _insert(key, nullptr, std::forward<Ts>(args)...);
 	}
 
 	template <typename T>
 	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::insert(TKey key, TConstRef val)
 	{
-		return _insert(key, val);
-	}
-
-	template <typename T>
-	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::insert(const char8* str, TConstRef val)
-	{
-		return _insert(API::hash_str_ct(str), val);
+		return _insert(key, nullptr, val);
 	}
 
 	template <typename T>
 	CAMY_INLINE void HashMap<T>::remove(TKey key)
 	{
 		_remove(key);
-	}
-
-	template <typename T>
-	CAMY_INLINE void HashMap<T>::remove(const char8* str)
-	{
-		_remove(API::hash_str_ct(str));
 	}
 
 	template <typename T>
@@ -314,10 +284,10 @@ namespace camy
 	template <typename T>
 	CAMY_INLINE void HashMap<T>::_make_space(rsize slots)
 	{
-		if (m_slots_occupied > m_capacity / 2)
+		if (m_slots_occupied > (m_capacity / 2))
 		{
 			Entry* old_buffer = m_entries;
-			rsize  new_capacity = API::min(m_capacity * 2, DEFAULT_CAPACITY);
+			rsize  new_capacity = API::max(m_capacity * 2, DEFAULT_CAPACITY);
 			m_entries = _allocate_align_same(new_capacity, old_buffer);
 
 			memcpy(m_entries, old_buffer, ENTRY_SIZE * m_capacity); // TODO: Copy constructor ?
@@ -365,8 +335,8 @@ namespace camy
 	}
 
 	template <typename T>
-	template <typename U = T>
-	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::_insert(TKey key, TConstRef val, HMEnableExtTrue<U>* = nullptr)
+	template <typename U = T, typename ...Ts>
+	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::_insert(TKey key, HMEnableExtTrue<U>* = nullptr, Ts&& ...args)
 	{
 		_make_space(m_slots_occupied + 1);
 	
@@ -383,7 +353,7 @@ namespace camy
 			if (cur.key == INVALID_KEY)
 			{
 				cur.key = key;
-				cur.val = (uint64)m_ext_buffer.allocate(val);
+				cur.val = (uint64)m_ext_buffer.allocate(std::forward<Ts>(args)...);
 				++m_slots_occupied;
 				return &m_ext_buffer.get((rsize)cur.val);
 			}
@@ -393,8 +363,8 @@ namespace camy
 	}
 
 	template <typename T>
-	template <typename U = T>
-	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::_insert(TKey key, TConstRef val, HMEnableExtFalse<U>* = nullptr)
+	template <typename U = T, typename ...Ts>
+	CAMY_INLINE typename HashMap<T>::TPtr HashMap<T>::_insert(TKey key, HMEnableExtFalse<U>* = nullptr, Ts&& ...args)
 	{
 		_make_space(m_slots_occupied + 1);
 
@@ -411,7 +381,7 @@ namespace camy
 			if (cur.key == INVALID_KEY)
 			{
 				cur.key = key;
-				cur.val = val;
+				new (&cur.val) T(std::forward<Ts>(args)...);
 				++m_slots_occupied;
 				return (TPtr)&cur.val;
 			}

@@ -328,7 +328,7 @@ namespace camy
         {
             TPtr old_beg = m_beg;
             rsize old_capacity = capacity();
-            rsize new_capacity = API::min(DEFAULT_CAPACITY, old_capacity * 2);
+            rsize new_capacity = API::max(DEFAULT_CAPACITY, old_capacity * 2);
             m_beg = _allocate_align_same(new_capacity, old_beg);
             _move_all(m_beg, old_beg, old_capacity);
             _deallocate(old_beg);
