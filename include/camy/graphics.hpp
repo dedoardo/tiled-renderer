@@ -477,7 +477,7 @@ namespace camy
     struct CAMY_API InputSignatureDesc
     {
         Blob bytecode;
-        ArrayAutoPtr<InputElement> elements;
+		AutoPtrTArray<InputElement> elements;
         uint32 num_elements;
     };
 

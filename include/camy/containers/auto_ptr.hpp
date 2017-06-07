@@ -12,129 +12,172 @@
 
 namespace camy
 {
-    template <typename PtrType>
-    using DestructorFunc = void (*)(PtrType* ptr);
-
     // Simple RAII smart pointer.
     // Assignment transfers ownership invalidating the previous AutoPtr<>
-    template <typename T, template <typename> class Destructor>
+    // ALlocation and deallocation are managed together as they require the same set of functions.
+    //! With C++14 a templated (variadic too) lambda can be passed as template and make things
+    //! slightly cleaner
+	//? Currently alloc()s are unaligned (TODO)
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
     class CAMY_API IAutoPtr final
     {
     public:
+        using TAutoPtr = IAutoPtr<T, Constructor, Destructor>;
+
+        using Alloc = Constructor<T>;
+
+        using TValue = T;
+        using TValue = T;
+        using TPtr = T*;
+        using TConstPtr = const T*;
+        using TRef = T&;
+        using TConstRef = const T&;
+
+    public:
         ~IAutoPtr();
 
-        IAutoPtr(IAutoPtr<T, Destructor>&& other);
-        IAutoPtr(IAutoPtr<T, Destructor>& other);
-        IAutoPtr(T* ptr = nullptr);
+        IAutoPtr(TAutoPtr& other);
+        IAutoPtr(TAutoPtr&& other);
+        IAutoPtr(TPtr ptr = nullptr);
 
-        IAutoPtr<T, Destructor>& operator=(IAutoPtr<T, Destructor>&& other);
-        IAutoPtr<T, Destructor>& operator=(IAutoPtr<T, Destructor>& other);
-        IAutoPtr<T, Destructor>& operator=(T* new_ptr);
+        TAutoPtr& operator=(TAutoPtr& other);
+        TAutoPtr& operator=(TAutoPtr&& other);
+        TAutoPtr& operator=(TPtr new_ptr);
 
-        operator T*() { return ptr; }
+        operator TPtr() { return ptr; }
 
-        T* operator->() { return ptr; }
-        const T* operator->() const { return ptr; }
+        TPtr operator->() { return ptr; }
+        TConstPtr operator->() const { return ptr; }
 
-        T& operator*() { return *ptr; }
-        const T& operator*() const { return *ptr; }
+        TRef operator*() { return *ptr; }
+        TConstRef operator*() const { return *ptr; }
 
-        T& operator[](rsize idx) { return ptr[idx]; }
-        const T& operator[](rsize idx) const { return ptr[idx]; }
+        TRef operator[](rsize idx) { return ptr[idx]; }
+        TConstRef operator[](rsize idx) const { return ptr[idx]; }
 
     private:
-        T* ptr;
+        TPtr ptr;
     };
 
-    template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>::~IAutoPtr()
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
+    CAMY_INLINE IAutoPtr<T, Constructor, Destructor>::~IAutoPtr()
     {
-        if (ptr != nullptr)
-        {
-            Destructor<T>()(ptr);
-            ptr = nullptr;
-        }
+        Destructor<T>()(ptr);
     }
 
-    template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>::IAutoPtr(IAutoPtr<T, Destructor>&& other)
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
+    CAMY_INLINE IAutoPtr<T, Constructor, Destructor>::IAutoPtr(TAutoPtr& other)
+        : ptr(nullptr)
     {
-        ptr = other.ptr;
-        other.ptr = nullptr;
+        API::swap(ptr, other.ptr);
     }
 
-    template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>::IAutoPtr(IAutoPtr<T, Destructor>& other)
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
+    CAMY_INLINE IAutoPtr<T, Constructor, Destructor>::IAutoPtr(TAutoPtr&& other)
+        : ptr(nullptr)
     {
-        ptr = other.ptr;
-        other.ptr = nullptr;
+        API::swap(ptr, other.ptr);
     }
 
-    template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>::IAutoPtr(T* ptr)
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
+    CAMY_INLINE IAutoPtr<T, Constructor, Destructor>::IAutoPtr(TPtr ptr)
         : ptr(ptr)
     {
     }
 
-    template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>& IAutoPtr<T, Destructor>::
-    operator=(IAutoPtr<T, Destructor>&& other)
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
+    CAMY_INLINE typename IAutoPtr<T, Constructor, Destructor>::TAutoPtr&
+    IAutoPtr<T, Constructor, Destructor>::operator=(TAutoPtr& other)
     {
-        if (ptr != nullptr)
-        {
-            Destructor<T>()(ptr);
-            ptr = nullptr;
-        }
-
-        ptr = other.ptr;
-        other.ptr = nullptr;
+        Destructor<T>()(ptr);
+        API::swap(ptr, other.ptr);
         return *this;
     }
 
-    template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>& IAutoPtr<T, Destructor>::
-    operator=(IAutoPtr<T, Destructor>& other)
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
+    CAMY_INLINE typename IAutoPtr<T, Constructor, Destructor>::TAutoPtr&
+    IAutoPtr<T, Constructor, Destructor>::operator=(TAutoPtr&& other)
     {
-        if (ptr != nullptr)
-        {
-            Destructor<T>()(ptr);
-            ptr = nullptr;
-        }
-
-        ptr = other.ptr;
-        other.ptr = nullptr;
+        Destructor<T>()(ptr);
+        API::swap(ptr, other.ptr);
         return *this;
     }
 
-    template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>& IAutoPtr<T, Destructor>::operator=(T* new_ptr)
+    template <typename T,
+              template <typename> class Constructor,
+              template <typename> class Destructor>
+    CAMY_INLINE typename IAutoPtr<T, Constructor, Destructor>::TAutoPtr&
+    IAutoPtr<T, Constructor, Destructor>::operator=(TPtr new_ptr)
     {
-        if (ptr != nullptr)
-        {
-            Destructor<T>()(ptr);
-            ptr = nullptr;
-        }
-
+        Destructor<T>()(ptr);
         ptr = new_ptr;
-
         return *this;
     }
 
     template <typename T>
-    struct _c_tdeallocate_array
+    struct _AutoPtrRawConstructor
     {
-        void operator()(T* ptr) { API::tdeallocate_array(ptr); }
+        T* operator()(rsize n) { return (T*)API::allocate(CAMY_UALLOC(sizeof(T) * n)); }
+    };
+
+	template <typename T>
+	struct _AutoPtrRawDestructor
+	{
+		void operator()(T*& ptr) { API::deallocate(ptr); }
+	};
+
+    template <typename T>
+    struct _AutoPtrTypedConstructor
+    {
+        template <typename... Ts>
+        T* operator()(Ts&&... args)
+        {
+            return API::tallocate<T>(CAMY_UALLOC1, std::forward<Ts>(args)...);
+        }
     };
 
     template <typename T>
-    struct _c_deallocate
+    struct _AutoPtrTypedDestructor
     {
-        void operator()(void* ptr) { API::deallocate(ptr); }
+        void operator()(T*& ptr) { API::tdeallocate(ptr); }
     };
 
     template <typename T>
-    using ArrayAutoPtr = IAutoPtr<T, _c_tdeallocate_array>;
+    struct _AutoPtrArrayTypedConstructor
+    {
+        template <typename... Ts>
+        T* operator()(rsize n, Ts&&... args)
+        {
+            return API::tallocate_array<T>(CAMY_UALLOC(n), std::forward<Ts>(args)...);
+        }
+    };
 
     template <typename T>
-    using RawAutoPtr = IAutoPtr<T, _c_deallocate>;
+    struct _AutoPtrArrayTypedDestructor
+    {
+        void operator()(T*& ptr) { API::tdeallocate_array(ptr); }
+    };
+
+	template <typename T>
+	using AutoPtrRaw = IAutoPtr<T, _AutoPtrRawConstructor, _AutoPtrRawDestructor>;
+
+    template <typename T>
+    using AutoPtrT = IAutoPtr<T, _AutoPtrTypedConstructor, _AutoPtrArrayTypedDestructor>;
+
+    template <typename T>
+    using AutoPtrTArray = IAutoPtr<T, _AutoPtrArrayTypedConstructor, _AutoPtrArrayTypedDestructor>;
 }
