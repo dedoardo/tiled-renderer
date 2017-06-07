@@ -49,11 +49,6 @@ namespace camy
         return *this;
     }
 
-    bool operator==(const float2& left, const float2& right)
-    {
-        return left.x == right.x && left.y == right.y;
-    }
-
     float2 operator-(const float2& right) { return float2(-right.x, -right.y); }
 
     float2 operator+(const float2& left, const float2& right)

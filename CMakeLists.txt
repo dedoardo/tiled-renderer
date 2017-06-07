@@ -55,7 +55,6 @@ set (CAMY_SOURCES
 
 	src/containers/blob.cpp
 	src/containers/dyn_linear_buffer.cpp
-	src/containers/int2int_map.cpp
 	
 	src/d3d11/d3d11_command_list.cpp
 	src/d3d11/d3d11_platform.cpp
@@ -104,5 +103,5 @@ target_link_libraries(camy
 
 # We are linking statically to glew
 target_compile_definitions(camy
-	PUBLIC GLEW_STATIC
+	PUBLIC GLEW_STATIC _CRT_SECURE_NO_WARNINGS
 )

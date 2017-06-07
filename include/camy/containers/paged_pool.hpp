@@ -13,17 +13,10 @@
 
 namespace camy
 {
-    /*
-    Class: PagedPool
-        Paged pool allocators that does not invalidate pointers, iterating
-        all the elements might be inefficient depending on fragmentation.
-        Especially useful for resource managers that want to return pointer
-        to resources.
-
-        Note: Does call destructors as it relies on FreelistPage
-
-        Note: Actual memory is released only on destruction
-    */
+    //! Paged pool that preserves pointers
+    //! - Typed, thus Constructors and Destructors are called
+    //! - Not made for iteration
+    //! - Pointers are the indices themselves
     template <typename T>
     class CAMY_API PagedPool final
     {
@@ -48,7 +41,7 @@ namespace camy
         PagedPool(TPagedPool&& other);
 
         TPagedPool& operator=(TPagedPool& other) = delete;
-		TPagedPool& operator=(TPagedPool&& other) = delete;
+        TPagedPool& operator=(TPagedPool&& other) = delete;
 
         template <typename... Ts>
         TPtr allocate(Ts&&... args);
@@ -66,7 +59,9 @@ namespace camy
 
     template <typename T>
     CAMY_INLINE PagedPool<T>::PagedPool(rsize elements_per_page, rsize alignment)
-        : m_first(nullptr), m_cur(nullptr), m_elements_per_page(elements_per_page)
+        : m_first(nullptr)
+        , m_cur(nullptr)
+        , m_elements_per_page(elements_per_page)
     {
         _append_page(alignment);
     }
@@ -78,8 +73,9 @@ namespace camy
         while (cur != nullptr)
         {
             cur->clear();
+            TPage* old = cur;
             cur = (TPage*)cur->next;
-            tdeallocate(cur);
+            API::tdeallocate(old);
         }
     }
 
@@ -102,7 +98,8 @@ namespace camy
         // Trying to allocate on current page
         // Very likely it is here
         TPtr ret = m_cur->allocate(std::forward<Ts>(args)...);
-        if (ret != nullptr) return ret;
+        if (ret != nullptr)
+            return ret;
 
         // We scan from the first page on to see if there is a free slot
         // this might not be the best idea, but drastically reduces fragmentation
@@ -162,13 +159,14 @@ namespace camy
         if (m_cur == nullptr)
         {
             CAMY_ASSERT(m_first == nullptr);
-			m_first = API::tallocate<TPage>(CAMY_ALLOC1(alignment), m_elements_per_page);
+            m_first = API::tallocate<TPage>(CAMY_ALLOC1(alignment), m_elements_per_page, alignment);
             m_cur = m_first;
         }
         else
         {
             TPage* old = m_cur;
-            m_cur = API::tallocate<TPage>(CAMY_ALLOC1_SRC(old);
+            m_cur = API::tallocate<TPage>(CAMY_ALLOC1_SRC(old), m_elements_per_page,
+                                          API::memory_block_alignment(old));
             old->next = m_cur;
             m_cur->previous = old;
         }

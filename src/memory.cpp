@@ -49,7 +49,7 @@ namespace camy
             CRITICAL_SECTION g_lock;
 #endif
             TimeSlice g_start;
-            rsize g_total_bytes;
+            sint64 g_total_bytes;
             AllocationHeader* g_head;
         }
 
@@ -66,7 +66,7 @@ namespace camy
 #endif
         }
 
-        rsize memory_total_bytes()
+        sint64 memory_total_bytes()
         {
 #if defined(CAMY_ENABLE_MEMORY_TRACKING)
             return g_total_bytes;
@@ -139,7 +139,7 @@ namespace camy
             hdr->bytes = info.count;
 			hdr->alignment = info.alignment;
 #endif
-            g_total_bytes += info.count;
+            g_total_bytes += (sint64)info.count;
 
             if (g_head == nullptr)
                 g_head = hdr;
@@ -171,7 +171,7 @@ namespace camy
             if (hdr->prev != nullptr) hdr->prev->next = hdr->next;
 
             byte* udata = (byte*)hdr - hdr->padding;
-            g_total_bytes -= hdr->bytes;
+            g_total_bytes -= (sint64)hdr->bytes;
             free(udata);
 
             CAMY_ASSERT(g_total_bytes >= 0);

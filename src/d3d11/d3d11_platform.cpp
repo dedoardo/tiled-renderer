@@ -69,7 +69,7 @@ namespace camy
             if (!RegisterClassExA(&wc))
             {
                 CL_ERR("Win32::RegisterClassEx failed with error: ", GetLastError());
-                return false;
+                return nullptr;
             }
         }
 

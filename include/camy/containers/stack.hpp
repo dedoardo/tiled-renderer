@@ -12,6 +12,7 @@
 
 namespace camy
 {
+    // Very standard stack implementation with contiguous storage.
     template <typename T>
     class CAMY_API Stack final
     {
@@ -38,8 +39,10 @@ namespace camy
 
         void push(TConstRef el);
         void push(T&& el);
+
         TRef pop();
         void clear();
+
         rsize count() const;
         rsize capacity() const;
         bool empty() const;
@@ -48,7 +51,7 @@ namespace camy
         TPtr _allocate_align_explicit(rsize n, rsize alignment);
         TPtr _allocate_align_same(rsize n, void* src_alignment);
         void _deallocate(TPtr ptr);
-		void _make_space(rsize n);
+        void _make_space(rsize n);
 
         TPtr m_base;
         TPtr m_cur;
@@ -84,21 +87,21 @@ namespace camy
     }
 
     template <typename T>
-    CAMY_INLINE Stack<T>::Stack(TStack&& other) :
-		m_base(nullptr),
-		m_cur(nullptr),
-		m_top(nullptr)
+    CAMY_INLINE Stack<T>::Stack(TStack&& other)
+        : m_base(nullptr)
+        , m_cur(nullptr)
+        , m_top(nullptr)
     {
-		API::swap(m_base, other.m_base);
-		API::swap(m_cur, other.m_cur);
-		API::swap(m_top, other.m_top);
+        API::swap(m_base, other.m_base);
+        API::swap(m_cur, other.m_cur);
+        API::swap(m_top, other.m_top);
     }
 
     template <typename T>
     CAMY_INLINE typename Stack<T>::TStack& Stack<T>::operator=(const TStack& other)
     {
-		_deallocate(m_base);
-		m_base = _allocate_align_explicit(other.capacity, other.m_base);
+        _deallocate(m_base);
+        m_base = _allocate_align_explicit(other.capacity, other.m_base);
         m_top = m_base + other.capacity();
         m_cur = m_base;
         for (rsize i = 0; i < other.count(); ++i)
@@ -109,25 +112,25 @@ namespace camy
     template <typename T>
     CAMY_INLINE typename Stack<T>::TStack& Stack<T>::operator=(TStack&& other)
     {
-		_deallocate(m_base);
-		m_base = m_cur = m_top = nullptr;
-		API::swap(m_base, other.m_base);
-		API::swap(m_cur, other.m_cur);
-		API::swap(m_top, other.m_top);
+        _deallocate(m_base);
+        m_base = m_cur = m_top = nullptr;
+        API::swap(m_base, other.m_base);
+        API::swap(m_cur, other.m_cur);
+        API::swap(m_top, other.m_top);
         return *this;
     }
 
     template <typename T>
     CAMY_INLINE void Stack<T>::push(TConstRef el)
     {
-		_make_space(count() + 1);
+        _make_space(count() + 1);
         new (m_cur++) T(el);
     }
 
     template <typename T>
     CAMY_INLINE void Stack<T>::push(T&& el)
     {
-		_make_space(count() + 1);
+        _make_space(count() + 1);
         new (m_cur++) T(el);
     }
 
@@ -154,7 +157,7 @@ namespace camy
     }
 
     template <typename T>
-	CAMY_INLINE rsize Stack<T>::capacity() const
+    CAMY_INLINE rsize Stack<T>::capacity() const
     {
         return (rsize)(m_top - m_base);
     }
@@ -165,38 +168,38 @@ namespace camy
         return count() == 0;
     }
 
-	template <typename T>
-	CAMY_INLINE typename Stack<T>::TPtr Stack<T>::_allocate_align_explicit(rsize n, rsize alignment)
-	{
-		return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
-	}
-	
-	template <typename T>
-	CAMY_INLINE typename Stack<T>::TPtr Stack<T>::_allocate_align_same(rsize n, void* src_alignment)
-	{
-		return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
-	}
-	
-	template <typename T>
-	CAMY_INLINE void Stack<T>::_deallocate(TPtr ptr)
-	{
-		API::deallocate(ptr);
-	}
+    template <typename T>
+    CAMY_INLINE typename Stack<T>::TPtr Stack<T>::_allocate_align_explicit(rsize n, rsize alignment)
+    {
+        return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
+    }
 
-	template <typename T>
-	CAMY_INLINE void Stack<T>::_make_space(rsize n)
-	{
-		if (count() >= capacity())
-		{
-			TPtr old_buffer = m_base;
-			rsize old_capacity = capacity();
-			rsize new_capacity = old_capacity * 2;
-			m_base = _allocate_align_same(new_capacity, old_buffer);
-			m_top = m_base + new_capacity;
-			m_cur = m_base;
-			for (rsize i = 0; i < old_capacity; ++i)
-				new (m_cur++) T(std::move(old_buffer[i]));
-			_deallocate(old_buffer);
-		}
-	}
+    template <typename T>
+    CAMY_INLINE typename Stack<T>::TPtr Stack<T>::_allocate_align_same(rsize n, void* src_alignment)
+    {
+        return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
+    }
+
+    template <typename T>
+    CAMY_INLINE void Stack<T>::_deallocate(TPtr ptr)
+    {
+        API::deallocate(ptr);
+    }
+
+    template <typename T>
+    CAMY_INLINE void Stack<T>::_make_space(rsize n)
+    {
+        if (count() >= capacity())
+        {
+            TPtr old_buffer = m_base;
+            rsize old_capacity = capacity();
+            rsize new_capacity = old_capacity * 2;
+            m_base = _allocate_align_same(new_capacity, old_buffer);
+            m_top = m_base + new_capacity;
+            m_cur = m_base;
+            for (rsize i = 0; i < old_capacity; ++i)
+                new (m_cur++) T(std::move(old_buffer[i]));
+            _deallocate(old_buffer);
+        }
+    }
 }

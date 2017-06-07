@@ -115,7 +115,7 @@ namespace camy
             ClearBits clear_bits;
             float4 color;
             float depth;
-            float stencil;
+            uint32 stencil;
         };
 
         Target render_targets[API::MAX_RENDER_TARGETS];

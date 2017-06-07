@@ -11,10 +11,10 @@
 #include <camy/system.hpp>
 
 namespace camy
-{ 
-	// Notes:
-	// - Typed, thus calls constructors and destructors
-	// - remove() swaps removed element with last one, does not shift the whole array
+{
+    // DynArray is a dense vector
+    //! - Typed, Constructors and Destructors are called
+    //! - remove() swaps removed element with the last one, does not shift the whole array
     template <typename T>
     class CAMY_API DynArray final
     {
@@ -67,7 +67,7 @@ namespace camy
         rsize capacity() const;
         bool empty() const;
 
-	protected:
+    protected:
         TPtr _allocate_align_explicit(rsize n, rsize alignment);
         TPtr _allocate_align_same(rsize n, TPtr src_alignment);
         void _destruct(TPtr beg, rsize n);
@@ -106,10 +106,10 @@ namespace camy
     }
 
     template <typename T>
-	CAMY_INLINE DynArray<T>::DynArray(TDynArray&& other) :
-		m_beg(nullptr),
-		m_cur(nullptr),
-		m_end(nullptr)
+    CAMY_INLINE DynArray<T>::DynArray(TDynArray&& other)
+        : m_beg(nullptr)
+        , m_cur(nullptr)
+        , m_end(nullptr)
     {
         API::swap(m_beg, other.m_beg);
         API::swap(m_cur, other.m_cur);
@@ -119,8 +119,8 @@ namespace camy
     template <typename T>
     CAMY_INLINE typename DynArray<T>::TDynArray& DynArray<T>::operator=(const TDynArray& other)
     {
-		_deallocate(m_beg);
-		m_beg = m_cur = m_end = nullptr;
+        _deallocate(m_beg);
+        m_beg = m_cur = m_end = nullptr;
         m_beg = _allocate_align_same(other.m_capacity, other.m_beg);
         _copy_all(m_beg, other.m_beg, other.count());
         m_cur = m_beg + other.count();
@@ -131,8 +131,8 @@ namespace camy
     template <typename T>
     CAMY_INLINE typename DynArray<T>::TDynArray& DynArray<T>::operator=(TDynArray&& other)
     {
-		_deallocate(m_beg);
-		m_beg = m_cur = m_end = nullptr;
+        _deallocate(m_beg);
+        m_beg = m_cur = m_end = nullptr;
         API::swap(m_beg, other.m_beg);
         API::swap(m_cur, other.m_cur);
         API::swap(m_end, other.m_end);
@@ -217,7 +217,8 @@ namespace camy
         rsize cur_count = count();
 
         // Same
-        if (cur_count == new_count) return;
+        if (cur_count == new_count)
+            return;
 
         // We have space, destructing last (cur_count - new_count) elements
         if (new_count < cur_count)
@@ -282,14 +283,14 @@ namespace camy
 
     template <typename T>
     CAMY_INLINE typename DynArray<T>::TPtr DynArray<T>::_allocate_align_explicit(rsize n,
-                                                                             rsize alignment)
+                                                                                 rsize alignment)
     {
         return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
     }
 
     template <typename T>
     CAMY_INLINE typename DynArray<T>::TPtr DynArray<T>::_allocate_align_same(rsize n,
-                                                                         TPtr src_alignment)
+                                                                             TPtr src_alignment)
     {
         return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
     }

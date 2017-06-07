@@ -51,7 +51,7 @@ void set_debug_name(ID3D11DeviceChild* child,
     if (gen != nullptr)
     {
         char idx_buf[3];
-        itoa(idx, idx_buf, 10);
+        _itoa(idx, idx_buf, 10);
 
         debug_name.append(" __gen(");
         debug_name.append(gen);
@@ -250,7 +250,7 @@ namespace camy
         for (int i = 0; i < API::MAX_CONTEXTS; ++i)
         {
             m_data.device->CreateDeferredContext1(0, &m_data.contexts[i].deferred_ctx);
-            m_data.contexts[i].locked = false;
+			m_data.contexts[i].locked = 0;
         }
         m_data.avail_contexts = API::MAX_CONTEXTS;
 
@@ -262,7 +262,7 @@ namespace camy
 
         // It sucks I know
         uint32 i = 0;
-        while (i < info_out.gpu_name.max_len() && adapter_desc.Description[i] != (WCHAR)'\0')
+        while (i < info_out.gpu_name.capacity() && adapter_desc.Description[i] != (WCHAR)'\0')
         {
             info_out.gpu_name.append((char)adapter_desc.Description[i]);
             ++i;

@@ -58,7 +58,7 @@ namespace camy
             return false;
         }
 
-        data_out.allocate((byte*)bytecode->GetBufferPointer(), (rsize)bytecode->GetBufferSize());
+        data_out.allocate((rsize)bytecode->GetBufferSize(), bytecode->GetBufferPointer());
         return true;
     }
 

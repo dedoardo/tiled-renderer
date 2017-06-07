@@ -79,7 +79,7 @@ namespace camy
         CAMY_INLINE T max(const T& a, const T& b);
         template <typename T>
         CAMY_INLINE bool is_power_of_two(T val);
-
+	
 		// http://www.isthe.com/chongo/tech/comp/fnv/
 		// https://softwareengineering.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed
 		constexpr uint64 _hash_fnv1a_64_ct(uint64 h, const char8* str)

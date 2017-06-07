@@ -13,11 +13,11 @@
 
 namespace camy
 {
-    /*
-        Paged version of a linear vector. Preserves pointers.
-        API is **much** simpler as memory is not contiguous and
-        methods such as data() are not present as they would be misleading.
-    */
+	// Paged version of a DynLinearArray. 
+	//! - Preserves pointer as NO contiguous storage
+	//! - data() and subscript operator are NOT present.
+	//! - Not strictly typed, see methods for more info
+	//! It's basically a Pool for pointers that is resettable every frame.
     template <typename T>
     class CAMY_API PagedDynLinearArray final
     {
@@ -44,7 +44,20 @@ namespace camy
         TPagedDynLinearArray& operator=(TPagedDynLinearArray&) = delete;
 		TPagedDynLinearArray& operator=(TPagedDynLinearArray&& other) = delete;
 
-        TRef next();
+		TRef last();
+		TConstRef last()const;
+
+		// Constructs a new element in place a returns a reference to it
+		template <typename ...Ts>
+		TRef emplace(Ts&& ...args);
+
+		// Bumps pointer ahead and returns reference to the new element.
+		//! DOES NOT CALL CONSTRUCTOR
+		//! To call a constructor use emplace()
+		TRef next();
+		
+		// Bumps pointer ahead count times. As with next(), no constructor
+		// is called, instead a pointer to the first element is returned
         TPtr next_array(rsize count);
         void reset();
 
@@ -76,7 +89,7 @@ namespace camy
             cur->reset();
             TPage* old = cur;
             cur = (TPage*)cur->next;
-            API::deallocate(old);
+            API::tdeallocate(old);
         }
     }
 
@@ -89,17 +102,45 @@ namespace camy
         other.m_elements_per_page = 0;
     }
 
+	template <typename T>
+	CAMY_INLINE typename PagedDynLinearArray<T>::TRef PagedDynLinearArray<T>::last()
+	{
+		return *m_cur->last();
+	}
+
+	template <typename T>
+	CAMY_INLINE typename PagedDynLinearArray<T>::TConstRef PagedDynLinearArray<T>::last()const
+	{
+		return *m_cur->last();
+	}
+
+	template <typename T>
+	template <typename ...Ts>
+	CAMY_INLINE typename PagedDynLinearArray<T>::TRef PagedDynLinearArray<T>::emplace(Ts&& ...args)
+	{
+		TPtr ret = m_cur->next_single();
+
+		if (ret == nullptr)
+		{
+			if (m_cur->next == nullptr) _append_page();
+			ret = m_cur->next_single();
+		}
+
+		new (ret) T(std::forward<Ts>(args)...);
+		return *ret;
+	}
+
     template <typename T>
     CAMY_INLINE typename PagedDynLinearArray<T>::TRef PagedDynLinearArray<T>::next()
     {
-        TPtr ret = m_cur->_next();
+        TPtr ret = m_cur->next_single();
 
         // Next page **has** to have a free slot
         if (ret == nullptr)
         {
             // Append new page if at last
             if (m_cur->next == nullptr) _append_page();
-            ret = m_cur->_next();
+            ret = m_cur->next_single();
         }
 
         return *ret;

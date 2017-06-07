@@ -1,10 +1,10 @@
 /* auto_ptr.hpp
-*
-* Copyright (C) 2017 Edoardo Dominici
-*
-* This software may be modified and distributed under the terms
-* of the MIT license.  See the LICENSE file for details.
-*/
+ *
+ * Copyright (C) 2017 Edoardo Dominici
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
 #pragma once
 
 // camy
@@ -15,17 +15,12 @@ namespace camy
     template <typename PtrType>
     using DestructorFunc = void (*)(PtrType* ptr);
 
-    /*
-            Simple RAII smart pointer. assignment operator transfers ownership
-            invalidating the previous owner.
-            TODO: Does it really make sense to define move ctor/assignment ?
-            && should be casted to & and normal operator should apply. Defining
-            them just for completeness.
-    */
+    // Simple RAII smart pointer.
+    // Assignment transfers ownership invalidating the previous AutoPtr<>
     template <typename T, template <typename> class Destructor>
     class CAMY_API IAutoPtr final
     {
-      public:
+    public:
         ~IAutoPtr();
 
         IAutoPtr(IAutoPtr<T, Destructor>&& other);
@@ -47,7 +42,7 @@ namespace camy
         T& operator[](rsize idx) { return ptr[idx]; }
         const T& operator[](rsize idx) const { return ptr[idx]; }
 
-      private:
+    private:
         T* ptr;
     };
 
@@ -76,7 +71,8 @@ namespace camy
     }
 
     template <typename T, template <typename> class Destructor>
-    inline IAutoPtr<T, Destructor>::IAutoPtr(T* ptr) : ptr(ptr)
+    inline IAutoPtr<T, Destructor>::IAutoPtr(T* ptr)
+        : ptr(ptr)
     {
     }
 

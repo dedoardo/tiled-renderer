@@ -32,7 +32,7 @@ namespace camy
 
         // Returns the total number of bytes currently allocated and yet to be freed
         // if everything has been properly deallocated it returns 0.
-        CAMY_API rsize memory_total_bytes();
+        CAMY_API sint64 memory_total_bytes();
 
         // Returns the number of allocated bytes for the pointer. The overhead is not included
         // this is the number passed to allocate()
@@ -203,6 +203,7 @@ namespace camy
 
     namespace API
     {
+		// DO NOT CALL ThreadExit() as you will leak memory, just return 
         CAMY_API ThreadID thread_launch(ThreadProc proc, void* pdata);
         CAMY_API void thread_join(ThreadID thread);
         CAMY_API bool thread_is_valid(ThreadID thread);

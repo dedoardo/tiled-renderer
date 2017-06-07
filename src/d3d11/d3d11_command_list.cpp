@@ -142,6 +142,7 @@ namespace camy
             return D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
         default:
             CAMY_ASSERT(false);
+			return (D3D11_PRIMITIVE_TOPOLOGY)-1;
         }
     }
 
@@ -275,6 +276,8 @@ namespace camy
             m_data.ctx->PSSetConstantBuffers(var.slot(), 1, &cbuffer.native.buffer);
         case ShaderDesc::Type::Geometry:
             m_data.ctx->GSSetConstantBuffers(var.slot(), 1, &cbuffer.native.buffer);
+		default:
+			CAMY_ASSERT(false);
         }
     }
 

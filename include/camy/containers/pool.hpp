@@ -13,6 +13,8 @@
 
 namespace camy
 {
+    // Typed pool that uses indices instead of pointers as storage is contiguous
+    // and pointers are likely to be invalidate. get() is as quick as indexing an array though.
     template <typename T>
     class CAMY_API Pool final
     {
@@ -50,9 +52,9 @@ namespace camy
         rsize capacity() const;
 
     private:
-		TPtr _allocate_align_explicit(rsize n, rsize alignment);
-		TPtr _allocate_align_same(rsize n, void* src_alignment);
-		void _deallocate(TPtr ptr);
+        TPtr _allocate_align_explicit(rsize n, rsize alignment);
+        TPtr _allocate_align_same(rsize n, void* src_alignment);
+        void _deallocate(TPtr ptr);
         void _grow();
 
         TPtr m_base;
@@ -65,7 +67,7 @@ namespace camy
         : m_base(nullptr)
         , m_top(nullptr)
     {
-		m_base = _allocate_align_explicit(capacity, alignment);
+        m_base = _allocate_align_explicit(capacity, alignment);
         m_top = m_base + capacity;
         for (rsize i = 0; i < capacity; ++i)
             m_freelist.push(capacity - i - 1);
@@ -74,7 +76,7 @@ namespace camy
     template <typename T>
     CAMY_INLINE Pool<T>::~Pool()
     {
-		_deallocate(m_base);
+        _deallocate(m_base);
     }
 
     template <typename T>
@@ -90,8 +92,8 @@ namespace camy
     template <typename T>
     CAMY_INLINE rsize Pool<T>::reserve()
     {
-        if (m_freelist.empty()) 
-			_grow();
+        if (m_freelist.empty())
+            _grow();
 
         rsize ret = m_freelist.pop();
         new (m_base + ret) T();
@@ -103,7 +105,7 @@ namespace camy
     CAMY_INLINE rsize Pool<T>::allocate(Ts&&... args)
     {
         if (m_freelist.empty())
-			_grow();
+            _grow();
 
         rsize ret = m_freelist.pop();
         new (m_base + ret) T(std::forward<Ts>(args)...);
@@ -144,37 +146,37 @@ namespace camy
         return (rsize)(m_top - m_base);
     }
 
-	template <typename T>
-	CAMY_INLINE typename Pool<T>::TPtr Pool<T>::_allocate_align_explicit(rsize n, rsize alignment)
-	{
-		return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
-	}
+    template <typename T>
+    CAMY_INLINE typename Pool<T>::TPtr Pool<T>::_allocate_align_explicit(rsize n, rsize alignment)
+    {
+        return (TPtr)API::allocate(CAMY_ALLOC(n * ELEMENT_SIZE, alignment));
+    }
 
-	template <typename T>
-	CAMY_INLINE typename Pool<T>::TPtr Pool<T>::_allocate_align_same(rsize n, void* src_alignment)
-	{
-		return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
-	}
+    template <typename T>
+    CAMY_INLINE typename Pool<T>::TPtr Pool<T>::_allocate_align_same(rsize n, void* src_alignment)
+    {
+        return (TPtr)API::allocate(CAMY_ALLOC_SRC(n * ELEMENT_SIZE, src_alignment));
+    }
 
-	template <typename T>
-	CAMY_INLINE void Pool<T>::_deallocate(TPtr ptr)
-	{
-		API::deallocate(ptr);
-	}
+    template <typename T>
+    CAMY_INLINE void Pool<T>::_deallocate(TPtr ptr)
+    {
+        API::deallocate(ptr);
+    }
 
-	template <typename T>
-	CAMY_INLINE void Pool<T>::_grow()
-	{
-		TPtr old_buffer = m_base;
-		rsize old_capacity = capacity();
-		rsize new_capacity = old_capacity * 2;
-		m_base = _allocate_align_same(new_capacity, old_buffer);
-		m_top = m_base + new_capacity;
-		for (rsize i = 0; i < old_capacity; ++i)
-		{
-			new (m_base + i) T(std::move(old_buffer[i]));
-			m_freelist.push(new_capacity - i - 1);
-		}
-		_deallocate(old_buffer);
-	}
+    template <typename T>
+    CAMY_INLINE void Pool<T>::_grow()
+    {
+        TPtr old_buffer = m_base;
+        rsize old_capacity = capacity();
+        rsize new_capacity = old_capacity * 2;
+        m_base = _allocate_align_same(new_capacity, old_buffer);
+        m_top = m_base + new_capacity;
+        for (rsize i = 0; i < old_capacity; ++i)
+        {
+            new (m_base + i) T(std::move(old_buffer[i]));
+            m_freelist.push(new_capacity - i - 1);
+        }
+        _deallocate(old_buffer);
+    }
 }

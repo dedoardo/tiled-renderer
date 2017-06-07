@@ -75,7 +75,7 @@ namespace camy
                 return false;
             }
 
-            info.is_directory = fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+            info.is_directory = (fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0x0;
             ((ULARGE_INTEGER&)info.size).LowPart = fdata.nFileSizeLow;
             ((ULARGE_INTEGER&)info.size).HighPart = fdata.nFileSizeHigh;
 

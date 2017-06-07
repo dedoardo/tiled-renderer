@@ -10,12 +10,14 @@
 
 #if defined(CAMY_OS_WINDOWS)
 #include <Windows.h>
+#include <process.h>
 
 namespace camy
 {
     namespace API
     {
-        DWORD WINAPI thread_launcher(void* args)
+		using thread_ep = unsigned(__stdcall*)(void*);
+        unsigned int __stdcall thread_launcher(void* args)
         {
             bool ret = ((ThreadProc*)args)[0](((void**)args)[1]);
             deallocate(args);
@@ -27,8 +29,8 @@ namespace camy
             void** args = (void**)API::allocate(CAMY_UALLOC(sizeof(void*) * 2));
             args[0] = proc;
             args[1] = pdata;
-			DWORD id;
-            HANDLE handle = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)thread_launcher, args, 0x0, (DWORD*)&id);
+			DWORD id; 
+            HANDLE handle = (HANDLE)_beginthreadex(nullptr, 0, (thread_ep)thread_launcher, args, 0x0, (unsigned int*)&id);
 			if (handle == nullptr)
 			{
                 CL_ERR("Win32::CreateThread failed with error: ", GetLastError());

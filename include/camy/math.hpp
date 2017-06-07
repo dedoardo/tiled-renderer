@@ -63,7 +63,6 @@ namespace camy
         float x, y;
     };
 
-    bool operator==(const float2& left, const float2& right);
     float2 operator-(const float2& right);
     float2 operator+(const float2& left, const float2& right);
     float2 operator-(const float2& left, const float2& right);
