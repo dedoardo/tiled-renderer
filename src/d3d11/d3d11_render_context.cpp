@@ -1,10 +1,10 @@
 /* render_context.cpp
-*
-* Copyright (C) 2017 Edoardo Dominici
-*
-* This software may be modified and distributed under the terms
-* of the MIT license.  See the LICENSE file for details.
-*/
+ *
+ * Copyright (C) 2017 Edoardo Dominici
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the LICENSE file for details.
+ */
 // Header
 #include <camy/render_context.hpp>
 
@@ -29,7 +29,8 @@
 template <typename ComType>
 void safe_release_com(ComType*& ptr)
 {
-    if (ptr != nullptr) ptr->Release();
+    if (ptr != nullptr)
+        ptr->Release();
     ptr = nullptr;
 }
 
@@ -250,7 +251,7 @@ namespace camy
         for (int i = 0; i < API::MAX_CONTEXTS; ++i)
         {
             m_data.device->CreateDeferredContext1(0, &m_data.contexts[i].deferred_ctx);
-			m_data.contexts[i].locked = 0;
+            m_data.contexts[i].locked = 0;
         }
         m_data.avail_contexts = API::MAX_CONTEXTS;
 
@@ -296,12 +297,12 @@ namespace camy
         uint32 des = 1;
         if (API::atomic_cas(m_data.contexts[ctx_id].locked, 0, des) == 0)
         {
-            m_data.contexts[ctx_id].owner = API::thread_current();
-            CL_INFO("Acquired context: ", ctx_id, " on thread: ", API::thread_current());
+            m_data.contexts[ctx_id].owner = API::thread_current_id();
+            // CL_INFO("Acquired context: ", ctx_id, " on thread: ", API::thread_current());
             return true;
         }
 
-        CL_ERR("Failed to acquire context: ", ctx_id, " on thread: ", API::thread_current());
+        CL_ERR("Failed to acquire context: ", ctx_id, " on thread: ", API::thread_current_id());
         return false;
     }
 
@@ -317,20 +318,22 @@ namespace camy
         }
 
         uint32 des = 0;
-        if (API::atomic_cas(m_data.contexts[ctx_id].locked, 1, des) == 1) return;
+        if (API::atomic_cas(m_data.contexts[ctx_id].locked, 1, des) == 1)
+            return;
 
-        CL_ERR("Failed to acquire context: ", ctx_id, " on thread: ", API::thread_current());
+        CL_ERR("Failed to release context: ", ctx_id, " on thread: ", API::thread_current_id());
     }
 
     ContextID RenderContext::id_for_current()
     {
         CAMY_ASSERT(m_data.is_valid());
 
-        ThreadID cur_id = API::thread_current();
+        Thread cur_id = API::thread_current_id();
 
         for (uint32 i = 0; i < API::MAX_CONTEXTS; ++i)
         {
-            if (m_data.contexts[i].locked && m_data.contexts[i].owner == cur_id) return i;
+            if (m_data.contexts[i].locked && m_data.contexts[i].owner == cur_id)
+                return i;
         }
 
         return API::INVALID_CONTEXT_ID;
@@ -350,7 +353,8 @@ namespace camy
             return;
         }
 
-        if (command_list.m_data.command_list == nullptr) return;
+        if (command_list.m_data.command_list == nullptr)
+            return;
 
         // Uploading cbuffer data
         for (rsize i = 0; i < command_list.m_updates.count(); ++i)
@@ -529,9 +533,12 @@ namespace camy
         ndesc.Usage = desc.usage == Usage::Dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
         ndesc.CPUAccessFlags = desc.usage == Usage::Dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
         ndesc.BindFlags = 0;
-        if (desc.gpu_views & GPUView::ShaderResource) ndesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
-        if (desc.gpu_views & GPUView::RenderTarget) ndesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-        if (desc.gpu_views & GPUView::DepthStencil) ndesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+        if (desc.gpu_views & GPUView::ShaderResource)
+            ndesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+        if (desc.gpu_views & GPUView::RenderTarget)
+            ndesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+        if (desc.gpu_views & GPUView::DepthStencil)
+            ndesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
         if (desc.gpu_views & GPUView::UnorderedAccess)
             ndesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
 
@@ -541,7 +548,8 @@ namespace camy
             ndesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
         uint32 num_subresources = ndesc.MipLevels;
-        if (desc.type == SurfaceDesc::Type::SurfaceCube) num_subresources *= 6;
+        if (desc.type == SurfaceDesc::Type::SurfaceCube)
+            num_subresources *= 6;
         if (desc.type == SurfaceDesc::Type::SurfaceCubeArray ||
             desc.type == SurfaceDesc::Type::Surface2DArray)
             num_subresources *= desc.array_count;
@@ -552,8 +560,8 @@ namespace camy
         {
             if (num_subsurfaces != num_subresources)
             {
-                CL_ERR("Invalid argument: num_subsurfaces: ", num_subsurfaces, " expected: ",
-                       num_subresources);
+                CL_ERR("Invalid argument: num_subsurfaces: ", num_subsurfaces,
+                       " expected: ", num_subresources);
             }
             else
             {
@@ -955,7 +963,8 @@ namespace camy
         HResource ret;
         ID3D11Buffer* buffer = nullptr;
         rsize element_size = 2;
-        if (desc.extended32) element_size = 4;
+        if (desc.extended32)
+            element_size = 4;
 
         D3D11_BUFFER_DESC ndesc;
         ndesc.ByteWidth = desc.num_elements * element_size;
@@ -1201,7 +1210,8 @@ namespace camy
         CAMY_CHECK_CONTEXT_FOR_THREAD;
 
         // Perfectly fine, just hardware generated values
-        if (desc.num_elements == 0) return HResource::make_invalid();
+        if (desc.num_elements == 0)
+            return HResource::make_invalid();
 
         DynLinearArray<D3D11_INPUT_ELEMENT_DESC> input_elements(desc.num_elements);
         for (unsigned int i = 0; i < desc.num_elements; ++i)
@@ -1441,7 +1451,8 @@ namespace camy
 
     void RenderContext::destroy_surface(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
 
         Surface& surface = get_surface(handle);
 
@@ -1474,7 +1485,8 @@ namespace camy
 
     void RenderContext::destroy_buffer(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         Buffer& buffer = m_resource_manager.get<Buffer>(handle);
 
         safe_release_com(buffer.native.uav);
@@ -1486,7 +1498,8 @@ namespace camy
 
     void RenderContext::destroy_vertex_buffer(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         VertexBuffer& vertex_buffer = m_resource_manager.get<VertexBuffer>(handle);
 
         safe_release_com(vertex_buffer.native.buffer);
@@ -1496,7 +1509,8 @@ namespace camy
 
     void RenderContext::destroy_index_buffer(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         IndexBuffer& index_buffer = m_resource_manager.get<IndexBuffer>(handle);
 
         safe_release_com(index_buffer.native.buffer);
@@ -1506,7 +1520,8 @@ namespace camy
 
     void RenderContext::destroy_constant_buffer(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         ConstantBuffer& constant_buffer = m_resource_manager.get<ConstantBuffer>(handle);
 
         safe_release_com(constant_buffer.native.buffer);
@@ -1516,7 +1531,8 @@ namespace camy
 
     void RenderContext::destroy_blend_state(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         BlendState& blend_state = m_resource_manager.get<BlendState>(handle);
 
         safe_release_com(blend_state.native.state);
@@ -1526,7 +1542,8 @@ namespace camy
 
     void RenderContext::destroy_rasterizer_state(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         RasterizerState& rasterizer_state = m_resource_manager.get<RasterizerState>(handle);
 
         safe_release_com(rasterizer_state.native.state);
@@ -1536,7 +1553,8 @@ namespace camy
 
     void RenderContext::destroy_input_signature(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         InputSignature& input_signature = m_resource_manager.get<InputSignature>(handle);
 
         safe_release_com(input_signature.native.input_layout);
@@ -1546,7 +1564,8 @@ namespace camy
 
     void RenderContext::destroy_sampler(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         Sampler& sampler = m_resource_manager.get<Sampler>(handle);
 
         safe_release_com(sampler.native.sampler);
@@ -1556,7 +1575,8 @@ namespace camy
 
     void RenderContext::destroy_depth_stencil_state(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         DepthStencilState& depth_stencil_state = m_resource_manager.get<DepthStencilState>(handle);
 
         safe_release_com(depth_stencil_state.native.state);
@@ -1566,7 +1586,8 @@ namespace camy
 
     void RenderContext::destroy_shader(HResource handle)
     {
-        if (handle.is_invalid()) return;
+        if (handle.is_invalid())
+            return;
         Shader& shader = m_resource_manager.get<Shader>(handle);
 
         safe_release_com(shader.native.shader);

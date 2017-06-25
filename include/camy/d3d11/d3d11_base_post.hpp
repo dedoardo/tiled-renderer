@@ -19,7 +19,7 @@ namespace camy
     {
         uint32 locked;
         ID3D11DeviceContext1* deferred_ctx = nullptr;
-        ThreadID owner;
+        uint64 owner;
     };
 
     struct CAMY_API RenderContextData

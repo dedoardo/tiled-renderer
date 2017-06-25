@@ -24,7 +24,7 @@ namespace camy
             return ret ? 0 : 1;
         }
 
-        ThreadID thread_launch(ThreadProc proc, void* pdata)
+        Thread thread_launch(ThreadProc proc, void* pdata)
         {
             void** args = (void**)API::allocate(CAMY_UALLOC(sizeof(void*) * 2));
             args[0] = proc;
@@ -34,12 +34,12 @@ namespace camy
 			if (handle == nullptr)
 			{
                 CL_ERR("Win32::CreateThread failed with error: ", GetLastError());
-                return (ThreadID)INVALID_HANDLE_VALUE;
+                return (Thread)INVALID_HANDLE_VALUE;
             }
-            return (ThreadID)handle;
+            return (Thread)handle;
         }
 
-        void thread_join(ThreadID thread)
+        void thread_join(Thread thread)
         {
             if ((HANDLE)thread == INVALID_HANDLE_VALUE)
             {
@@ -50,9 +50,9 @@ namespace camy
             WaitForSingleObject((HANDLE)thread, INFINITE);
         }
 
-        bool thread_is_valid(ThreadID thread) { return (HANDLE)thread != INVALID_HANDLE_VALUE; }
+        bool thread_is_valid(Thread thread) { return (HANDLE)thread != INVALID_HANDLE_VALUE; }
 
-        ThreadID thread_current() { return (ThreadID)GetCurrentThread(); }
+        uint64 thread_current_id() { return (uint64)GetCurrentThreadId(); }
 
         void thread_yield_current() { YieldProcessor(); }
 
@@ -74,8 +74,18 @@ namespace camy
 
         uint32 atomic_fetch_add(uint32& data, uint32 addend)
         {
-            return _InterlockedExchangeAdd((long*)&data, addend);
+            return (uint32)_InterlockedExchangeAdd((long*)&data, addend);
         }
+
+		uint32 atomic_incr(uint32& data)
+		{
+			return (uint32)_InterlockedIncrement((long*)&data);
+		}
+
+		uint32 atomic_decr(uint32& data)
+		{
+			return (uint32)_InterlockedDecrement((long*)&data);
+		}
 
         Futex futex_create()
         {

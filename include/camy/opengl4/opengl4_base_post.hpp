@@ -28,7 +28,7 @@ namespace camy
     struct CAMY_API ConcurrentContextData
     {
         uint32 locked;
-        ThreadID owner;
+        uint64 owner;
         HGLRC off_ctx;
     };
 

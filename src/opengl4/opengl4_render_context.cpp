@@ -285,12 +285,12 @@ namespace camy
         if (API::atomic_cas(m_data.contexts[ctx_id].locked, 0, des) == 0)
         {
             wglMakeCurrent(m_data.hdc, m_data.contexts[ctx_id].off_ctx);
-            m_data.contexts[ctx_id].owner = API::thread_current();
-            CL_INFO("Acquired context: ", ctx_id, " on thread: ", API::thread_current());
+            m_data.contexts[ctx_id].owner = API::thread_current_id();
+            //CL_INFO("Acquired context: ", ctx_id, " on thread: ", API::thread_current_id());
             return true;
         }
 
-        CL_ERR("Failed to acquire context: ", ctx_id, " on thread: ", API::thread_current());
+        CL_ERR("Failed to acquire context: ", ctx_id, " on thread: ", API::thread_current_id());
         return false;
     }
 
@@ -309,13 +309,13 @@ namespace camy
         if (API::atomic_cas(m_data.contexts[ctx_id].locked, 1, des) == 1)
             wglMakeCurrent(nullptr, nullptr);
         else
-            CL_ERR("Failed to release context: ", ctx_id, " on thread: ", API::thread_current());
+            CL_ERR("Failed to release context: ", ctx_id, " on thread: ", API::thread_current_id());
     }
 
     ContextID RenderContext::id_for_current()
     {
         CAMY_ASSERT(m_data.is_valid());
-        ThreadID cur_id = API::thread_current();
+        ThreadID cur_id = API::thread_current_id();
 
         for (uint32 i = 0; i < API::MAX_CONTEXTS; ++i)
         {

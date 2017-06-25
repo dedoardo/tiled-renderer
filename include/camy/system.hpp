@@ -193,7 +193,7 @@ namespace camy
 
     // Thread
     // -----------------------------------------------------------------------------------------------
-    using ThreadID = uint64;
+    using Thread = uint64;
     using ThreadProc = bool (*)(void*);
 
     using Futex = void*;
@@ -204,10 +204,10 @@ namespace camy
     namespace API
     {
 		// DO NOT CALL ThreadExit() as you will leak memory, just return 
-        CAMY_API ThreadID thread_launch(ThreadProc proc, void* pdata);
-        CAMY_API void thread_join(ThreadID thread);
-        CAMY_API bool thread_is_valid(ThreadID thread);
-        CAMY_API ThreadID thread_current();
+        CAMY_API Thread thread_launch(ThreadProc proc, void* pdata);
+        CAMY_API void thread_join(Thread thread);
+        CAMY_API bool thread_is_valid(Thread thread);
+        CAMY_API uint64 thread_current_id();
         CAMY_API void thread_yield_current();
         CAMY_API void thread_sleep_current(rsize milliseconds);
 
@@ -226,6 +226,8 @@ namespace camy
         CAMY_API uint32 atomic_cas(uint32& data, uint32 expected, uint32 desired);
         CAMY_API uint32 atomic_swap(uint32& data, uint32 desired);
         CAMY_API uint32 atomic_fetch_add(uint32& data, uint32 addend);
+		CAMY_API uint32 atomic_incr(uint32& data);
+		CAMY_API uint32 atomic_decr(uint32& data);
 
         CAMY_API Futex futex_create();
         CAMY_API void futex_destroy(Futex futex);

@@ -28,7 +28,7 @@ namespace camy
     {
         RenderContextData& data = API::rc().get_platform_data();
         ContextID ctx_id = API::rc().id_for_current();
-        m_data.ctx = data.contexts[0].deferred_ctx;
+        m_data.ctx = data.contexts[ctx_id].deferred_ctx;
 
         if (m_data.command_list != nullptr)
         {
@@ -39,7 +39,12 @@ namespace camy
         m_updates.clear();
     }
 
-    void CommandList::end() { m_data.ctx->FinishCommandList(false, &m_data.command_list); }
+    void CommandList::end() 
+	{ 
+		if (m_data.command_list != nullptr)
+			m_data.command_list->Release();
+		m_data.ctx->FinishCommandList(false, &m_data.command_list); 
+	}
 
 #define _camy_cl_assert                                                                            \
     {                                                                                              \
